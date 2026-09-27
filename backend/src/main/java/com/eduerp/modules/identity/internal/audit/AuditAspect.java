@@ -7,10 +7,17 @@ import java.util.UUID;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+// Đặt thứ tự tường minh để nằm NGOÀI advice của @Transactional (số nhỏ hơn = bọc ngoài). Nếu để
+// mặc định thì cả hai cùng LOWEST_PRECEDENCE và thứ tự không xác định — nghĩa là không biết dòng
+// audit được ghi trước hay sau khi commit. Ở ngoài là lựa chọn đúng: chỉ hành động đã commit mới
+// được ghi, một transaction rollback lúc commit sẽ không để lại audit của việc chưa xảy ra.
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 class AuditAspect {
 
     private final AuditLogRepository auditLogs;
