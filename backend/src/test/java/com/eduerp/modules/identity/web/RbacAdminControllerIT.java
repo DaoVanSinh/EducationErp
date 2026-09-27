@@ -2,6 +2,7 @@ package com.eduerp.modules.identity.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.eduerp.modules.identity.IdentityConstants;
@@ -204,6 +205,35 @@ class RbacAdminControllerIT {
         assertThat(auditLogs.findByEntityTypeAndActionOrderByOccurredAtDesc(IdentityConstants.Resources.ACCOUNT,
                 IdentityConstants.AuditActions.ACCOUNT_JOIN_GROUP, Pageable.unpaged()))
                 .extracting(AuditLog::getEntityId).doesNotContain(target.getId().toString());
+    }
+
+    @Test
+    void listsAccountsAndTheReferenceCatalogForTheAdminScreens() throws Exception {
+        var admin = signIn("rbac-read@eduerp.local", IdentityConstants.RoleCodes.ADMIN);
+
+        var accountsPage = mockMvc.perform(get("/api/rbac/accounts?page=0&size=5").cookie(admin)).andReturn();
+        var catalog = mockMvc.perform(get("/api/rbac/catalog").cookie(admin)).andReturn();
+
+        assertThat(accountsPage.getResponse().getStatus()).isEqualTo(200);
+        var page = objectMapper.readTree(accountsPage.getResponse().getContentAsString());
+        assertThat(page.get("items")).hasSizeLessThanOrEqualTo(5);
+        assertThat(page.get("totalItems").asLong()).isEqualTo(accounts.count());
+        assertThat(page.get("items").get(0).hasNonNull("roleCode")).isTrue();
+
+        assertThat(catalog.getResponse().getStatus()).isEqualTo(200);
+        var reference = objectMapper.readTree(catalog.getResponse().getContentAsString());
+        assertThat(reference.get("roles")).isNotEmpty();
+        assertThat(reference.get("permissions")).isNotEmpty();
+    }
+
+    /** Danh sach tai khoan lo du lieu ca to chuc, nen quyen PERSONAL khong duoc mo. */
+    @Test
+    void refusesToListAccountsForAPersonalScopedRole() throws Exception {
+        var teacher = signIn("rbac-read-teacher@eduerp.local", IdentityConstants.RoleCodes.TEACHER);
+
+        var result = mockMvc.perform(get("/api/rbac/accounts").cookie(teacher)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(403);
     }
 
     @Test

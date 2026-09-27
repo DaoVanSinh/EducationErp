@@ -1,17 +1,25 @@
 package com.eduerp.modules.identity.web;
 
 import com.eduerp.modules.identity.IdentityConstants;
+import com.eduerp.modules.identity.dto.AccountSummaryResponse;
 import com.eduerp.modules.identity.dto.AssignGroupRequest;
 import com.eduerp.modules.identity.dto.CreatePermissionGroupRequest;
 import com.eduerp.modules.identity.dto.CreateRoleRequest;
+import com.eduerp.modules.identity.dto.PageResponse;
+import com.eduerp.modules.identity.dto.RbacCatalogResponse;
 import com.eduerp.modules.identity.dto.TransferBranchRequest;
 import com.eduerp.modules.identity.usecase.AssignGroupToAccount;
 import com.eduerp.modules.identity.usecase.CreatePermissionGroup;
 import com.eduerp.modules.identity.usecase.CreateRole;
+import com.eduerp.modules.identity.usecase.GetRbacCatalog;
+import com.eduerp.modules.identity.usecase.ListAccounts;
 import com.eduerp.modules.identity.usecase.TransferAccountBranch;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,13 +34,30 @@ class RbacAdminController {
     private final CreatePermissionGroup createPermissionGroup;
     private final AssignGroupToAccount assignGroupToAccount;
     private final TransferAccountBranch transferAccountBranch;
+    private final ListAccounts listAccounts;
+    private final GetRbacCatalog getRbacCatalog;
 
     RbacAdminController(CreateRole createRole, CreatePermissionGroup createPermissionGroup,
-            AssignGroupToAccount assignGroupToAccount, TransferAccountBranch transferAccountBranch) {
+            AssignGroupToAccount assignGroupToAccount, TransferAccountBranch transferAccountBranch,
+            ListAccounts listAccounts, GetRbacCatalog getRbacCatalog) {
         this.createRole = createRole;
         this.createPermissionGroup = createPermissionGroup;
         this.assignGroupToAccount = assignGroupToAccount;
         this.transferAccountBranch = transferAccountBranch;
+        this.listAccounts = listAccounts;
+        this.getRbacCatalog = getRbacCatalog;
+    }
+
+    @GetMapping("/accounts")
+    @PreAuthorize(IdentityConstants.AccessRules.READ_ACCOUNT)
+    PageResponse<AccountSummaryResponse> listAccounts(@PageableDefault(size = 20) Pageable pageable) {
+        return listAccounts.execute(pageable);
+    }
+
+    @GetMapping("/catalog")
+    @PreAuthorize(IdentityConstants.AccessRules.READ_ROLE)
+    RbacCatalogResponse catalog() {
+        return getRbacCatalog.execute();
     }
 
     @PostMapping("/permission-groups")

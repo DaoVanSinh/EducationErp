@@ -147,6 +147,11 @@ public final class IdentityConstants {
                 + CHECK_SEPARATOR + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String UPDATE_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        /** Danh mục RBAC đi kèm nhau, nên một quyền đọc role là đủ cho cả màn hình tham chiếu. */
+        public static final String READ_ROLE = CHECK_PREFIX + Resources.ROLE + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
         /** Số liệu trên dashboard là của toàn hệ thống, nên quyền đọc nó cũng phải ở cấp tổ chức. */
         public static final String READ_DASHBOARD = CHECK_PREFIX + Resources.DASHBOARD + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
