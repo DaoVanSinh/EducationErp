@@ -37,15 +37,14 @@ class SecurityConfig {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh"))
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh",
+                                "/api/account/change-password", "/api/account/forgot-password",
+                                "/api/account/reset-password", "/api/account/profile"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/forgot-password",
-                                "/api/auth/reset-password")
+                        .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/account/forgot-password",
+                                "/api/account/reset-password")
                         .permitAll()
                         .anyRequest().authenticated())
-                // Không cấu hình formLogin/httpBasic (auth là cookie-based, không phải form/basic),
-                // nên phải khai báo rõ entry point 401 - nếu không Spring Security sẽ mặc định
-                // dùng Http403ForbiddenEntryPoint và trả 403 thay vì 401 cho request chưa xác thực.
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new CookieAuthenticationFilter(jwtTokenService, blacklist, permissionCache, accounts),
