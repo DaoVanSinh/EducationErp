@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: eduerp-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eduerp
+    username: ${DB_USERNAME:eduerp}
+    password: ${DB_PASSWORD:eduerp}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+
+identity:
+  jwt-secret: ${IDENTITY_JWT_SECRET:dev-only-secret-change-me-please-32bytes}
+  access-token-ttl: 15m
+  refresh-token-ttl: 30d
+  password-reset-ttl: 30m
+  mail-from: no-reply@eduerp.local
+  frontend-reset-url: http://localhost:5173/reset-password
+
+server:
+  port: 8080
