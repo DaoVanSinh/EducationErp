@@ -5,7 +5,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.springframework.stereotype.Component;
 
+@Component
 class EffectivePermissionCalculator {
 
     Set<EffectivePermission> calculate(Role role, Set<Group> groups) {
