@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.LoginRequest;
 import com.eduerp.modules.identity.internal.model.Account;
+import com.eduerp.modules.identity.internal.model.AuditLog;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
+import com.eduerp.modules.identity.internal.repository.AuditLogRepository;
 import com.eduerp.modules.identity.internal.repository.RoleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -53,6 +56,9 @@ class AuthControllerIT {
     @Autowired
     PasswordEncoder passwordEncoder;
 
+    @Autowired
+    AuditLogRepository auditLogs;
+
     @Test
     void loginRefreshLogoutFlow() throws Exception {
         var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
@@ -75,6 +81,12 @@ class AuthControllerIT {
 
         var logoutResult = mockMvc.perform(post("/api/auth/logout").cookie(newAccess).with(csrf())).andReturn();
         assertThat(logoutResult.getResponse().getStatus()).isEqualTo(200);
+
+        var accountId = accounts.findByTypedEmail("flow@eduerp.local").orElseThrow().getId();
+        assertThat(auditLogs.findByEntityTypeAndActionOrderByOccurredAtDesc(IdentityConstants.Resources.ACCOUNT,
+                IdentityConstants.AuditActions.LOGIN, Pageable.unpaged()))
+                .extracting(AuditLog::getEntityId)
+                .contains(accountId.toString());
     }
 
     @Test

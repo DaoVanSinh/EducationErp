@@ -94,6 +94,21 @@ public final class IdentityConstants {
         public static final String REFRESH_TOKEN = "refresh_token";
     }
 
+    /**
+     * Tên hành động ghi vào audit log. Loại entity dùng lại {@link Resources} — cùng một danh sách
+     * tài nguyên, không dựng thêm một bộ từ vựng thứ hai để rồi hai bên lệch nhau.
+     */
+    public static final class AuditActions {
+        private AuditActions() {
+        }
+
+        public static final String LOGIN = "LOGIN";
+        public static final String ROLE_CREATE = "ROLE_CREATE";
+        public static final String PERMISSION_GROUP_CREATE = "PERMISSION_GROUP_CREATE";
+        public static final String ACCOUNT_JOIN_GROUP = "ACCOUNT_JOIN_GROUP";
+        public static final String ACCOUNT_TRANSFER_BRANCH = "ACCOUNT_TRANSFER_BRANCH";
+    }
+
     /** Giá trị mặc định do chính module quyết định, không phụ thuộc cấu hình triển khai. */
     public static final class Defaults {
         private Defaults() {
