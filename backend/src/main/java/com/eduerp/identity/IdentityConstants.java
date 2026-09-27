@@ -55,4 +55,11 @@ public final class IdentityConstants {
         public static final String TEACHER = "TEACHER";
         public static final String STUDENT = "STUDENT";
     }
+
+    public static final class Authorities {
+        private Authorities() {
+        }
+
+        public static final String PERMISSION_AUTHORITY_PREFIX = "PERM:";
+    }
 }
