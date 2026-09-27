@@ -78,6 +78,21 @@ class AuthControllerIT {
     }
 
     @Test
+    void loginAcceptsTheEmailInAnyCase() throws Exception {
+        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
+        accounts.save(new Account("Case.Insensitive@EduERP.Local", passwordEncoder.encode("Password123!"),
+                "Case Insensitive", role, null));
+
+        var result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new LoginRequest("case.insensitive@eduerp.local", "Password123!"))))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+    }
+
+    @Test
     void refreshRejectsAnAccessTokenPresentedAsRefreshToken() throws Exception {
         var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("type-confusion@eduerp.local", passwordEncoder.encode("Password123!"),

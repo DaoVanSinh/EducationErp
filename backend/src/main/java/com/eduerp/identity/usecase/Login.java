@@ -27,7 +27,7 @@ public class Login {
 
     @Transactional(readOnly = true)
     public SessionTokens execute(LoginRequest request) {
-        var account = accounts.findByEmail(request.email()).orElseThrow(InvalidCredentialsException::new);
+        var account = accounts.findByTypedEmail(request.email()).orElseThrow(InvalidCredentialsException::new);
         if (!passwordEncoder.matches(request.password(), account.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }

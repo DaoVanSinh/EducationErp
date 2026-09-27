@@ -80,7 +80,10 @@ src/main/java/com/acme/shop/
 │       ├── rules/                 pure decisions, no I/O — unit-testable with `new`
 │       ├── token/                 JWT issue/decode/blacklist — a mechanism, not a decision
 │       ├── permission/            effective-permission calculation + its Redis cache
-│       └── mail/                  outbound notifications this module owns
+│       ├── mail/                  outbound notifications this module owns
+│       └── util/                  pure transforms (EmailNormalizer) — created only when a real
+│                                  caller exists; an empty util/ is the dumping ground this
+│                                  structure exists to prevent
 │
 ├── billing/ ...                 same shape, one package per domain module
 │
@@ -132,6 +135,8 @@ The recurring question is where a given piece of code belongs. The test is **who
 | A role/permission enum 3+ modules need | `shared/SharedConstants.java` — promotion only, never a first draft |
 
 `core/exception/` naming a domain entity is the earliest visible sign the boundary has leaked. So is any `Utils.java` at the application root.
+
+**`util/` vs `rules/`:** a rule answers *may this happen* and belongs in `internal/rules/`; a util only changes the shape of data and belongs in `internal/util/`. The distinction matters because a rule is a business decision someone will want to change, while a util must never quietly change — normalizing an email differently silently repartitions the accounts table. Create `util/` when the first real caller exists, never before: a package that exists before its content is what turns into `common/`.
 
 ## Non-negotiable rules
 

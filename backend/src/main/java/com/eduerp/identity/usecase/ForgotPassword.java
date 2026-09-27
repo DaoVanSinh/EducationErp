@@ -29,7 +29,7 @@ public class ForgotPassword {
 
     @Transactional(readOnly = true)
     public void execute(ForgotPasswordRequest request) {
-        accounts.findByEmail(request.email()).ifPresent(account -> {
+        accounts.findByTypedEmail(request.email()).ifPresent(account -> {
             String token = UUID.randomUUID().toString();
             redis.opsForValue().set(IdentityCacheKeys.passwordResetToken(token), account.getId().toString(),
                     properties.passwordResetTtl());

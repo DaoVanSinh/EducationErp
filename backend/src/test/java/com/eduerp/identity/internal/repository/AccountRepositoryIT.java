@@ -43,4 +43,15 @@ class AccountRepositoryIT {
         assertThat(found.get().getHomeBranch()).isNotNull();
         assertThat(found.get().getStatus()).isEqualTo(IdentityConstants.AccountStatus.ACTIVE);
     }
+
+    @Test
+    void storesEmailNormalizedSoCaseDoesNotCreateASecondAccountForTheSamePerson() {
+        var role = roles.save(new Role("QA_EMAIL_CASE_ROLE", "Giáo viên", true));
+
+        var saved = accounts.save(new Account("  Teacher.Case@EduERP.Local ", "hashed", "Nguyễn Văn B", role, null));
+
+        assertThat(saved.getEmail()).isEqualTo("teacher.case@eduerp.local");
+        assertThat(accounts.findByTypedEmail("TEACHER.CASE@eduerp.LOCAL")).isPresent();
+        assertThat(accounts.findByEmail("Teacher.Case@EduERP.Local")).isEmpty();
+    }
 }

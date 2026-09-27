@@ -1,6 +1,7 @@
 package com.eduerp.identity.internal.model;
 
 import com.eduerp.identity.IdentityConstants;
+import com.eduerp.identity.internal.util.EmailNormalizer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -62,7 +63,8 @@ public class Account {
     private final Set<Group> groups = new HashSet<>();
 
     public Account(String email, String passwordHash, String fullName, Role role, Branch homeBranch) {
-        this.email = email;
+        // Chuẩn hoá tại đây để cột email chỉ tồn tại một dạng duy nhất, bất kể ai tạo Account.
+        this.email = EmailNormalizer.normalize(email);
         this.passwordHash = passwordHash;
         this.fullName = fullName;
         this.role = role;
