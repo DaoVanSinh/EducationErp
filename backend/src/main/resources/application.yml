@@ -32,6 +32,9 @@ identity:
   access-token-ttl: 15m
   refresh-token-ttl: 30d
   password-reset-ttl: 30m
+  # Cookie phiên chỉ nên đi qua HTTPS. Khi chạy local bằng http mà trình duyệt bỏ cookie Secure
+  # thì đăng nhập sẽ "thành công" nhưng không có phiên; lúc đó đặt IDENTITY_SECURE_COOKIES=false.
+  secure-cookies: ${IDENTITY_SECURE_COOKIES:true}
   mail-from: no-reply@eduerp.local
   frontend-reset-url: http://localhost:5173/reset-password
   default-admin-email: ${IDENTITY_DEFAULT_ADMIN_EMAIL:admin@eduerp.local}

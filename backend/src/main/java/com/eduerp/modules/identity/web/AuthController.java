@@ -46,6 +46,6 @@ class AuthController {
             @CookieValue(value = IdentityConstants.Cookies.REFRESH_TOKEN, required = false) String refreshToken,
             HttpServletResponse response) {
         logout.execute(accessToken, refreshToken);
-        AuthCookies.clearSession(response);
+        AuthCookies.clearSession(response, properties);
     }
 }

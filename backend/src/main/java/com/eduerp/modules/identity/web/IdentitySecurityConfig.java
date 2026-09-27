@@ -45,6 +45,7 @@ class IdentitySecurityConfig {
                 // logout, đổi mật khẩu, sửa profile - vẫn phải mang CSRF token.
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh",
                                 "/api/account/forgot-password", "/api/account/reset-password"))
                 .authorizeHttpRequests(auth -> auth

@@ -16,7 +16,7 @@ class JwtTokenServiceTest {
             "test-secret-key-must-be-at-least-32-bytes-long",
             Duration.ofMinutes(15), Duration.ofDays(30), Duration.ofMinutes(30),
             "no-reply@eduerp.local", "http://localhost:5173/reset-password",
-            "admin@eduerp.local", "ChangeMe123!");
+            "admin@eduerp.local", "ChangeMe123!", true);
 
     private final JwtTokenService service = new JwtTokenService(properties);
 
