@@ -1,0 +1,2 @@
+/** Port ra DB: {@code JpaRepository} chính là abstraction, không tự viết AbstractRepository (rule #6). */
+package com.eduerp.modules.identity.internal.repository;

@@ -52,13 +52,18 @@ Add `spring-boot-starter-data-redis` (cache), `spring-modulith-starter-amqp` + `
 src/main/java/com/acme/shop/
 ├── ShopApplication.java        @SpringBootApplication + @Modulithic(systemName = "Shop")
 │
+├── modules/                    every domain module lives here — NOT a module itself, just the
+│   │                           grouping that makes "what business does this system do?" answerable
+│   │                           by one `ls`, and keeps domains from mixing with mechanism at the root
+│   └── <domain>/ ...            one package per domain, each annotated @ApplicationModule
+│
 ├── core/                       shared mechanism — no business concept lives here
 │   ├── exception/               AppException hierarchy, GlobalExceptionHandler → ProblemDetail
 │   ├── web/                     RequestCorrelationFilter (request/correlation id → MDC + response headers)
 │   ├── security/                JWT resource-server config, method-security bootstrap — no role/permission constants
 │   └── config/                  CorsConfig, JacksonConfig, OpenApiConfig — app-wide settings only
 │
-├── identity/                   domain module — an ADVANCED module: base package = its published API,
+├── modules/identity/           domain module — an ADVANCED module: base package = its published API,
 │   │                           every sub-package below is internal unless @NamedInterface says otherwise
 │   ├── package-info.java         @ApplicationModule(displayName = "Identity & Access") + a Javadoc
 │   │                             sentence per sub-package saying what that package is responsible for
@@ -85,16 +90,19 @@ src/main/java/com/acme/shop/
 │                                  caller exists; an empty util/ is the dumping ground this
 │                                  structure exists to prevent
 │
-├── billing/ ...                 same shape, one package per domain module
+├── modules/billing/ ...         same shape, one package per domain module
 │
 ├── shared/                      only once 3+ modules need the same concept — promotion, not a first draft
 │   ├── SharedConstants.java      the promoted enum/limit, still one class (rule #10)
 │   └── package-info.java         @NamedInterface / no @ApplicationModule(allowedDependencies=...) pointing at a domain module — one-way
 │
-└── infra/
-    ├── cache/                    Redis: CacheConfig, <Entity>CacheKeys — Spring Cache abstraction
+└── integrations/               adapters to outside systems — like modules/, a grouping, not a module
+    ├── cache/                    Redis: CacheConfig + CacheKeyBuilder — see rule #5
     ├── messaging/                RabbitMQ: topology/exchanges/queues, listeners
     └── storage/                  S3 client, config, exceptions — no tables, no HTTP
+
+    No class under integrations/ may carry a domain's name. An `IdentityCacheKeys` here is a
+    leaked boundary: the names belong to the module, only the mechanism belongs here.
 
 src/test/java/com/acme/shop/     mirrors src/main 1:1 — Maven/Gradle convention enforces this, not choice
 ├── ModularityTests.java          ApplicationModules.of(ShopApplication.class).verify() — run in CI
@@ -108,13 +116,19 @@ src/test/java/com/acme/shop/     mirrors src/main 1:1 — Maven/Gradle conventio
 pom.xml, Dockerfile (layertools), compose.yaml (dev), application.yml + application-{profile}.yml
 ```
 
+**Nesting domains under `modules/` requires one line of config, or it silently destroys every boundary.** Spring Modulith's default strategy treats each *direct* sub-package of the application package as a module, so with domains at `com.acme.shop.modules.identity` the module becomes `modules` — all domains collapse into one, their `internal/` packages become mutually visible, and `verify()` keeps passing while enforcing nothing. Set `spring.modulith.detection-strategy: explicitly-annotated` and annotate each domain package with `@ApplicationModule`; nested packages are then detected at any depth (module names come out as `modules.identity`, `integrations.cache`).
+
+That strategy has its own failure mode: a domain added without the annotation is not a module, so nothing guards it — and nothing complains. Pin the detected set in `ModularityTests` (`assertThat(modules.stream().map(ApplicationModule::getName))...containsExactlyInAnyOrder(...)`) so a forgotten annotation fails the build instead of quietly opting a domain out of enforcement.
+
 **Simple module or advanced module — pick one and be consistent.** A module small enough to stay in a single package is a *simple module*: one package, facade `public`, everything else package-private, no `internal/` at all. The moment it needs sub-packages it becomes an *advanced module* and the shape above applies: entity, repository and rules move under `internal/`, and types inside `internal/**` become `public` again so its own sub-packages can see each other — Spring Modulith still hides the whole `internal` subtree from every other module. What you must not produce is the middle state: thirty classes flat in the base package with a token `internal/` beside them. That publishes the entities, the repositories and the filter as module API and rule #1 stops protecting anything.
 
 Every package, including `internal/**`, carries a `package-info.java` that names the package's job in one sentence. Someone opening the module must be able to tell what each package is for without reading a single class.
 
-**The advanced-module rule cuts both ways: `core/exception/` and `infra/cache/` are sub-packages too**, so they are internal to modules `core` and `infra` and every reference to them from a domain module fails `verify()` until you publish them. Put `@NamedInterface("exception")` / `@NamedInterface("cache")` on their `package-info.java` — that is the deliberate act of saying "this is the part of `core` the rest of the system is allowed to build on", and it is the reason `AppException` is extensible while `GlobalExceptionHandler` stays private.
+**The advanced-module rule cuts both ways: `core/exception/` is a sub-package too**, so it is internal to module `core` and every reference to `AppException` from a domain module fails `verify()` until you publish it. Put `@NamedInterface("exception")` on its `package-info.java` — the deliberate act of saying "this is the part of `core` the rest of the system may build on", and the reason `AppException` is extensible while `GlobalExceptionHandler` stays private.
 
-An infrastructure package (`infra/cache`, `infra/messaging`, `infra/storage`) is a module like any other. It differs from a domain module only in what it lacks: no `@Entity` because it owns no tables, no `@RestController` because it exposes no HTTP. It still owns its own config, constants and exceptions.
+Under `integrations/`, prefer making each adapter its own annotated module (`@ApplicationModule` on `integrations/cache`) over nesting it inside one big `integrations` module and poking a `@NamedInterface` through. Reach for `@NamedInterface` when a module genuinely has two audiences — its facade and a narrow extension point — not to undo a grouping you chose badly.
+
+An integration package (`integrations/cache`, `integrations/messaging`, `integrations/storage`) is a module like any other. It differs from a domain module only in what it lacks: no `@Entity` because it owns no tables, no `@RestController` because it exposes no HTTP. It still owns its own config, constants and exceptions.
 
 ## Placement rules
 
@@ -124,7 +138,7 @@ The recurring question is where a given piece of code belongs. The test is **who
 |---|---|
 | `OrderStatus`, `MAX_SEATS`, error codes | `<module>/IdentityConstants.java` — module base package, nested inside one class |
 | `OrderNotFoundException`, `SeatLimitReachedException` | `<module>/IdentityException.java` (or its own file if it grows) |
-| `AppException`, `NotFoundException` base classes | `core/exception/` |
+| `AppException`, `NotFoundException` base classes | `core/exception/`, published via `@NamedInterface` |
 | `jwt.secret`, `cache.ttl` for one module | `<module>/IdentityProperties.java`, `@ConfigurationProperties(prefix = "identity")` |
 | `spring.datasource.*`, CORS origins | `application.yml` root, bound in `core/config/` |
 | `canCancelOrder()` — a decision | `<module>/internal/rules/IdentityRules.java` (base package in a simple module) — plain object |
@@ -132,9 +146,10 @@ The recurring question is where a given piece of code belongs. The test is **who
 | `ProblemDetail` mapping, pagination wrapper | `core/`, as mechanism (`Page<T>`/`Pageable` are already framework-provided — don't reinvent them) |
 | `JpaRepository<T, ID>` subinterface | `<module>/internal/repository/`; it *is* the abstraction — no hand-written `Abstract*Repository` needed, see rule #6 |
 | A `Set-Cookie` header, a `SecurityFilterChain` covering one module's endpoints | `<module>/web/` — it references that module's use cases, so it cannot live in `core/security/` (rule #4) |
+| A Redis key prefix (`perm:account`) | `<module>/IdentityConstants.CacheNamespaces` — the name is the module's; only the assembly is shared (rule #5) |
 | A role/permission enum 3+ modules need | `shared/SharedConstants.java` — promotion only, never a first draft |
 
-`core/exception/` naming a domain entity is the earliest visible sign the boundary has leaked. So is any `Utils.java` at the application root.
+`core/exception/` or `integrations/cache/` naming a domain entity is the earliest visible sign the boundary has leaked. So is any `Utils.java` at the application root.
 
 **`util/` vs `rules/`:** a rule answers *may this happen* and belongs in `internal/rules/`; a util only changes the shape of data and belongs in `internal/util/`. The distinction matters because a rule is a business decision someone will want to change, while a util must never quietly change — normalizing an email differently silently repartitions the accounts table. Create `util/` when the first real caller exists, never before: a package that exists before its content is what turns into `common/`.
 
@@ -148,7 +163,7 @@ The recurring question is where a given piece of code belongs. The test is **who
 
 **4. The root (`ShopApplication`, `core/`) holds mechanism, never a business concept.**
 
-**5. Cache keys are built only in `infra/cache/<Entity>CacheKeys`.** Each module supplies its entity name via its own constants class — see `references/caching-and-messaging.md`.
+**5. Cache keys are assembled in exactly one class — `integrations/cache/CacheKeyBuilder` — and every namespace string it receives comes from the owning module's own constants class.** Keys built with inline concatenation scattered across modules make correct invalidation impossible, because nothing can enumerate what exists. But a class named `<Domain>CacheKeys` sitting in `integrations/` is the other failure: it drags domain vocabulary into infrastructure, and it forces you to publish that infrastructure package (`@NamedInterface`) for the benefit of exactly one consumer. Split it — `CacheKeyBuilder.key(namespace, id)` knows no namespaces, `IdentityConstants.CacheNamespaces` knows no Redis. See `references/caching-and-messaging.md`.
 
 **6. Don't hand-write `AbstractRepository`/`AbstractUnitOfWork` — Spring already gives you both, and duplicating them is where this skill deliberately diverges from `fastapi-modular-scaffold`.** `JpaRepository<T, ID>` *is* the repository abstraction (Spring Data proxies it at runtime; a `Fake`/in-memory implementation for tests is just another bean, not a subclass of a hand-rolled base class). `@Transactional` on the use case's single public method *is* the unit of work (`PlatformTransactionManager` commits or rolls back the whole method). Reintroducing an `AbstractUnitOfWork` on top of `@Transactional` buys nothing and gives you two competing transaction boundaries.
 
@@ -156,7 +171,7 @@ The recurring question is where a given piece of code belongs. The test is **who
 
 **8. Controllers hold no business logic.** They translate HTTP to a use-case call. Domain exceptions map to HTTP status via `@RestControllerAdvice` centrally — see `references/api-contract.md`.
 
-**9. Config property prefixes mirror the module's package name, never a vendor name.** `infra/cache/` binds `cache.*` (`CACHE_TTL` as env var via Spring's relaxed binding), not `redis.*` — swapping Redis for another backend shouldn't force every deployment's env vars to change. Same rule for every domain module (`identity.*` → `IDENTITY_JWT_SECRET`) and every infra package. Only root, app-wide settings (`spring.datasource.*`, `server.port`, CORS) stay unprefixed by a module name.
+**9. Config property prefixes mirror the module's package name, never a vendor name.** `integrations/cache/` binds `cache.*` (`CACHE_TTL` as env var via Spring's relaxed binding), not `redis.*` — swapping Redis for another backend shouldn't force every deployment's env vars to change. Same rule for every domain module (`identity.*` → `IDENTITY_JWT_SECRET`) and every integration package. Only root, app-wide settings (`spring.datasource.*`, `server.port`, CORS) stay unprefixed by a module name.
 
 **10. No bare `public static final` constant or free-floating utility method scattered across files it isn't the file's job to own.** Java already forces every method into a class, so this rule is nearly free — the discipline is making sure it's the *right* class: `IdentityConstants.MAX_NAME_LENGTH`, not a constant duplicated inline in three use cases; `IdentityRules.canCancelOrder(...)`, not the same `if` chain copy-pasted into two controllers. See rule #16 of `fastapi-modular-scaffold` for the Python-side version of this same discipline.
 

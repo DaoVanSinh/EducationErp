@@ -1,6 +1,12 @@
 spring:
   application:
     name: eduerp-backend
+  modulith:
+    # Domain nằm trong com.eduerp.modules.<ten>, tức không còn là sub-package trực tiếp của
+    # com.eduerp. Với chiến lược mặc định (direct-sub-packages) thì cả "modules" sẽ thành MỘT
+    # module và ranh giới giữa các domain biến mất. explicitly-annotated chỉ coi package có
+    # @ApplicationModule là module, ở độ sâu nào cũng được.
+    detection-strategy: explicitly-annotated
   datasource:
     url: jdbc:postgresql://localhost:5432/eduerp
     username: ${DB_USERNAME:eduerp}
