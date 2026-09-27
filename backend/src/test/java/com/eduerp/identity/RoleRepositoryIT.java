@@ -27,11 +27,11 @@ class RoleRepositoryIT {
     @Test
     void roleCanReferenceMultiplePermissionGroups() {
         var group = permissionGroups.save(new PermissionGroup("Nhóm cơ bản", null));
-        var role = new Role(IdentityConstants.RoleCodes.TEACHER, "Giáo viên", true);
+        var role = new Role("QA_JPA_TEST_ROLE", "Giáo viên", true);
         role.addPermissionGroup(group);
 
         roles.save(role);
-        var found = roles.findByCode(IdentityConstants.RoleCodes.TEACHER).orElseThrow();
+        var found = roles.findByCode("QA_JPA_TEST_ROLE").orElseThrow();
 
         assertThat(found.getPermissionGroups()).hasSize(1);
         assertThat(found.isSystemDefault()).isTrue();

@@ -29,7 +29,7 @@ class AccountRepositoryIT {
 
     @Test
     void savesAccountWithHomeBranchAndFindsByEmail() {
-        var role = roles.save(new Role(IdentityConstants.RoleCodes.TEACHER, "Giáo viên", true));
+        var role = roles.save(new Role("QA_JPA_TEST_ROLE", "Giáo viên", true));
         var branch = branches.save(new Branch("HN01", "Chi nhánh Hà Nội", null));
 
         accounts.save(new Account("teacher@eduerp.local", "hashed", "Nguyễn Văn A", role, branch));
