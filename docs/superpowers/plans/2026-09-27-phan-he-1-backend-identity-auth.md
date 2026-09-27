@@ -1763,6 +1763,7 @@ git commit -m "feat(identity): add Redis-backed effective-permission cache with 
 - Create: `backend/src/main/java/com/eduerp/identity/DecodedToken.java`
 - Create: `backend/src/main/java/com/eduerp/identity/TokenInvalidException.java`
 - Create: `backend/src/main/java/com/eduerp/identity/TokenBlacklistService.java`
+- Modify: `backend/src/main/java/com/eduerp/EduErpApplication.java` (Task 1) — thêm `@ConfigurationPropertiesScan`
 - Test: `backend/src/test/java/com/eduerp/identity/JwtTokenServiceTest.java`
 - Test: `backend/src/test/java/com/eduerp/identity/TokenBlacklistServiceIT.java`
 
@@ -2081,6 +2082,7 @@ git commit -m "feat(identity): add thin JWT issue/verify and Redis token blackli
 - Create: `backend/src/main/java/com/eduerp/identity/AccountPrincipal.java`
 - Create: `backend/src/main/java/com/eduerp/identity/ScopedPermissionEvaluator.java`
 - Create: `backend/src/main/java/com/eduerp/identity/SecurityConfig.java`
+- Create: `backend/src/main/java/com/eduerp/identity/DashboardController.java` (stub tối thiểu chỉ để có 1 route thật cho test; Task 17 sẽ `Modify` file này thành bản đầy đủ)
 - Test: `backend/src/test/java/com/eduerp/identity/CookieAuthenticationFilterIT.java`
 
 **Interfaces:**
@@ -2588,8 +2590,9 @@ git commit -m "feat(identity): add login/refresh/logout endpoints with rotating 
 - Test: `backend/src/test/java/com/eduerp/identity/AccountSelfServiceControllerIT.java`
 
 **Interfaces:**
-- Consumes: `AccountRepository`, `PasswordEncoder`, `StringRedisTemplate` (token quên mật khẩu), `TokenBlacklistService` (force-logout sau reset), `PermissionCacheService`.
+- Consumes: `AccountRepository`, `PasswordEncoder`, `StringRedisTemplate` (token quên mật khẩu), `TokenBlacklistService` (force-logout sau reset).
 - Produces: `POST /api/account/change-password`, `POST /api/account/forgot-password`, `POST /api/account/reset-password`, `PATCH /api/account/profile`.
+- **Không** tiêm `PermissionCacheService` vào controller này — đổi mật khẩu/hồ sơ không làm thay đổi Role/Group nên không cần evict cache quyền (khác với Task 16, nơi đổi Group/chi nhánh thực sự cần evict).
 
 - [ ] **Step 1: Viết 4 DTO**
 
@@ -2830,18 +2833,16 @@ public class AccountSelfServiceController {
 
     private final AccountRepository accounts;
     private final PasswordEncoder passwordEncoder;
-    private final PermissionCacheService permissionCache;
     private final TokenBlacklistService blacklist;
     private final StringRedisTemplate redis;
     private final PasswordResetMailer mailer;
     private final IdentityProperties properties;
 
     AccountSelfServiceController(AccountRepository accounts, PasswordEncoder passwordEncoder,
-            PermissionCacheService permissionCache, TokenBlacklistService blacklist, StringRedisTemplate redis,
+            TokenBlacklistService blacklist, StringRedisTemplate redis,
             PasswordResetMailer mailer, IdentityProperties properties) {
         this.accounts = accounts;
         this.passwordEncoder = passwordEncoder;
-        this.permissionCache = permissionCache;
         this.blacklist = blacklist;
         this.redis = redis;
         this.mailer = mailer;
@@ -3232,7 +3233,6 @@ package com.eduerp.identity;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
 @Aspect
@@ -3376,7 +3376,7 @@ git commit -m "feat(identity): add AOP-based audit logging with @Audited marker,
 - Test: `backend/src/test/java/com/eduerp/identity/RbacAdminControllerIT.java`
 
 **Interfaces:**
-- Consumes: `RoleRepository`, `GroupRepository`, `PermissionGroupRepository`, `PermissionRepository`, `AccountRepository`, `PermissionCacheService.evict`.
+- Consumes: `RoleRepository`, `GroupRepository`, `PermissionGroupRepository`, `PermissionRepository`, `AccountRepository`, `BranchRepository`, `PermissionCacheService.evict`.
 - Produces: `POST /api/rbac/roles`, `POST /api/rbac/permission-groups`, `POST /api/rbac/accounts/{id}/groups`, `POST /api/rbac/accounts/{id}/transfer-branch` — mọi endpoint đổi quyền/chi nhánh đều gọi `permissionCache.evict(accountId)` và được `@Audited`.
 
 - [ ] **Step 1: Viết 4 DTO**
