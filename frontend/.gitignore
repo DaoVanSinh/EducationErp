@@ -1,0 +1,5 @@
+# Gốc .gitignore neo /node_modules và /build vào thư mục gốc repo, nên frontend cần khai báo riêng.
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
