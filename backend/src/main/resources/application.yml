@@ -34,6 +34,10 @@ identity:
   password-reset-ttl: 30m
   mail-from: no-reply@eduerp.local
   frontend-reset-url: http://localhost:5173/reset-password
+  default-admin-email: ${IDENTITY_DEFAULT_ADMIN_EMAIL:admin@eduerp.local}
+  # Mật khẩu này chỉ là lối vào lần đầu cho môi trường dev. Trên môi trường thật phải đặt
+  # IDENTITY_DEFAULT_ADMIN_PASSWORD, vì tài khoản được dựng lại mỗi khi hệ thống không còn Admin.
+  default-admin-password: ${IDENTITY_DEFAULT_ADMIN_PASSWORD:ChangeMe123!}
 
 server:
   port: 8080

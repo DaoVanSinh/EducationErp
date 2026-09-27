@@ -93,4 +93,12 @@ public final class IdentityConstants {
         public static final String ACCESS_TOKEN = "access_token";
         public static final String REFRESH_TOKEN = "refresh_token";
     }
+
+    /** Giá trị mặc định do chính module quyết định, không phụ thuộc cấu hình triển khai. */
+    public static final class Defaults {
+        private Defaults() {
+        }
+
+        public static final String ADMIN_FULL_NAME = "Quản trị viên mặc định";
+    }
 }

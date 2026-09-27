@@ -10,5 +10,7 @@ public record IdentityProperties(
         Duration refreshTokenTtl,
         Duration passwordResetTtl,
         String mailFrom,
-        String frontendResetUrl) {
+        String frontendResetUrl,
+        String defaultAdminEmail,
+        String defaultAdminPassword) {
 }
