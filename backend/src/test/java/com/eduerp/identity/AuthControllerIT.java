@@ -72,4 +72,21 @@ class AuthControllerIT {
         var logoutResult = mockMvc.perform(post("/api/auth/logout").cookie(newAccess).with(csrf())).andReturn();
         assertThat(logoutResult.getResponse().getStatus()).isEqualTo(200);
     }
+
+    @Test
+    void refreshRejectsAnAccessTokenPresentedAsRefreshToken() throws Exception {
+        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
+        accounts.save(new Account("type-confusion@eduerp.local", passwordEncoder.encode("Password123!"), "Type Confusion", role, null));
+
+        var loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("type-confusion@eduerp.local", "Password123!"))))
+                .andReturn();
+        Cookie access = loginResult.getResponse().getCookie("access_token");
+
+        // Present the ACCESS token's value as if it were the refresh_token cookie.
+        var result = mockMvc.perform(post("/api/auth/refresh").cookie(new Cookie("refresh_token", access.getValue()))).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(401);
+    }
 }

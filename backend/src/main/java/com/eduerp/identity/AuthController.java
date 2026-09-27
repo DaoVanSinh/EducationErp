@@ -40,8 +40,11 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public void refresh(@CookieValue("refresh_token") String refreshToken, HttpServletResponse response) {
+    public void refresh(@CookieValue(IdentityConstants.Cookies.REFRESH_TOKEN) String refreshToken, HttpServletResponse response) {
         var decoded = jwtTokenService.verify(refreshToken);
+        if (!IdentityConstants.TokenTypes.REFRESH.equals(decoded.type())) {
+            throw new TokenInvalidException("Token này không phải refresh token");
+        }
         if (blacklist.isBlacklisted(decoded.jti())) {
             throw new TokenInvalidException("Refresh token đã bị thu hồi");
         }
@@ -50,22 +53,22 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public void logout(@CookieValue("access_token") String accessToken,
-            @CookieValue(value = "refresh_token", required = false) String refreshToken,
+    public void logout(@CookieValue(IdentityConstants.Cookies.ACCESS_TOKEN) String accessToken,
+            @CookieValue(value = IdentityConstants.Cookies.REFRESH_TOKEN, required = false) String refreshToken,
             HttpServletResponse response) {
         blacklist.blacklist(jwtTokenService.verify(accessToken).jti(), properties.accessTokenTtl());
         if (refreshToken != null) {
             blacklist.blacklist(jwtTokenService.verify(refreshToken).jti(), properties.refreshTokenTtl());
         }
-        AuthCookies.clear(response, "access_token");
-        AuthCookies.clear(response, "refresh_token");
+        AuthCookies.clear(response, IdentityConstants.Cookies.ACCESS_TOKEN);
+        AuthCookies.clear(response, IdentityConstants.Cookies.REFRESH_TOKEN);
     }
 
     private void issueTokenPair(UUID accountId, HttpServletResponse response) {
         var access = jwtTokenService.issueAccessToken(accountId);
         var refresh = jwtTokenService.issueRefreshToken(accountId);
         blacklist.trackSession(accountId, access.jti(), properties.accessTokenTtl());
-        AuthCookies.set(response, "access_token", access.token(), properties.accessTokenTtl());
-        AuthCookies.set(response, "refresh_token", refresh.token(), properties.refreshTokenTtl());
+        AuthCookies.set(response, IdentityConstants.Cookies.ACCESS_TOKEN, access.token(), properties.accessTokenTtl());
+        AuthCookies.set(response, IdentityConstants.Cookies.REFRESH_TOKEN, refresh.token(), properties.refreshTokenTtl());
     }
 }

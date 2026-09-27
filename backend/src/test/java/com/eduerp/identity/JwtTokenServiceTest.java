@@ -34,4 +34,15 @@ class JwtTokenServiceTest {
 
         assertThatThrownBy(() -> service.verify(tampered)).isInstanceOf(TokenInvalidException.class);
     }
+
+    @Test
+    void issuedTokensCarryTheCorrectType() {
+        var accountId = UUID.randomUUID();
+
+        var access = service.verify(service.issueAccessToken(accountId).token());
+        var refresh = service.verify(service.issueRefreshToken(accountId).token());
+
+        assertThat(access.type()).isEqualTo(IdentityConstants.TokenTypes.ACCESS);
+        assertThat(refresh.type()).isEqualTo(IdentityConstants.TokenTypes.REFRESH);
+    }
 }

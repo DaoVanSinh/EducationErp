@@ -16,8 +16,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 class CookieAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String ACCESS_TOKEN_COOKIE = "access_token";
-
     private final JwtTokenService jwtTokenService;
     private final TokenBlacklistService blacklist;
     private final PermissionCacheService permissionCache;
@@ -34,7 +32,7 @@ class CookieAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        readCookie(request, ACCESS_TOKEN_COOKIE).ifPresent(this::authenticate);
+        readCookie(request, IdentityConstants.Cookies.ACCESS_TOKEN).ifPresent(this::authenticate);
         chain.doFilter(request, response);
     }
 

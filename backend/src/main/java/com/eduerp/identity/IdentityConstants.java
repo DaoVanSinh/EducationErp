@@ -62,4 +62,20 @@ public final class IdentityConstants {
 
         public static final String PERMISSION_AUTHORITY_PREFIX = "PERM:";
     }
+
+    public static final class TokenTypes {
+        private TokenTypes() {
+        }
+
+        public static final String ACCESS = "access";
+        public static final String REFRESH = "refresh";
+    }
+
+    public static final class Cookies {
+        private Cookies() {
+        }
+
+        public static final String ACCESS_TOKEN = "access_token";
+        public static final String REFRESH_TOKEN = "refresh_token";
+    }
 }
