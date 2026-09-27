@@ -58,9 +58,11 @@ class CookieAuthenticationFilter extends OncePerRequestFilter {
                     account.getHomeBranch() == null ? null : account.getHomeBranch().getId());
             var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (RuntimeException e) {
-            // Token không hợp lệ/hết hạn hoặc tài khoản không còn tồn tại: coi request là chưa xác thực
-            // thay vì để lỗi rò rỉ thành 500 - filter phải fail-closed về mặt bảo mật.
+        } catch (TokenInvalidException | AccountNotFoundException e) {
+            // Token không hợp lệ/hết hạn/bị thu hồi, hoặc tài khoản đã bị xoá giữa hai lần tra cứu:
+            // coi request là chưa xác thực (fail-closed). Lỗi hạ tầng khác (Redis/DB down, lỗi
+            // deserialize) KHÔNG bắt ở đây - phải trồi lên thành 500 để cảnh báo vận hành, không
+            // được âm thầm biến thành "người dùng bị đăng xuất".
             SecurityContextHolder.clearContext();
         }
     }
