@@ -45,4 +45,15 @@ class PermissionCacheServiceIT {
         var second = cache.getEffectivePermissions(account.getId());
         assertThat(second).isEqualTo(first);
     }
+
+    @Test
+    void servesFromCacheOnSecondCallWithoutEviction() {
+        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
+        var account = accounts.save(new Account("cache-hit-test@eduerp.local", "hash", "Cache Hit Test", role, null));
+
+        var first = cache.getEffectivePermissions(account.getId());
+        var second = cache.getEffectivePermissions(account.getId());
+
+        assertThat(second).isEqualTo(first);
+    }
 }
