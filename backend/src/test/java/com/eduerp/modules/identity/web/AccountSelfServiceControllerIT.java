@@ -1,6 +1,7 @@
 package com.eduerp.modules.identity.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,11 +14,13 @@ import com.eduerp.modules.identity.dto.ProfileUpdateRequest;
 import com.eduerp.modules.identity.dto.ResetPasswordRequest;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
-import com.eduerp.modules.identity.internal.repository.RoleRepository;
 import com.eduerp.integrations.cache.CacheKeyBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -50,6 +53,12 @@ class AccountSelfServiceControllerIT {
     @MockBean
     JavaMailSender mailSender;
 
+    /** MailClient giờ dựng MimeMessage thật (email HTML) — mock trả về null nếu không stub việc này. */
+    @BeforeEach
+    void mockMailSenderCreatesARealMimeMessage() {
+        given(mailSender.createMimeMessage()).willReturn(new MimeMessage((Session) null));
+    }
+
     @Autowired
     MockMvc mockMvc;
 
@@ -58,9 +67,6 @@ class AccountSelfServiceControllerIT {
 
     @Autowired
     AccountRepository accounts;
-
-    @Autowired
-    RoleRepository roles;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -78,9 +84,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void changePasswordThenLoginWithNewPassword() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("selfservice@eduerp.local", passwordEncoder.encode("OldPass123!"), "Self Service",
-                role, null));
+                null));
         var access = login("selfservice@eduerp.local", "OldPass123!");
 
         var result = mockMvc.perform(post("/api/account/change-password")
@@ -97,9 +102,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void changePasswordWithoutCsrfTokenIsRejected() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("csrf-guard@eduerp.local", passwordEncoder.encode("OldPass123!"), "Csrf Guard",
-                role, null));
+                null));
         var access = login("csrf-guard@eduerp.local", "OldPass123!");
 
         var result = mockMvc.perform(post("/api/account/change-password")
@@ -114,9 +118,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void forgotPasswordThenResetPassword() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("forgot@eduerp.local", passwordEncoder.encode("Whatever123!"), "Forgot Test",
-                role, null));
+                null));
 
         mockMvc.perform(post("/api/account/forgot-password")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -137,9 +140,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void updatesProfile() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("profile@eduerp.local", passwordEncoder.encode("Password123!"), "Old Name",
-                role, null));
+                null));
         var access = login("profile@eduerp.local", "Password123!");
 
         var result = mockMvc.perform(patch("/api/account/profile")

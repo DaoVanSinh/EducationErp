@@ -5,18 +5,19 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.access.AccessManagement;
+import com.eduerp.modules.access.dto.AssignGroupRequest;
+import com.eduerp.modules.access.internal.model.Group;
+import com.eduerp.modules.access.internal.repository.GroupRepository;
+import com.eduerp.modules.access.internal.repository.PermissionGroupRepository;
 import com.eduerp.modules.identity.IdentityConstants;
-import com.eduerp.modules.identity.dto.AssignGroupRequest;
 import com.eduerp.modules.identity.dto.LoginRequest;
 import com.eduerp.modules.identity.dto.SessionResponse;
 import com.eduerp.modules.identity.internal.model.Account;
-import com.eduerp.modules.identity.internal.model.Branch;
-import com.eduerp.modules.identity.internal.model.Group;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
-import com.eduerp.modules.identity.internal.repository.BranchRepository;
-import com.eduerp.modules.identity.internal.repository.GroupRepository;
-import com.eduerp.modules.identity.internal.repository.PermissionGroupRepository;
-import com.eduerp.modules.identity.internal.repository.RoleRepository;
+import com.eduerp.modules.organization.internal.model.Branch;
+import com.eduerp.modules.organization.internal.repository.BranchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
@@ -61,7 +62,7 @@ class CurrentSessionIT {
     AccountRepository accounts;
 
     @Autowired
-    RoleRepository roles;
+    AccessManagement access;
 
     @Autowired
     GroupRepository groups;
@@ -76,8 +77,9 @@ class CurrentSessionIT {
     PasswordEncoder passwordEncoder;
 
     private Cookie signIn(String email, String roleCode, Branch branch) throws Exception {
-        var role = roles.findByCode(roleCode).orElseThrow();
-        accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email, role, branch));
+        var account = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email,
+                branch == null ? null : branch.getId()));
+        access.assignRole(account.getId(), roleCode);
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginRequest(email, PASSWORD))))
@@ -89,29 +91,30 @@ class CurrentSessionIT {
     @Test
     void describesWhoIsSignedInAndWhatTheyMayDo() throws Exception {
         var branch = branches.save(new Branch("HN02", "Chi nhánh Hà Nội 2", null));
-        var cookie = signIn("me-admin@eduerp.local", IdentityConstants.RoleCodes.ADMIN, branch);
+        var cookie = signIn("me-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN, branch);
 
         var result = mockMvc.perform(get("/api/account/me").cookie(cookie)).andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         var session = objectMapper.readValue(result.getResponse().getContentAsString(), SessionResponse.class);
         assertThat(session.email()).isEqualTo("me-admin@eduerp.local");
-        assertThat(session.roleCode()).isEqualTo(IdentityConstants.RoleCodes.ADMIN);
+        assertThat(session.roleCode()).isEqualTo(AccessConstants.RoleCodes.ADMIN);
         assertThat(session.branchName()).isEqualTo("Chi nhánh Hà Nội 2");
         assertThat(session.permissions())
-                .anyMatch(p -> IdentityConstants.Resources.DASHBOARD.equals(p.resource())
-                        && IdentityConstants.Actions.READ.equals(p.action())
-                        && p.scope() == IdentityConstants.PermissionScope.ORGANIZATION);
+                .anyMatch(p -> AccessConstants.Resources.DASHBOARD.equals(p.resource())
+                        && AccessConstants.Actions.READ.equals(p.action())
+                        && p.scope() == AccessConstants.PermissionScope.ORGANIZATION);
     }
 
     /**
      * Quyền trả về ở đây phải là quyền mà backend thật sự dùng — nếu lệch, giao diện sẽ hiện nút mà
-     * API từ chối, hoặc giấu nút mà lẽ ra bấm được.
+     * API từ chối, hoặc giấu nút mà lẽ ra bấm được. Cache evict chạy trong cùng transaction (không
+     * qua event bất đồng bộ) nên không cần đợi.
      */
     @Test
     void reflectsAPermissionChangeOnTheNextCall() throws Exception {
-        var admin = signIn("me-granter@eduerp.local", IdentityConstants.RoleCodes.ADMIN, null);
-        var studentCookie = signIn("me-student@eduerp.local", IdentityConstants.RoleCodes.STUDENT, null);
+        var admin = signIn("me-granter@eduerp.local", AccessConstants.RoleCodes.ADMIN, null);
+        var studentCookie = signIn("me-student@eduerp.local", AccessConstants.RoleCodes.STUDENT, null);
         var studentId = accounts.findByTypedEmail("me-student@eduerp.local").orElseThrow().getId();
         var group = new Group("Ban giám hiệu", null);
         group.addPermissionGroup(permissionGroups.findById(FULL_RIGHTS_PERMISSION_GROUP).orElseThrow());
@@ -129,8 +132,8 @@ class CurrentSessionIT {
                 mockMvc.perform(get("/api/account/me").cookie(studentCookie)).andReturn()
                         .getResponse().getContentAsString(), SessionResponse.class);
 
-        assertThat(before.permissions()).noneMatch(p -> IdentityConstants.Resources.ROLE.equals(p.resource()));
-        assertThat(after.permissions()).anyMatch(p -> IdentityConstants.Resources.ROLE.equals(p.resource()));
+        assertThat(before.permissions()).noneMatch(p -> AccessConstants.Resources.ROLE.equals(p.resource()));
+        assertThat(after.permissions()).anyMatch(p -> AccessConstants.Resources.ROLE.equals(p.resource()));
     }
 
     @Test

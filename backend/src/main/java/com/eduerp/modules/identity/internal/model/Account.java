@@ -8,20 +8,19 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
+/**
+ * Chỉ còn giữ dữ liệu của riêng identity: thông tin đăng nhập và hồ sơ cơ bản. Role/group (access)
+ * và tên chi nhánh (organization) không còn là quan hệ JPA ở đây — {@code homeBranchId} là UUID
+ * trần, không {@code @ManyToOne} (rule #3): tên chi nhánh cần hiển thị thì use case tự gọi
+ * {@code OrganizationManagement} để ghép, không JOIN chéo module.
+ */
 @Entity
 @Table(name = "accounts")
 @Getter
@@ -48,32 +47,16 @@ public class Account {
     @Column(nullable = false)
     private IdentityConstants.AccountStatus status;
 
-    @ManyToOne
-    @JoinColumn(name = "home_branch_id")
-    private Branch homeBranch;
+    @Column(name = "home_branch_id")
+    private UUID homeBranchId;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
-
-    @ManyToMany
-    @JoinTable(name = "account_groups",
-            joinColumns = @JoinColumn(name = "account_id"),
-            inverseJoinColumns = @JoinColumn(name = "group_id"))
-    private final Set<Group> groups = new HashSet<>();
-
-    public Account(String email, String passwordHash, String fullName, Role role, Branch homeBranch) {
+    public Account(String email, String passwordHash, String fullName, UUID homeBranchId) {
         // Chuẩn hoá tại đây để cột email chỉ tồn tại một dạng duy nhất, bất kể ai tạo Account.
         this.email = EmailNormalizer.normalize(email);
         this.passwordHash = passwordHash;
         this.fullName = fullName;
-        this.role = role;
-        this.homeBranch = homeBranch;
+        this.homeBranchId = homeBranchId;
         this.status = IdentityConstants.AccountStatus.ACTIVE;
-    }
-
-    public Set<Group> getGroups() {
-        return Collections.unmodifiableSet(groups);
     }
 
     public void changePasswordHash(String newHash) {
@@ -85,15 +68,7 @@ public class Account {
         this.avatarUrl = avatarUrl;
     }
 
-    public void transferToBranch(Branch branch) {
-        this.homeBranch = branch;
-    }
-
-    public void joinGroup(Group group) {
-        groups.add(group);
-    }
-
-    public void changeRole(Role role) {
-        this.role = role;
+    public void transferToBranch(UUID branchId) {
+        this.homeBranchId = branchId;
     }
 }

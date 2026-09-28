@@ -21,12 +21,4 @@ class IdentityRulesTest {
         assertThat(rules.isRefreshToken(IdentityConstants.TokenTypes.ACCESS)).isFalse();
         assertThat(rules.isRefreshToken(null)).isFalse();
     }
-
-    @Test
-    void broaderScopeWins() {
-        assertThat(rules.isBroaderOrEqual(IdentityConstants.PermissionScope.ORGANIZATION,
-                IdentityConstants.PermissionScope.BRANCH)).isTrue();
-        assertThat(rules.isBroaderOrEqual(IdentityConstants.PermissionScope.PERSONAL,
-                IdentityConstants.PermissionScope.BRANCH)).isFalse();
-    }
 }

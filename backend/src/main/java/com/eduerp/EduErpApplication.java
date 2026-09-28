@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.modulith.Modulithic;
 
-@Modulithic(systemName = "EduERP", sharedModules = {})
+@Modulithic(systemName = "EduERP", sharedModules = {"shared"})
 @SpringBootApplication
 @ConfigurationPropertiesScan
 public class EduErpApplication {

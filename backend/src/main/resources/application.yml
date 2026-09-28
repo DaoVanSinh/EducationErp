@@ -2,10 +2,6 @@ spring:
   application:
     name: eduerp-backend
   modulith:
-    # Domain nằm trong com.eduerp.modules.<ten>, tức không còn là sub-package trực tiếp của
-    # com.eduerp. Với chiến lược mặc định (direct-sub-packages) thì cả "modules" sẽ thành MỘT
-    # module và ranh giới giữa các domain biến mất. explicitly-annotated chỉ coi package có
-    # @ApplicationModule là module, ở độ sâu nào cũng được.
     detection-strategy: explicitly-annotated
   datasource:
     url: jdbc:postgresql://localhost:5432/eduerp
@@ -26,20 +22,19 @@ spring:
     port: ${MAIL_PORT:1025}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+  thymeleaf:
+    prefix: "classpath:/"
+    check-template-location: false
 
 identity:
   jwt-secret: ${IDENTITY_JWT_SECRET:dev-only-secret-change-me-please-32bytes}
   access-token-ttl: 15m
   refresh-token-ttl: 30d
   password-reset-ttl: 30m
-  # Cookie phiên chỉ nên đi qua HTTPS. Khi chạy local bằng http mà trình duyệt bỏ cookie Secure
-  # thì đăng nhập sẽ "thành công" nhưng không có phiên; lúc đó đặt IDENTITY_SECURE_COOKIES=false.
   secure-cookies: ${IDENTITY_SECURE_COOKIES:true}
   mail-from: no-reply@eduerp.local
   frontend-reset-url: http://localhost:5173/reset-password
   default-admin-email: ${IDENTITY_DEFAULT_ADMIN_EMAIL:admin@eduerp.local}
-  # Mật khẩu này chỉ là lối vào lần đầu cho môi trường dev. Trên môi trường thật phải đặt
-  # IDENTITY_DEFAULT_ADMIN_PASSWORD, vì tài khoản được dựng lại mỗi khi hệ thống không còn Admin.
   default-admin-password: ${IDENTITY_DEFAULT_ADMIN_PASSWORD:ChangeMe123!}
 
 server:

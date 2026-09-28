@@ -1,13 +1,14 @@
 package com.eduerp.modules.identity.web;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.AccountNotFoundException;
-import com.eduerp.modules.identity.AccountPrincipal;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.TokenInvalidException;
-import com.eduerp.modules.identity.internal.permission.PermissionCacheService;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.identity.internal.token.JwtTokenService;
 import com.eduerp.modules.identity.internal.token.TokenBlacklistService;
+import com.eduerp.shared.AccountPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -22,19 +23,19 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Đọc access token từ cookie, nạp quyền hiệu lực từ Redis thành authority cho request hiện tại. */
+/** Đọc access token từ cookie, nạp quyền hiệu lực từ Redis (module access) thành authority cho request hiện tại. */
 class CookieAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenService jwtTokenService;
     private final TokenBlacklistService blacklist;
-    private final PermissionCacheService permissionCache;
+    private final AccessManagement access;
     private final AccountRepository accounts;
 
     CookieAuthenticationFilter(JwtTokenService jwtTokenService, TokenBlacklistService blacklist,
-            PermissionCacheService permissionCache, AccountRepository accounts) {
+            AccessManagement access, AccountRepository accounts) {
         this.jwtTokenService = jwtTokenService;
         this.blacklist = blacklist;
-        this.permissionCache = permissionCache;
+        this.access = access;
         this.accounts = accounts;
     }
 
@@ -58,14 +59,13 @@ class CookieAuthenticationFilter extends OncePerRequestFilter {
             if (account == null) {
                 return;
             }
-            var permissions = permissionCache.getEffectivePermissions(account.getId());
+            var permissions = access.effectivePermissions(account.getId());
             List<GrantedAuthority> authorities = permissions.stream()
-                    .map(p -> new SimpleGrantedAuthority(IdentityConstants.Authorities.PERMISSION_AUTHORITY_PREFIX
+                    .map(p -> new SimpleGrantedAuthority(AccessConstants.Authorities.PERMISSION_AUTHORITY_PREFIX
                             + p.resource() + ":" + p.action() + ":" + p.scope()))
                     .map(GrantedAuthority.class::cast)
                     .toList();
-            var principal = new AccountPrincipal(account.getId(),
-                    account.getHomeBranch() == null ? null : account.getHomeBranch().getId());
+            var principal = new AccountPrincipal(account.getId(), account.getHomeBranchId());
             var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (TokenInvalidException | AccountNotFoundException e) {

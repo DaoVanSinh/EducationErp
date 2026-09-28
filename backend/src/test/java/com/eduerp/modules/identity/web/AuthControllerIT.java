@@ -4,22 +4,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.eduerp.modules.audit.AuditConstants;
+import com.eduerp.modules.audit.AuditManagement;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.LoginRequest;
 import com.eduerp.modules.identity.internal.model.Account;
-import com.eduerp.modules.identity.internal.model.AuditLog;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
-import com.eduerp.modules.identity.internal.repository.AuditLogRepository;
-import com.eduerp.modules.identity.internal.repository.RoleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
+import java.time.Duration;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -51,18 +51,14 @@ class AuthControllerIT {
     AccountRepository accounts;
 
     @Autowired
-    RoleRepository roles;
-
-    @Autowired
     PasswordEncoder passwordEncoder;
 
     @Autowired
-    AuditLogRepository auditLogs;
+    AuditManagement audit;
 
     @Test
     void loginRefreshLogoutFlow() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
-        accounts.save(new Account("flow@eduerp.local", passwordEncoder.encode("Password123!"), "Flow Test", role, null));
+        accounts.save(new Account("flow@eduerp.local", passwordEncoder.encode("Password123!"), "Flow Test", null));
 
         var loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,17 +79,18 @@ class AuthControllerIT {
         assertThat(logoutResult.getResponse().getStatus()).isEqualTo(200);
 
         var accountId = accounts.findByTypedEmail("flow@eduerp.local").orElseThrow().getId();
-        assertThat(auditLogs.findByEntityTypeAndActionOrderByOccurredAtDesc(IdentityConstants.Resources.ACCOUNT,
-                IdentityConstants.AuditActions.LOGIN, Pageable.unpaged()))
-                .extracting(AuditLog::getEntityId)
-                .contains(accountId.toString());
+        // @ApplicationModuleListener chạy bất đồng bộ sau khi transaction của Login commit — đợi
+        // thay vì đọc ngay, nếu không test sẽ chập chờn tuỳ tốc độ luồng nền ghi audit.
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(audit.recentActions(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.LOGIN, 20))
+                        .extracting(a -> a.entityId())
+                        .contains(accountId.toString()));
     }
 
     @Test
     void loginAcceptsTheEmailInAnyCase() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("Case.Insensitive@EduERP.Local", passwordEncoder.encode("Password123!"),
-                "Case Insensitive", role, null));
+                "Case Insensitive", null));
 
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -106,9 +103,8 @@ class AuthControllerIT {
 
     @Test
     void refreshRejectsAnAccessTokenPresentedAsRefreshToken() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("type-confusion@eduerp.local", passwordEncoder.encode("Password123!"),
-                "Type Confusion", role, null));
+                "Type Confusion", null));
 
         var loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,9 +121,8 @@ class AuthControllerIT {
 
     @Test
     void logoutWithoutCsrfTokenIsRejected() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("csrf-logout@eduerp.local", passwordEncoder.encode("Password123!"),
-                "Csrf Logout", role, null));
+                "Csrf Logout", null));
 
         var loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

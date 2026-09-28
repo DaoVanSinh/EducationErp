@@ -1,6 +1,6 @@
 package com.eduerp.modules.identity.dto;
 
-import com.eduerp.modules.identity.IdentityConstants;
+import com.eduerp.modules.access.AccessConstants;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +20,6 @@ public record SessionResponse(
         String branchName,
         List<GrantedPermission> permissions) {
 
-    public record GrantedPermission(String resource, String action, IdentityConstants.PermissionScope scope) {
+    public record GrantedPermission(String resource, String action, AccessConstants.PermissionScope scope) {
     }
 }
