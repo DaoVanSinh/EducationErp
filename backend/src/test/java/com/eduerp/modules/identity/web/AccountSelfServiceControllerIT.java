@@ -13,7 +13,6 @@ import com.eduerp.modules.identity.dto.ProfileUpdateRequest;
 import com.eduerp.modules.identity.dto.ResetPasswordRequest;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
-import com.eduerp.modules.identity.internal.repository.RoleRepository;
 import com.eduerp.integrations.cache.CacheKeyBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
@@ -60,9 +59,6 @@ class AccountSelfServiceControllerIT {
     AccountRepository accounts;
 
     @Autowired
-    RoleRepository roles;
-
-    @Autowired
     PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -78,9 +74,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void changePasswordThenLoginWithNewPassword() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("selfservice@eduerp.local", passwordEncoder.encode("OldPass123!"), "Self Service",
-                role, null));
+                null));
         var access = login("selfservice@eduerp.local", "OldPass123!");
 
         var result = mockMvc.perform(post("/api/account/change-password")
@@ -97,9 +92,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void changePasswordWithoutCsrfTokenIsRejected() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("csrf-guard@eduerp.local", passwordEncoder.encode("OldPass123!"), "Csrf Guard",
-                role, null));
+                null));
         var access = login("csrf-guard@eduerp.local", "OldPass123!");
 
         var result = mockMvc.perform(post("/api/account/change-password")
@@ -114,9 +108,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void forgotPasswordThenResetPassword() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("forgot@eduerp.local", passwordEncoder.encode("Whatever123!"), "Forgot Test",
-                role, null));
+                null));
 
         mockMvc.perform(post("/api/account/forgot-password")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -137,9 +130,8 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void updatesProfile() throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
         accounts.save(new Account("profile@eduerp.local", passwordEncoder.encode("Password123!"), "Old Name",
-                role, null));
+                null));
         var access = login("profile@eduerp.local", "Password123!");
 
         var result = mockMvc.perform(patch("/api/account/profile")

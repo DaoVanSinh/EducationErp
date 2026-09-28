@@ -2,7 +2,8 @@ package com.eduerp.modules.identity.startup;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.eduerp.modules.identity.IdentityConstants;
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.identity.usecase.SeedDefaultAdmin;
 import com.redis.testcontainers.RedisContainer;
@@ -31,6 +32,9 @@ class DefaultAdminSeederIT {
     AccountRepository accounts;
 
     @Autowired
+    AccessManagement access;
+
+    @Autowired
     SeedDefaultAdmin seedDefaultAdmin;
 
     @Test
@@ -38,16 +42,17 @@ class DefaultAdminSeederIT {
         var admin = accounts.findByTypedEmail("admin@eduerp.local");
 
         assertThat(admin).isPresent();
-        assertThat(admin.orElseThrow().getRole().getCode()).isEqualTo(IdentityConstants.RoleCodes.ADMIN);
+        assertThat(access.roleOf(admin.orElseThrow().getId()))
+                .hasValueSatisfying(role -> assertThat(role.code()).isEqualTo(AccessConstants.RoleCodes.ADMIN));
     }
 
     /** Chạy lại lần hai không được tạo thêm tài khoản — nếu không, mỗi lần khởi động lại sinh một Admin. */
     @Test
     void doesNothingWhenAnAdminAlreadyExists() {
-        long before = accounts.countByRole_Code(IdentityConstants.RoleCodes.ADMIN);
+        long before = accounts.count();
 
         seedDefaultAdmin.execute();
 
-        assertThat(accounts.countByRole_Code(IdentityConstants.RoleCodes.ADMIN)).isEqualTo(before);
+        assertThat(accounts.count()).isEqualTo(before);
     }
 }

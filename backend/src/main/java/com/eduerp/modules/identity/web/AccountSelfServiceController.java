@@ -1,6 +1,5 @@
 package com.eduerp.modules.identity.web;
 
-import com.eduerp.modules.identity.AccountPrincipal;
 import com.eduerp.modules.identity.dto.ChangePasswordRequest;
 import com.eduerp.modules.identity.dto.ForgotPasswordRequest;
 import com.eduerp.modules.identity.dto.ProfileUpdateRequest;
@@ -11,6 +10,7 @@ import com.eduerp.modules.identity.usecase.ForgotPassword;
 import com.eduerp.modules.identity.usecase.GetCurrentSession;
 import com.eduerp.modules.identity.usecase.ResetPassword;
 import com.eduerp.modules.identity.usecase.UpdateProfile;
+import com.eduerp.shared.AccountPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;

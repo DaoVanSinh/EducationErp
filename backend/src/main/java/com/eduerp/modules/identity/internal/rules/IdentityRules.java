@@ -19,10 +19,4 @@ public class IdentityRules {
     public boolean isRefreshToken(String tokenType) {
         return IdentityConstants.TokenTypes.REFRESH.equals(tokenType);
     }
-
-    /** Cùng một quyền được cấp nhiều nơi thì cấp độ rộng hơn thắng. */
-    public boolean isBroaderOrEqual(IdentityConstants.PermissionScope candidate,
-            IdentityConstants.PermissionScope current) {
-        return candidate.rank() >= current.rank();
-    }
 }

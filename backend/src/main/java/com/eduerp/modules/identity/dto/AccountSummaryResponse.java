@@ -1,6 +1,7 @@
 package com.eduerp.modules.identity.dto;
 
 import com.eduerp.modules.identity.IdentityConstants;
+import com.eduerp.shared.NamedReference;
 import java.util.List;
 import java.util.UUID;
 

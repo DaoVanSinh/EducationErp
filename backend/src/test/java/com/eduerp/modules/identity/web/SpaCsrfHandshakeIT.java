@@ -4,11 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.LoginRequest;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
-import com.eduerp.modules.identity.internal.repository.RoleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
@@ -57,7 +58,7 @@ class SpaCsrfHandshakeIT {
     AccountRepository accounts;
 
     @Autowired
-    RoleRepository roles;
+    AccessManagement access;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -90,8 +91,8 @@ class SpaCsrfHandshakeIT {
     }
 
     private Cookie signIn(String email) throws Exception {
-        var role = roles.findByCode(IdentityConstants.RoleCodes.ADMIN).orElseThrow();
-        accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email, role, null));
+        var account = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email, null));
+        access.assignRole(account.getId(), AccessConstants.RoleCodes.ADMIN);
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginRequest(email, PASSWORD))))
