@@ -1,6 +1,7 @@
 package com.eduerp.modules.identity.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -16,7 +17,10 @@ import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.integrations.cache.CacheKeyBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -48,6 +52,12 @@ class AccountSelfServiceControllerIT {
 
     @MockBean
     JavaMailSender mailSender;
+
+    /** MailClient giờ dựng MimeMessage thật (email HTML) — mock trả về null nếu không stub việc này. */
+    @BeforeEach
+    void mockMailSenderCreatesARealMimeMessage() {
+        given(mailSender.createMimeMessage()).willReturn(new MimeMessage((Session) null));
+    }
 
     @Autowired
     MockMvc mockMvc;
