@@ -7,11 +7,7 @@ import com.eduerp.modules.identity.internal.token.TokenBlacklistService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.PermissionEvaluator;
-import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,26 +15,17 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+/**
+ * {@code @EnableWebSecurity}/{@code @EnableMethodSecurity} và việc bật cơ chế đã chuyển sang
+ * {@code core.security.SecurityBootstrapConfig} — lớp này chỉ còn khai cụ thể endpoint nào của
+ * identity/module khác cần quyền gì, vì đó là quyết định nghiệp vụ (rule #4), không phải cơ chế.
+ */
 @Configuration
-@EnableWebSecurity
-@EnableMethodSecurity
 class IdentitySecurityConfig {
 
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * Nhận {@code PermissionEvaluator} qua interface của Spring Security, không import thẳng
-     * {@code ScopedPermissionEvaluator} — lớp đó nằm trong {@code access.internal}, Spring Modulith
-     * che khỏi identity. Spring tự nối bean bằng kiểu, nên biên module vẫn nguyên vẹn.
-     */
-    @Bean
-    DefaultMethodSecurityExpressionHandler methodSecurityExpressionHandler(PermissionEvaluator evaluator) {
-        var handler = new DefaultMethodSecurityExpressionHandler();
-        handler.setPermissionEvaluator(evaluator);
-        return handler;
     }
 
     @Bean
@@ -56,6 +43,10 @@ class IdentitySecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/account/forgot-password",
                                 "/api/account/reset-password")
+                        .permitAll()
+                        // Tài liệu API: xem được mà không cần đăng nhập, để FE/QA tra cứu contract.
+                        // Gọi thử một endpoint thật từ trang Swagger UI vẫn phải qua đúng luật ở trên.
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()
                         .anyRequest().authenticated())
                 // Mặc định Spring trả 403 cho request chưa xác thực; API này phải trả 401 để frontend
