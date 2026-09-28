@@ -1,8 +1,8 @@
-package com.eduerp.modules.identity.web;
+package com.eduerp.modules.dashboard.web;
 
-import com.eduerp.modules.identity.IdentityConstants;
-import com.eduerp.modules.identity.dto.DashboardStatsResponse;
-import com.eduerp.modules.identity.usecase.GetDashboardStats;
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.dashboard.dto.DashboardStatsResponse;
+import com.eduerp.modules.dashboard.usecase.GetDashboardStats;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +19,7 @@ class DashboardController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize(IdentityConstants.AccessRules.READ_DASHBOARD)
+    @PreAuthorize(AccessConstants.AccessRules.READ_DASHBOARD)
     DashboardStatsResponse stats() {
         return getDashboardStats.execute();
     }
