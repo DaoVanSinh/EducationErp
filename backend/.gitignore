@@ -1,2 +1,7 @@
-# File thật chứa secret của máy bạn — không commit. .env.example là bản mẫu được commit.
+# File thật chứa secret — không commit. Bản .example tương ứng của mỗi cái mới được commit.
+# .env             chạy native trên máy (mvn spring-boot:run)
+# .env.docker      docker-compose.yml, container trên chính máy này
+# .env.docker.prod docker-compose.prod.yml, server thật
 .env
+.env.docker
+.env.docker.prod

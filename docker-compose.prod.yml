@@ -1,0 +1,108 @@
+# Stack prod: tự đủ, không phụ thuộc container/network có sẵn nào trên máy chủ — server thật không
+# có agent-postgres/redis-stack như máy dev. Postgres, Redis, MinIO (S3-compatible) đều là container
+# riêng của chính stack này, dữ liệu bền qua volume.
+#
+# MinIO mới chỉ là hạ tầng dựng sẵn — chưa có code nào trong app gọi tới nó (chưa có tính năng cần
+# lưu file). Bật container để sẵn sàng, không tự chế thêm cấu hình Spring S3 khi chưa có tính năng
+# nào dùng.
+#
+# Chạy: docker compose -f docker-compose.prod.yml --env-file backend/.env.docker.prod up -d --build
+name: eduerp-prod
+
+networks:
+  eduerp-net:
+
+volumes:
+  eduerp-pgdata:
+  eduerp-minio-data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: eduerp-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-eduerp}
+      POSTGRES_USER: ${DB_USERNAME:?bắt buộc đặt DB_USERNAME trong backend/.env.docker.prod}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?bắt buộc đặt DB_PASSWORD trong backend/.env.docker.prod}
+    volumes:
+      - eduerp-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduerp-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: eduerp-redis-prod
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?bắt buộc đặt REDIS_PASSWORD trong backend/.env.docker.prod}", "--save", "60", "1"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - eduerp-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: eduerp-minio-prod
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?bắt buộc đặt MINIO_ROOT_USER trong backend/.env.docker.prod}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?bắt buộc đặt MINIO_ROOT_PASSWORD trong backend/.env.docker.prod}
+    volumes:
+      - eduerp-minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduerp-net
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: eduerp-backend:prod
+    container_name: eduerp-app-prod
+    restart: unless-stopped
+    env_file:
+      - backend/.env.docker.prod
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      IDENTITY_SECURE_COOKIES: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - eduerp-net
+
+  nginx:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    image: eduerp-nginx:prod
+    container_name: eduerp-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - eduerp-net
