@@ -1,56 +1,165 @@
-# API contract
+# API Contract Reference
 
-## Error shape — `ProblemDetail` (RFC 7807), built into Spring 6 / Spring Boot 3
+## Wire Format: Strict camelCase
 
-Don't invent a bespoke error envelope — Spring already ships one, and every client library that understands `application/problem+json` understands it for free.
+Every REST API contract is serialized in **camelCase**.
+- Jackson converts record component names and bean properties directly to camelCase by default.
+- Never let SQL database column names (`account_id`, `created_at`) leak through to JSON.
+
+```json
+{
+  "id": "e6a0d241-766b-4e8c-897b-cf1088c4b2a1",
+  "email": "student@eduerp.local",
+  "fullName": "Nguyen Van A",
+  "status": "ACTIVE",
+  "createdAt": "2026-09-28T14:30:00Z"
+}
+```
+
+---
+
+## Error Envelope: RFC 9457 `ProblemDetail`
+
+All error responses adhere to the standard **RFC 9457 (Problem Details for HTTP APIs)** specification, natively supported in Spring Boot 3+.
+
+```json
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Email student@eduerp.local is already registered",
+  "instance": "/api/v1/accounts",
+  "errorCode": "IDENTITY_EMAIL_ALREADY_EXISTS",
+  "timestamp": "2026-09-28T14:30:05.123Z",
+  "invalidParams": []
+}
+```
+
+### Key Fields:
+- **`status`**: Standard HTTP status code (400, 401, 403, 404, 409, 422, 500).
+- **`errorCode`**: Stable, machine-readable string key (e.g. `IDENTITY_EMAIL_ALREADY_EXISTS`). The frontend translation system (`i18next`) keys on this value.
+- **`detail`**: Human-readable debugging message in English. The frontend should **never** display raw `detail` directly to end-users.
+- **`invalidParams`**: List of field-level validation errors (if applicable).
+
+---
+
+## Central Error Mapping (`GlobalExceptionHandler.java`)
+
+Located in `core/exception/GlobalExceptionHandler.java`:
 
 ```java
-package com.acme.shop.core.exception;
+package com.eduerp.core.exception;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-class GlobalExceptionHandler {
+public class GlobalExceptionHandler {
+
     @ExceptionHandler(AppException.class)
-    ProblemDetail handle(AppException ex) {
-        var detail = ProblemDetail.forStatus(ex.getStatus());
-        detail.setTitle(ex.getErrorCode());
-        detail.setDetail(ex.getMessage());
-        detail.setProperty("errorCode", ex.getErrorCode());   // stable, i18n-key-shaped, machine-matchable
-        return detail;
+    public ResponseEntity<ProblemDetail> handleAppException(AppException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
+        problem.setProperty("errorCode", ex.getErrorCode());
+        problem.setProperty("timestamp", Instant.now());
+        return ResponseEntity.status(ex.getStatus()).body(problem);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
-        var detail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-        detail.setProperty("errors", ex.getFieldErrors().stream()
-                .map(e -> Map.of("field", e.getField(), "message", e.getDefaultMessage())).toList());
-        return detail;
+    public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_ENTITY, "Validation failed for one or more fields"
+        );
+        problem.setProperty("errorCode", "VALIDATION_FAILED");
+        problem.setProperty("timestamp", Instant.now());
+
+        List<InvalidParam> errors = ex.getBindingResult().getFieldErrors().stream()
+            .map(err -> new InvalidParam(err.getField(), err.getDefaultMessage()))
+            .toList();
+
+        problem.setProperty("invalidParams", errors);
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(problem);
+    }
+
+    public record InvalidParam(String field, String reason) {}
+}
+```
+
+---
+
+## Pagination Format: `PageResponse<T>`
+
+Never return raw unbounded database queries. Every list endpoint accepts a `Pageable` and returns a standardized `PageResponse<T>` record:
+
+```java
+package com.eduerp.core.pagination;
+
+import java.util.List;
+import org.springframework.data.domain.Page;
+
+public record PageResponse<T>(
+    List<T> items,
+    int page,
+    int size,
+    long totalElements,
+    int totalPages,
+    boolean hasNext,
+    boolean hasPrevious
+) {
+    public static <T> PageResponse<T> from(Page<T> page) {
+        return new PageResponse<>(
+            page.getContent(),
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.hasNext(),
+            page.hasPrevious()
+        );
     }
 }
 ```
 
-`errorCode` (e.g. `IDENTITY_USER_NOT_FOUND`) is the same kind of stable, i18n-lookup-friendly string `fastapi-modular-scaffold`'s api-contract.md specifies — resolve its human-facing text via `MessageSource` keyed on that same string, not by hardcoding English into `AppException`.
-
-## Wire format
-
-Jackson serializes Java's own `camelCase` field names as-is — unlike the Python side, there's no `alias_generator`/`to_camel` step to remember, because the wire format already matches the language's own naming convention. The one thing worth being deliberate about: don't let `@Entity` fields leak (see SKILL.md's "never return an entity" rule) — DTO records control the wire shape independently of the JPA column names.
-
-## Pagination
-
-Use Spring Data's `Page<T>`/`Pageable` rather than a hand-rolled envelope — it already carries `totalElements`, `totalPages`, `number`, `size`, and Spring MVC binds `?page=&size=&sort=` from a plain `Pageable` controller parameter automatically, no extra annotation required:
-
-```java
-@GetMapping
-Page<UserResponse> list(Pageable pageable) {
-    return identity.list(pageable).map(UserResponse::from);
+HTTP Wire Shape:
+```json
+{
+  "items": [ ... ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 150,
+  "totalPages": 8,
+  "hasNext": true,
+  "hasPrevious": false
 }
 ```
 
-If the project also generates OpenAPI docs via `springdoc-openapi-starter-webmvc-ui`, add `@ParameterObject` (from that same dependency, `org.springdoc.core.annotations.ParameterObject`) so `page`/`size`/`sort` render as individual query parameters instead of one opaque `Pageable` schema — it's a docs-quality annotation, not something Spring MVC's binding itself requires.
+---
 
-## Versioning
+## Server-Sent Events (SSE)
 
-Prefer a URI prefix (`/api/v1/...`) over a media-type/header scheme for a modular monolith with one deployable — it's visible in logs, curl-able without extra headers, and easy to route in a gateway later if the monolith is ever split. Reserve content negotiation for the rare endpoint that genuinely needs to serve two representations of the same resource simultaneously.
+For real-time streaming notifications or asynchronous task updates, use Spring's `SseEmitter`:
 
-## SSE / streaming
+```java
+@GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter streamEvents(@AuthenticationPrincipal AccountPrincipal principal) {
+    SseEmitter emitter = new SseEmitter(60_000L); // 60s timeout
+    notificationService.registerEmitter(principal.id(), emitter);
 
-`SseEmitter` or, on Spring 6+, a controller method returning `Flux<ServerSentEvent<T>>` (WebFlux) if the module is reactive; a plain servlet module can still stream via `SseEmitter` without adopting WebFlux for the whole app. Bind correlation-id logging (see `architecture.md#correlation-id-logging`) into the emitter's error/completion callbacks too — a dropped SSE connection should still show up in logs under the request that opened it.
+    emitter.onCompletion(() -> notificationService.removeEmitter(principal.id(), emitter));
+    emitter.onTimeout(() -> notificationService.removeEmitter(principal.id(), emitter));
+    return emitter;
+}
+```
+
+Payload format adheres to standard SSE lines:
+```text
+event: notification
+data: {"id":"123","title":"Grade Published","timestamp":"2026-09-28T14:35:00Z"}
+
+```

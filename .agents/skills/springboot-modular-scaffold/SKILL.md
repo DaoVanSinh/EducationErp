@@ -1,227 +1,188 @@
 ---
 name: springboot-modular-scaffold
-description: Scaffold and extend production-grade modular Spring Boot projects with PostgreSQL, Redis, RabbitMQ and object storage, following the Spring Modulith convention where every module owns its entities, config, exceptions, rules and a facade, and every integration is a module rather than a flat utility package. Use whenever the user asks to start a new Spring Boot/Java backend, set up or review a Spring Boot project structure, add a module or feature to an existing Spring Boot codebase, decide where constants, exceptions, config or utility code should live, wire up Redis caching or RabbitMQ/outbox messaging, or asks how to organize a large Java backend — even without saying "modular monolith" or "Spring Modulith". The Spring Boot counterpart to fastapi-modular-scaffold; use this one when the stack is Java/Spring instead of Python/FastAPI.
+description: Scaffold and extend production-grade modular Spring Boot 3.4+ / Java 21 projects with PostgreSQL, Redis, RabbitMQ and object storage, following the Spring Modulith convention where every module owns its entities, config, exceptions, rules, repository and facade, and every integration is a module rather than a flat utility package. Use whenever the user asks to start a new Spring Boot backend, set up or review a modular Spring Boot structure, refactor an existing Spring Boot codebase, decide where constants, exceptions, rules or utils should live, avoid God modules, wire up Redis caching or RabbitMQ/outbox messaging, or asks how to organize a large Java enterprise backend.
 ---
 
 # Spring Boot Modular Scaffold
 
-Build backends that survive growth. The organizing idea is the same one this repo already applies to FastAPI, expressed through Spring's own official tooling: **Spring Modulith** (docs.spring.io/spring-modulith), which treats every direct sub-package of the application's base package as an application module with a public API (its base package) and hidden internals (its sub-packages), verified at build time rather than trusted to reviewer discipline.
+Build backends that survive growth. The organizing idea, powered officially by **Spring Modulith** (docs.spring.io/spring-modulith), is that **a module owns everything it needs**: its JPA entities, its enums and error codes, its `@ConfigurationProperties`, its sealed exceptions, its pure business rules, and its public facade. The application root holds mechanism only — the `@SpringBootApplication` bootstrap class and cross-cutting infrastructure — and no business concept at all.
 
-**A module owns everything it needs**: its `@Entity` classes, its enums and error codes, its `@ConfigurationProperties`, its exceptions, its rules. The application root holds mechanism only — the `@SpringBootApplication` class and cross-cutting infrastructure — and no business concept at all.
+This inverts the instinct to create a `common/` or `util/` package that accumulates everything, becomes imported by every module, and creates unmaintainable cyclic dependencies.
 
-This inverts the instinct to create a `common/` or `util/` package that every module imports from. Those packages start small, accumulate everything, and end up imported by every module while importing from several — a new version of the mess the structure was meant to prevent. The one sanctioned exception is a real `shared` module — a promoted concept, not a dumping ground — that a type only enters once it clears the bar in `references/placement.md#when-duplication-is-correct` (needed by three or more modules, stable, and one where divergence would be a bug).
+**Baseline assumption**: Java 21+, Spring Boot 3.4+, Maven, single deployable JAR with Spring Modulith managing package-level boundaries verified at build time.
 
-**Baseline assumption** (state the alternative and move on if the project differs): Java 21+, Spring Boot 3.4+, Maven, single deployable jar with Spring Modulith managing package-level module boundaries — not a Maven multi-module reactor with one jar per domain. Spring Modulith's own philosophy is exactly Dispatch's: one deployable, real internal boundaries, split into services later only if you actually need to. A team that already runs a Maven multi-module / polyrepo microservices setup is solving a different problem; say so rather than forcing this structure onto it.
+---
 
 ## When to do what
 
 | Situation | Action |
 |---|---|
-| New project | `references/architecture.md#bootstrapping` (Spring Initializr command), then read the rest of that file |
-| Add a domain module | Follow `references/architecture.md#adding-a-module` — no generator script; the module shape is small enough to hand-write correctly once you've read the rules |
-| Add Redis, RabbitMQ, S3 | `references/caching-and-messaging.md` |
-| "Where does this constant/config/exception go, or does it belong in `shared`?" | Read `references/placement.md` |
-| Boundary violation, `ApplicationModules.verify()` failure, or unsure which class in a module may reference which | Read `references/architecture.md#module-boundaries-and-verification` |
-| Full worked example of every layer — entity, rules, use case, facade, controller, module test | Read `references/layer-examples.md` |
-| Wire caching, fix stale data | `references/caching-and-messaging.md#redis-caching` |
-| Add RabbitMQ, outbox, idempotent consumers | `references/caching-and-messaging.md#rabbitmq-and-the-outbox` |
-| Wire a new endpoint, decide the error/response shape | `references/api-contract.md` |
-| Deploy, set up profiles/env, layered Docker image | `references/deployment.md` |
-| Add permissions, roles, method-level access control | `references/architecture.md#authorization` |
-| Before shipping | Walk `references/checklist.md` |
+| New project bootstrap | Run `curl https://start.spring.io/starter.zip ...` then see `references/architecture.md` |
+| Add a domain module | `python scripts/scaffold.py --add-module <name> --package <pkg>` |
+| Add cache or messaging | `python scripts/scaffold.py --add-integration <name> --package <pkg>` |
+| "Where does this code go?" or "Can this be in `shared/`?" | Read `references/placement.md` |
+| God Module warning ("Identity is doing too much") | Read `references/architecture.md#avoiding-the-god-module-trap-when-and-how-to-split` |
+| Full worked example of every layer in an advanced module | Read `references/layer-examples.md` |
+| Redis caching, versioned keys, post-commit eviction | Read `references/caching.md` |
+| RabbitMQ, transactional outbox, `@ApplicationModuleListener` | Read `references/messaging.md` |
+| Structured JSON logging, correlation IDs, MDC tracing | Read `references/logging.md` |
+| Scoped RBAC, permissions over roles, method security | Read `references/rbac.md` |
+| RFC 9457 `ProblemDetail`, error codes, camelCase API | Read `references/api-contract.md` |
+| Layered Dockerfile, compose files, Flyway migrations | Read `references/deployment.md` |
+| Pre-production verification | Walk `references/checklist.md` |
 
-Ask what infrastructure the project actually needs before adding it. A message broker added to a project with no async work is weight the team carries forever.
+---
 
-**Works alongside:** if this system also has a Next.js/React frontend, that half is governed by the `nextjs-modular-architecture` skill, not this one — same shape of rules (modular, layered, one-way dependencies, small-file budget), different stack. If this system's backend is FastAPI instead of Spring Boot, use `fastapi-modular-scaffold` instead — the two are deliberately parallel so a team can read either and recognize the shape. After changing code, run `reviewing-code-against-skills` before calling the work done.
+## Generating Modules
 
-## Bootstrapping
+Use the provided generator script to scaffold modules with all package-info, constants, exceptions, DTOs, entities, repositories, rules, use cases, and facades pre-wired:
 
 ```bash
-curl https://start.spring.io/starter.zip \
-  -d type=maven-project -d language=java -d bootVersion=3.4.1 \
-  -d javaVersion=21 -d groupId=com.acme -d artifactId=shop -d packageName=com.acme.shop \
-  -d dependencies=web,data-jpa,postgresql,validation,actuator,modulith \
-  -o shop.zip && unzip shop.zip -d shop
+# Add a domain module (e.g. billing, catalog, enrollment)
+python scripts/scaffold.py --add-module billing --package com.eduerp --output ./backend/src/main/java
+
+# Add an integration module
+python scripts/scaffold.py --add-integration cache --package com.eduerp --output ./backend/src/main/java
 ```
 
-Add `spring-boot-starter-data-redis` (cache), `spring-modulith-starter-amqp` + `spring-boot-starter-amqp` (queue), and an S3 client (`software.amazon.awssdk:s3`) only when the project actually needs them.
+---
 
-## The structure
+## The Structure
 
 ```
-src/main/java/com/acme/shop/
-├── ShopApplication.java        @SpringBootApplication + @Modulithic(systemName = "Shop")
+src/main/java/com/eduerp/
+├── EduErpApplication.java        @SpringBootApplication + @Modulithic(systemName = "EduERP")
 │
-├── modules/                    every domain module lives here — NOT a module itself, just the
-│   │                           grouping that makes "what business does this system do?" answerable
-│   │                           by one `ls`, and keeps domains from mixing with mechanism at the root
-│   └── <domain>/ ...            one package per domain, each annotated @ApplicationModule
+├── core/                         shared mechanism — no business concept lives here
+│   ├── exception/                AppException base hierarchy, GlobalExceptionHandler -> ProblemDetail
+│   ├── web/                      RequestCorrelationFilter (requestId, correlationId -> MDC + headers)
+│   ├── config/                   CorsConfig, JacksonConfig, OpenApiConfig — app-wide settings only
+│   └── pagination/               PageResponse<T> wrapper
 │
-├── core/                       shared mechanism — no business concept lives here
-│   ├── exception/               AppException hierarchy, GlobalExceptionHandler → ProblemDetail
-│   ├── web/                     RequestCorrelationFilter (request/correlation id → MDC + response headers)
-│   ├── security/                JWT resource-server config, method-security bootstrap — no role/permission constants
-│   └── config/                  CorsConfig, JacksonConfig, OpenApiConfig — app-wide settings only
+├── modules/                      domain modules — grouping folder (requires explicitly-annotated detection)
+│   ├── identity/                 ONLY accounts, credentials, auth sessions, profile
+│   │   ├── package-info.java       @ApplicationModule(displayName = "Identity & Access")
+│   │   ├── IdentityManagement.java the facade — the ONLY type other modules may inject/call
+│   │   ├── IdentityConstants.java  enums, limits, namespaces — grouped inside static inner classes
+│   │   ├── IdentityProperties.java @ConfigurationProperties(prefix = "identity")
+│   │   ├── IdentityException.java  sealed base + AccountNotFoundException, EmailAlreadyExistsException
+│   │   ├── IdentityEvents.java     domain event records published via ApplicationEventPublisher
+│   │   ├── dto/                    request/response records; @NamedInterface("dto")
+│   │   ├── usecase/                one class = one use case, public @Transactional on execute()
+│   │   ├── web/                    HTTP controllers, cookie helpers, auth filters
+│   │   └── internal/               implementation hidden by Spring Modulith
+│   │       ├── model/              JPA @Entity classes; only this module queries these tables
+│   │       ├── repository/         Spring Data JpaRepository interfaces
+│   │       ├── rules/              pure business decisions, zero I/O — 100% unit-testable with `new`
+│   │       └── util/               pure data transforms (EmailNormalizer)
+│   │
+│   ├── access/                   RBAC: roles, permissions, permission groups, assignments
+│   ├── organization/             Branches, departments, campus hierarchy
+│   ├── audit/                    Audit trail (consumes domain events via @ApplicationModuleListener)
+│   └── billing/ ...              same shape, one package per domain module
 │
-├── modules/identity/           domain module — an ADVANCED module: base package = its published API,
-│   │                           every sub-package below is internal unless @NamedInterface says otherwise
-│   ├── package-info.java         @ApplicationModule(displayName = "Identity & Access") + a Javadoc
-│   │                             sentence per sub-package saying what that package is responsible for
-│   ├── IdentityManagement.java   the facade — the ONLY type other modules may call
-│   ├── IdentityConstants.java    enums, error codes, limits — nested inside one class (see rule #10)
-│   ├── IdentityProperties.java   @ConfigurationProperties(prefix = "identity")
-│   ├── IdentityException.java    sealed base + UserNotFoundException, EmailTakenException
-│   ├── IdentityPrincipal.java    the records other modules read — published API, never an @Entity
-│   ├── IdentityEvents.java        records implementing a marker event interface
-│   ├── dto/                      request/response records + Bean Validation; @NamedInterface("dto")
-│   │                             so callers and controllers may reference them
-│   ├── usecase/                  one class = one use case, `@Transactional` on its single public method;
-│   │                             the only place that orchestrates repository + rules + token + cache
-│   ├── web/                      HTTP adapters ONLY: controllers whose handlers are one line each, the
-│   │                             cookie writer, this module's SecurityFilterChain + auth filter
-│   └── internal/                 implementation — invisible outside the module (Modulith-enforced)
-│       ├── model/                 @Entity classes; only this module's repositories touch these tables
-│       ├── repository/            JpaRepository subinterfaces — the ports (rule #6)
-│       ├── rules/                 pure decisions, no I/O — unit-testable with `new`
-│       ├── token/                 JWT issue/decode/blacklist — a mechanism, not a decision
-│       ├── permission/            effective-permission calculation + its Redis cache
-│       ├── mail/                  outbound notifications this module owns
-│       └── util/                  pure transforms (EmailNormalizer) — created only when a real
-│                                  caller exists; an empty util/ is the dumping ground this
-│                                  structure exists to prevent
+├── shared/                       only once 3+ modules need the same concept — rule #16
+│   ├── SharedConstants.java      promoted enums, static inner classes
+│   └── package-info.java         one-way shared module
 │
-├── modules/billing/ ...         same shape, one package per domain module
-│
-├── shared/                      only once 3+ modules need the same concept — promotion, not a first draft
-│   ├── SharedConstants.java      the promoted enum/limit, still one class (rule #10)
-│   └── package-info.java         @NamedInterface / no @ApplicationModule(allowedDependencies=...) pointing at a domain module — one-way
-│
-└── integrations/               adapters to outside systems — like modules/, a grouping, not a module
-    ├── cache/                    Redis: CacheConfig + CacheKeyBuilder — see rule #5
-    ├── messaging/                RabbitMQ: topology/exchanges/queues, listeners
-    └── storage/                  S3 client, config, exceptions — no tables, no HTTP
+└── integrations/                 adapters to outside infrastructure
+    ├── cache/                    Redis: CacheConfig, CacheProperties, CacheKeyBuilder
+    ├── messaging/                RabbitMQ: RabbitTopologyConfig, EventRelay
+    └── storage/                  S3: S3ClientConfig, S3StorageService
 
-    No class under integrations/ may carry a domain's name. An `IdentityCacheKeys` here is a
-    leaked boundary: the names belong to the module, only the mechanism belongs here.
-
-src/test/java/com/acme/shop/     mirrors src/main 1:1 — Maven/Gradle convention enforces this, not choice
-├── ModularityTests.java          ApplicationModules.of(ShopApplication.class).verify() — run in CI
-├── identity/
-│   ├── internal/rules/           IdentityRulesTest — plain JUnit, no Spring context at all
-│   ├── internal/repository/      *RepositoryIT — @DataJpaTest + Testcontainers Postgres
-│   ├── usecase/                  Mockito fakes for the repositories — no database
-│   └── web/                      *ControllerIT — @SpringBootTest + @AutoConfigureMockMvc
-└── billing/ ...
-
-pom.xml, Dockerfile (layertools), compose.yaml (dev), application.yml + application-{profile}.yml
+src/test/java/com/eduerp/         mirrors src/main 1:1
+├── ModularityTests.java          ApplicationModules.of(...).verify() — mandatory in CI
+├── modules/identity/
+│   ├── internal/rules/           IdentityRulesTest — pure JUnit 5, instant
+│   ├── usecase/                  RegisterAccountTest — Mockito test, no database
+│   └── web/                      AccountControllerIT — MockMvc integration test
 ```
 
-**Nesting domains under `modules/` requires one line of config, or it silently destroys every boundary.** Spring Modulith's default strategy treats each *direct* sub-package of the application package as a module, so with domains at `com.acme.shop.modules.identity` the module becomes `modules` — all domains collapse into one, their `internal/` packages become mutually visible, and `verify()` keeps passing while enforcing nothing. Set `spring.modulith.detection-strategy: explicitly-annotated` and annotate each domain package with `@ApplicationModule`; nested packages are then detected at any depth (module names come out as `modules.identity`, `integrations.cache`).
+---
 
-That strategy has its own failure mode: a domain added without the annotation is not a module, so nothing guards it — and nothing complains. Pin the detected set in `ModularityTests` (`assertThat(modules.stream().map(ApplicationModule::getName))...containsExactlyInAnyOrder(...)`) so a forgotten annotation fails the build instead of quietly opting a domain out of enforcement.
-
-**Simple module or advanced module — pick one and be consistent.** A module small enough to stay in a single package is a *simple module*: one package, facade `public`, everything else package-private, no `internal/` at all. The moment it needs sub-packages it becomes an *advanced module* and the shape above applies: entity, repository and rules move under `internal/`, and types inside `internal/**` become `public` again so its own sub-packages can see each other — Spring Modulith still hides the whole `internal` subtree from every other module. What you must not produce is the middle state: thirty classes flat in the base package with a token `internal/` beside them. That publishes the entities, the repositories and the filter as module API and rule #1 stops protecting anything.
-
-Every package, including `internal/**`, carries a `package-info.java` that names the package's job in one sentence. Someone opening the module must be able to tell what each package is for without reading a single class.
-
-**The advanced-module rule cuts both ways: `core/exception/` is a sub-package too**, so it is internal to module `core` and every reference to `AppException` from a domain module fails `verify()` until you publish it. Put `@NamedInterface("exception")` on its `package-info.java` — the deliberate act of saying "this is the part of `core` the rest of the system may build on", and the reason `AppException` is extensible while `GlobalExceptionHandler` stays private.
-
-Under `integrations/`, prefer making each adapter its own annotated module (`@ApplicationModule` on `integrations/cache`) over nesting it inside one big `integrations` module and poking a `@NamedInterface` through. Reach for `@NamedInterface` when a module genuinely has two audiences — its facade and a narrow extension point — not to undo a grouping you chose badly.
-
-An integration package (`integrations/cache`, `integrations/messaging`, `integrations/storage`) is a module like any other. It differs from a domain module only in what it lacks: no `@Entity` because it owns no tables, no `@RestController` because it exposes no HTTP. It still owns its own config, constants and exceptions.
-
-## Placement rules
-
-The recurring question is where a given piece of code belongs. The test is **who owns the concept**, not what shape the code has.
+## Placement Rules
 
 | Code | Goes to |
 |---|---|
-| `OrderStatus`, `MAX_SEATS`, error codes | `<module>/IdentityConstants.java` — module base package, nested inside one class |
-| `OrderNotFoundException`, `SeatLimitReachedException` | `<module>/IdentityException.java` (or its own file if it grows) |
-| `AppException`, `NotFoundException` base classes | `core/exception/`, published via `@NamedInterface` |
-| `jwt.secret`, `cache.ttl` for one module | `<module>/IdentityProperties.java`, `@ConfigurationProperties(prefix = "identity")` |
-| `spring.datasource.*`, CORS origins | `application.yml` root, bound in `core/config/` |
-| `canCancelOrder()` — a decision | `<module>/internal/rules/IdentityRules.java` (base package in a simple module) — plain object |
-| `normalizeEmail()` — a transform | `<module>/internal/util/` — no decisions, one class per concern |
-| `ProblemDetail` mapping, pagination wrapper | `core/`, as mechanism (`Page<T>`/`Pageable` are already framework-provided — don't reinvent them) |
-| `JpaRepository<T, ID>` subinterface | `<module>/internal/repository/`; it *is* the abstraction — no hand-written `Abstract*Repository` needed, see rule #6 |
-| A `Set-Cookie` header, a `SecurityFilterChain` covering one module's endpoints | `<module>/web/` — it references that module's use cases, so it cannot live in `core/security/` (rule #4) |
-| A Redis key prefix (`perm:account`) | `<module>/IdentityConstants.CacheNamespaces` — the name is the module's; only the assembly is shared (rule #5) |
-| A role/permission enum 3+ modules need | `shared/SharedConstants.java` — promotion only, never a first draft |
+| `AccountStatus`, `Limits.MAX_EMAIL_LENGTH`, error codes | `<module>/<Module>Constants.java` — nested static classes |
+| `AccountNotFoundException`, `EmailAlreadyExistsException` | `<module>/<Module>Exception.java` (sealed hierarchy) |
+| `AppException`, `ConflictException` base classes | `core/exception/`, published via `@NamedInterface("exception")` |
+| `identity.jwt-secret`, `identity.access-token-ttl` | `<module>/<Module>Properties.java`, `@ConfigurationProperties(prefix = "...")` |
+| `spring.datasource.*`, `server.port`, CORS | `application.yml` root, bound in `core/config/` |
+| `canAuthenticateAccount()`, `canModify()` — a decision | `<module>/internal/rules/<Module>Rules.java` — pure Java, no I/O |
+| `normalizeEmail()`, `formatPhone()` — a transform | `<module>/internal/util/` — pure transform, no decisions |
+| `ProblemDetail`, `PageResponse<T>` | `core/`, as mechanism |
+| `JpaRepository<T, ID>` sub-interface | `<module>/internal/repository/` — persistence port |
+| Redis key assembly (`key(namespace, id)`) | `integrations/cache/CacheKeyBuilder.java` |
+| Redis key namespaces (`perm:account`, `blacklist:jti`) | `<module>/<Module>Constants.CacheNamespaces` |
+| An enum needed by 3+ modules (`PermissionScope`) | `shared/SharedConstants.java` — promotion only (Rule of Three) |
 
-`core/exception/` or `integrations/cache/` naming a domain entity is the earliest visible sign the boundary has leaked. So is any `Utils.java` at the application root.
+---
 
-**`util/` vs `rules/`:** a rule answers *may this happen* and belongs in `internal/rules/`; a util only changes the shape of data and belongs in `internal/util/`. The distinction matters because a rule is a business decision someone will want to change, while a util must never quietly change — normalizing an email differently silently repartitions the accounts table. Create `util/` when the first real caller exists, never before: a package that exists before its content is what turns into `common/`.
+## Non-Negotiable Rules
 
-## Non-negotiable rules
+**1. Modules reach each other only through the Facade.** Other modules inject `<Module>Management.java` or consume types exposed via `@NamedInterface`. Never import `<module>.internal.*`, an entity, or a repository directly. Spring Modulith enforces this at build time via `ApplicationModules.of(...).verify()`.
 
-**1. Modules reach each other only through the facade (the module's base-package public types).** Never reach into `<module>.internal` or another module's `@Entity`/`@Repository` from outside. Spring Modulith enforces this at build time via `ApplicationModules.of(ShopApplication.class).verify()` in `ModularityTests.java` — a boundary violation fails the build, not a code review.
+**2. Cross-module references name the module.** Import `com.eduerp.modules.identity.IdentityManagement`, never wildcard or obscured imports.
 
-**2. Cross-module references name the module.** Import `com.acme.shop.identity.IdentityManagement`, not a static import that hides where it came from. Reading the call site tells you where the type came from.
+**3. One table has exactly one owning module.** Cross-module reads go through the facade. No JPA `@ManyToOne` across module boundaries; no cross-module SQL joins. Compose in the use case.
 
-**3. One table has exactly one owning module's repository.** Cross-module reads go through the facade. No JPA `@ManyToOne` or SQL join across module boundaries; compose in the use case. This costs a query and buys the ability to split the module into its own service later.
+**4. The root (`core/`, application class) holds mechanism, never a business concept.**
 
-**4. The root (`ShopApplication`, `core/`) holds mechanism, never a business concept.**
+**5. Cache keys are assembled only in `integrations/cache/CacheKeyBuilder`.** Key namespaces are owned by the domain (`<Module>Constants.CacheNamespaces`).
 
-**5. Cache keys are assembled in exactly one class — `integrations/cache/CacheKeyBuilder` — and every namespace string it receives comes from the owning module's own constants class.** Keys built with inline concatenation scattered across modules make correct invalidation impossible, because nothing can enumerate what exists. But a class named `<Domain>CacheKeys` sitting in `integrations/` is the other failure: it drags domain vocabulary into infrastructure, and it forces you to publish that infrastructure package (`@NamedInterface`) for the benefit of exactly one consumer. Split it — `CacheKeyBuilder.key(namespace, id)` knows no namespaces, `IdentityConstants.CacheNamespaces` knows no Redis. See `references/caching-and-messaging.md`.
+**6. Invalidate cache after database commit, never before.** Wrap cache eviction in `TransactionSynchronizationManager.registerSynchronization(afterCommit(...))` so uncommitted rollbacks never leave stale cache entries.
 
-**6. Don't hand-write `AbstractRepository`/`AbstractUnitOfWork` — Spring already gives you both, and duplicating them is where this skill deliberately diverges from `fastapi-modular-scaffold`.** `JpaRepository<T, ID>` *is* the repository abstraction (Spring Data proxies it at runtime; a `Fake`/in-memory implementation for tests is just another bean, not a subclass of a hand-rolled base class). `@Transactional` on the use case's single public method *is* the unit of work (`PlatformTransactionManager` commits or rolls back the whole method). Reintroducing an `AbstractUnitOfWork` on top of `@Transactional` buys nothing and gives you two competing transaction boundaries.
+**7. Cache entities or IDs, not cross-module join results.** Composing two cached reads beats caching a multi-table blob that creates cascading invalidation bugs.
 
-**7. One use case = one class with one public method, `@Transactional` at that method.** Growth adds classes, not branches inside a service.
+**8. Connection pools live in Spring Boot / HikariCP config.** Size pools responsibly; do not create ad-hoc database connections.
 
-**8. Controllers hold no business logic.** They translate HTTP to a use-case call. Domain exceptions map to HTTP status via `@RestControllerAdvice` centrally — see `references/api-contract.md`.
+**9. One use case = one class with one public `execute()` method, `@Transactional` on that method.** Spring proxy-based AOP requires `public` visibility; a package-private `@Transactional` method will silently fail to open a transaction.
 
-**9. Config property prefixes mirror the module's package name, never a vendor name.** `integrations/cache/` binds `cache.*` (`CACHE_TTL` as env var via Spring's relaxed binding), not `redis.*` — swapping Redis for another backend shouldn't force every deployment's env vars to change. Same rule for every domain module (`identity.*` → `IDENTITY_JWT_SECRET`) and every integration package. Only root, app-wide settings (`spring.datasource.*`, `server.port`, CORS) stay unprefixed by a module name.
+**10. Controllers hold no business logic.** Controllers translate HTTP requests to use-case calls and map responses. Domain exceptions map to RFC 9457 `ProblemDetail` centrally in `GlobalExceptionHandler`.
 
-**10. No bare `public static final` constant or free-floating utility method scattered across files it isn't the file's job to own.** Java already forces every method into a class, so this rule is nearly free — the discipline is making sure it's the *right* class: `IdentityConstants.MAX_NAME_LENGTH`, not a constant duplicated inline in three use cases; `IdentityRules.canCancelOrder(...)`, not the same `if` chain copy-pasted into two controllers. See rule #16 of `fastapi-modular-scaffold` for the Python-side version of this same discipline.
+**11. Configuration property prefixes mirror the module's folder name.** `modules/identity/` binds `identity.*`, `integrations/cache/` binds `cache.*`. Never use vendor names (`redis.*`, `s3.*`) for module-level properties.
 
-**11. `internal/` (or package-private visibility in a flat module) is where implementation details live.** A module with no sub-packages: mark everything except the facade class as package-private (no `public` modifier) and Spring Modulith's simple-module rule hides it automatically. A module with sub-packages: put internals under `<module>.internal` and Spring Modulith's advanced-module rule hides that sub-package from everyone but the module itself.
+**12. No class over ~400–500 lines, no method over cyclomatic complexity 15.** Split use cases, controllers, and repositories into focused single-responsibility classes.
 
-**12. `shared/` is the only sanctioned shared module, and it is one-way.** Every domain module may depend on it (declare it in `sharedModules` on `@Modulithic`, or reference it plainly since Spring Modulith allows unrestricted dependencies on shared modules by design); `shared` itself may never import a domain module — that would recreate the exact cross-module cycle rule #1 forbids, one hop removed. A concept lands here only once it clears the bar in `references/placement.md#when-duplication-is-correct`.
+**13. Avoid God Modules.** Never cram unrelated domains into `identity`. Keep `identity` strictly focused on accounts, credentials, and auth sessions. Extract audit to `modules.audit`, roles/permissions to `modules.access`, branches to `modules.organization`, mail to `integrations.mail`, and dashboard metrics to `modules.dashboard`.
 
-**13. Cross-module communication that shouldn't be a direct call is an application event, not a shared table poke.** Publish via `ApplicationEventPublisher`; listen with `@ApplicationModuleListener` (async, and — once `spring-modulith-starter-jdbc` is on the classpath — backed by the transactional outbox automatically, so "publish" and "commit" can never disagree). See `references/caching-and-messaging.md#rabbitmq-and-the-outbox`.
+**14. Intra-module package tiers are strictly one-way.** Tier 0 (constants/properties) → Tier 1 (exceptions/dto/events/model) → Tier 2 (rules/util) → Tier 3 (repository) → Tier 4 (usecase) → Tier 5 (web) → Tier 6 (facade). No circular imports within a module.
 
-**14. No class over ~400-500 lines, no method over cyclomatic complexity 15.** Checkstyle/PMD (or SonarQube in CI) enforce the second; the first is a judgment call at review time made the same way as in `fastapi-modular-scaffold`. Split into a sub-package instead of writing a flatter God class.
+**15. No bare constants or loose floating helper methods.** Group constants, limits, authorities, and namespaces into named static inner classes inside `<Module>Constants.java`.
 
-**15. `@SuppressWarnings` never goes bare.** State what and why: `@SuppressWarnings("unchecked") // Jackson TypeReference erasure, verified by the round-trip test below`. A suppression with no reason is a decision that needs to survive the person who wrote it leaving the team.
+**16. `shared/` is the only sanctioned shared module, and it is strictly one-way.** Promotion only (Rule of Three: 3+ modules need it, it is stable, and divergence would be a bug). `shared` may never depend on a domain module.
 
-## Deciding how far to go
+**17. Cross-module asynchronous reactions use `ApplicationEventPublisher` and `@ApplicationModuleListener`.** Listeners run asynchronously after transaction commit, backed by the Transactional Outbox (`spring-modulith-starter-jdbc`).
 
-Match the ceremony to the size — over-structuring is as damaging as under-structuring and much easier to do by accident.
+**18. Every project verifies boundaries in CI with `ApplicationModules.of(...).verify()`.** Configure `spring.modulith.detection-strategy: explicitly-annotated` in `application.yml` and pin detected modules in test assertions.
 
-- **Under ~15 endpoints**: one module, skip `shared/` entirely until a second module actually needs something from it.
-- **Multiple domains and a team**: the full structure, `ModularityTests` in CI from day one — it's nearly free and gets much more painful to add after the boundaries have already blurred.
-- **Only add RabbitMQ** when there's real async work or real cross-module eventing that must survive a restart. Spring's own `ApplicationEventPublisher` (in-process, synchronous by default) covers the rest.
-- **Only turn on the outbox** (`spring-modulith-starter-jdbc`) when losing an event has business consequences. Without it, `@ApplicationModuleListener` still runs after commit — you're choosing durability across a broker/consumer restart, not correctness within the app.
-- **Spring Data's `JpaRepository` and `@Transactional` are the default, not a judgment call** (rule #6) — don't rebuild what Spring already gives you for free.
+---
 
-Say so plainly when a request would push past what the project needs. Suggesting the smaller version is more useful than silently building the bigger one.
+## Reference Files
 
-## Writing style in generated code
+- [architecture.md](references/architecture.md) — Dependency direction, avoiding God modules, package tiers, Spring Modulith detection, transaction boundaries.
+- [placement.md](references/placement.md) — Where each kind of code belongs, decision matrix, rules vs utils, sealed exceptions, integrations as modules.
+- [layer-examples.md](references/layer-examples.md) — Real Java 21 / Spring Boot 3.4 worked code for every layer: entity, rules, usecase, facade, controller, tests.
+- [caching.md](references/caching.md) — Redis cache keys, versioned counters, post-commit invalidation, stampede singleflight, graceful degradation.
+- [messaging.md](references/messaging.md) — Spring Modulith Event Publication Registry, Transactional Outbox, RabbitMQ AMQP topology, dead-letter exchanges, idempotent consumers.
+- [logging.md](references/logging.md) — RequestCorrelationFilter, MDC tracking, structured JSON formatting, correlation propagation, sensitive data redaction.
+- [rbac.md](references/rbac.md) — Scoped RBAC, permission catalog, method security, SpEL evaluation, effective permission caching.
+- [api-contract.md](references/api-contract.md) — CamelCase wire format, RFC 9457 ProblemDetail, GlobalExceptionHandler, PageResponse, Server-Sent Events.
+- [deployment.md](references/deployment.md) — Layered Dockerfile, compose.yaml, env variable matrix, Flyway migrations, HikariCP pool sizing, Actuator health probes.
+- [checklist.md](references/checklist.md) — Pre-production checklist covering modular structure, database, cache, messaging, security, API contracts, and observability.
 
-- One Javadoc line per public class/method where the *why* isn't obvious from the name; no inline `//` narration of *what* the code does.
-- Prefer `record` for DTOs and events — immutable, `equals`/`hashCode`/`toString` for free, and it reads as data rather than behavior.
-- Constructor injection only (`final` fields, no `@Autowired` on fields) — makes missing dependencies a compile error, not a runtime `NullPointerException`.
-- Never return a JPA `@Entity` from a controller. Lazy-loaded associations serialize unpredictably (or throw `LazyInitializationException` outside the session) and entities leak columns never meant to be public — map to a `dto` record instead.
+---
 
-## Reference files
-
-Read the one that matches the task.
-
-- `references/architecture.md` — bootstrapping, adding a module, module boundaries and verification, correlation-id logging, authorization
-- `references/placement.md` — where each kind of code belongs, and the failure modes of getting it wrong, plus the promotion bar for `shared/`
-- `references/layer-examples.md` — every layer's real code side by side: entity, rules, use case, repository port, facade, controller, module test
-- `references/caching-and-messaging.md` — Redis cache keys and invalidation; RabbitMQ topology, the outbox, idempotent consumers
-- `references/api-contract.md` — `ProblemDetail` error shape, error codes, pagination, versioning
-- `references/deployment.md` — profiles, layered Docker image, compose file, Testcontainers, migrations
-- `references/checklist.md` — pre-production review
-
-## Verify before handing over
-
-A structure that doesn't compile or doesn't respect its own boundaries is worse than no structure:
+## Verify Before Handing Over
 
 ```bash
-mvn -q -DskipTests package
-mvn -q test -Dtest=ModularityTests   # ApplicationModules.of(...).verify()
-mvn -q verify                         # full test suite, Testcontainers included
+# Verify modular boundaries (ArchUnit + Spring Modulith)
+mvn test -Dtest=ModularityTests
+
+# Run full unit and integration test suite
+mvn test
+
+# Verify build package and Docker layertools
+mvn clean package -DskipTests
 ```
