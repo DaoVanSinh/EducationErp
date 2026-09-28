@@ -1,0 +1,2 @@
+# File thật chứa secret của máy bạn — không commit. .env.example là bản mẫu được commit.
+.env
