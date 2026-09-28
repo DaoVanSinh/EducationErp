@@ -36,9 +36,126 @@ export default [
 ```
 This makes `modules/orders` importing from `modules/profile` a lint error, not a convention someone forgot.
 
-## No circular imports
+---
+
+## Zero Hardcoded String Literals (Không Hard-Type String)
+
+Never use inline string literals for auth status, role codes, permissions, resources, actions, or route paths.
+
+```ts
+// REJECTED:
+if (session.status === "authenticated") { ... }
+<Can I="READ" a="ACCOUNT" />
+<RequirePermission resource="ACCOUNT" action="CREATE" />
+const queryKey = ["accounts", id];
+
+// CORRECT:
+import { AUTH_STATUS, RESOURCES, ACTIONS, PERMISSIONS } from "@/shared/constants";
+import { isAuthenticated } from "@/shared/lib/auth";
+
+if (isAuthenticated(session)) { ... }
+<Can I={ACTIONS.READ} a={RESOURCES.ACCOUNT} />
+<RequirePermission resource={RESOURCES.ACCOUNT} action={ACTIONS.CREATE} />
+const queryKey = accountQueryKeys.detail(id);
+```
+
+Using centralized constants from `@/shared/constants/` prevents typo bugs, makes refactoring instant via TypeScript symbols, and guarantees frontend and backend constants remain synchronized.
+
+---
+
+## Separation of Logic from Render (Tách Biệt Logic Khỏi Render)
+
+UI components (`ui/*.tsx`) must be **strictly declarative and presentational** ("Clean Render"). They should focus only on layout, Tailwind styles, accessibility, and visual states.
+
+### The Rule:
+1. **Zero inline async handlers**: Never write giant inline `onSubmit={async (data) => { ... }}` in JSX props.
+2. **Extract to Custom Hooks (`hooks/use-*.ts`)**: Form state, Zod validation, TanStack Query mutations/queries, and multi-step workflows belong in a custom controller hook.
+
+```tsx
+// REJECTED: Logic, mutation, state, and render all tangled in one component
+export function BadAccountForm() {
+  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const form = useForm({ resolver: zodResolver(accountSchema) });
+
+  const onSubmit = async (data) => {
+    setLoading(true);
+    try {
+      await apiFetch("/api/accounts", { method: "POST", body: data });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Created");
+    } catch (e) {
+      toast.error("Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <form onSubmit={form.handleSubmit(onSubmit)}>...</form>;
+}
+
+// CORRECT: UI component is clean, purely presentational
+// 1. Controller Hook: hooks/use-account-form-controller.ts
+export function useAccountFormController(onSuccess?: () => void) {
+  const form = useForm<AccountFormValues>({ resolver: zodResolver(accountSchema) });
+  const createMutation = useCreateAccountMutation({
+    onSuccess: () => {
+      form.reset();
+      onSuccess?.();
+    }
+  });
+
+  const handleSubmit = form.handleSubmit((data) => createMutation.mutate(data));
+
+  return { form, isSubmitting: createMutation.isPending, handleSubmit };
+}
+
+// 2. Presentational UI Component: ui/account-form.tsx (< 100 lines)
+export function AccountForm({ onSuccess }: AccountFormProps) {
+  const { form, isSubmitting, handleSubmit } = useAccountFormController(onSuccess);
+
+  return (
+    <Form {...form}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormField name="email" render={({ field }) => <Input {...field} />} />
+        <Button type="submit" disabled={isSubmitting}>Submit</Button>
+      </form>
+    </Form>
+  );
+}
+```
+
+---
+
+## Keeping Components Clean (< 15 Cyclomatic Complexity & Budget)
+
+1. **Cyclomatic Complexity < 15**:
+   - ESLint rule `complexity: ["error", 15]` enforces this strictly.
+   - If a component has multiple if/else branches, extract branch rendering into smaller sub-components.
+2. **Component Size Budget (< 150–200 lines)**:
+   - Pure UI component files must stay under ~150–200 lines. If a view grows past that, decompose it into focused sub-components (`<AccountListHeader>`, `<AccountListTable>`, `<AccountListPagination>`).
+3. **No Nested Ternary Hell**:
+   - `a ? (b ? <C1 /> : <C2 />) : <C3 />` is forbidden.
+   - Use early returns or separate sub-components for clean readability.
+
 ```js
-// eslint.config.js — needs eslint-plugin-import
+// eslint.config.js
+export default [
+  {
+    rules: {
+      complexity: ["error", 15],
+      "max-lines": ["warn", { max: 200, skipBlankLines: true, skipComments: true }],
+    },
+  },
+];
+```
+
+---
+
+## No Circular Imports
+
+```js
+// eslint.config.js
 export default [
   {
     rules: {
@@ -47,13 +164,14 @@ export default [
   },
 ];
 ```
-Two files importing each other breaks under ESM's live-binding evaluation order and shows up as a value being `undefined` at a distance, hard to trace back to the cycle. `eslint-plugin-boundaries`' layer rules already prevent most cycles structurally (a module can't import another module, so they can't import each other); this rule catches the ones boundaries don't reach — two files inside the same module, or two entities.
+Two files importing each other breaks under ESM's live-binding evaluation order. Move shared types/hooks down into `model/` or `entities/` so dependencies only point one way.
 
-This is unrelated to `next/dynamic(() => import(...))` or a plain `await import(...)` — a dynamic import for code-splitting is encouraged (see `performance-checklist.md`) and isn't a circular dependency. The rule to fix is two files each needing something the other exports; move the shared piece into `model/` (same slice) or `entities/`/`shared/` (cross-slice) so the dependency only points one way.
+---
 
-## No suppression comment without a reason
+## No Suppression Comment Without a Reason
+
 ```js
-// eslint.config.js — needs @eslint-community/eslint-plugin-eslint-comments
+// eslint.config.js
 import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 
 export default [
@@ -61,74 +179,21 @@ export default [
     plugins: { "eslint-comments": eslintComments },
     rules: {
       "eslint-comments/require-description": ["error", { ignore: [] }],
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        { "ts-expect-error": "allow-with-description", "ts-ignore": true, minimumDescriptionLength: 10 },
+      ],
     },
   },
 ];
 ```
-ESLint itself understands a `-- reason` suffix on any directive comment; `require-description` makes leaving it off an error instead of a habit:
-```ts
-// Rejected — no reason, and eslint-disable-next-line with no rule name silences everything on the line
-// eslint-disable-next-line
-const x: any = fetchLegacyPayload();
 
-// Correct — specific rule, stated reason
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy endpoint has no generated types yet, ticket JIRA-1234
-const x: any = fetchLegacyPayload();
-```
-For TypeScript specifically, prefer `@ts-expect-error` over `@ts-ignore` — `@ts-expect-error` itself errors once the suppressed problem is fixed, so a stale suppression gets caught automatically instead of silently doing nothing forever:
-```js
-// eslint.config.js
-{
-  rules: {
-    "@typescript-eslint/ban-ts-comment": [
-      "error",
-      { "ts-expect-error": "allow-with-description", "ts-ignore": true, minimumDescriptionLength: 10 },
-    ],
-  },
-}
-```
-A suppression comment is a decision that has to survive the person who wrote it leaving the team. If there's no real reason, the fix is the actual problem, not the comment.
+---
 
-## Keeping files and functions small
-```js
-// eslint.config.js
-export default [
-  {
-    rules: {
-      complexity: ["error", 15],
-      "max-lines": ["warn", { max: 600, skipBlankLines: true, skipComments: true }],
-    },
-  },
-];
-```
-A component or hook file over ~500-600 lines is a sign it holds more than one concept — split it into a folder instead of leaving it flat, the same way a module itself splits into `api/ model/ ui/ hooks/`:
-```
-# order-list.tsx grew past readable size
-ui/order-list/
-├── index.tsx          # OrderList — composes the pieces below
-├── order-list-item.tsx
-└── order-list-filters.tsx
-```
-A function over complexity 15 is almost always doing more than one job — extract branches into smaller named functions, or move a decision into a dedicated hook. Don't disable the ESLint rule to make the warning go away; split the code instead.
-
-## Type-safe env vars
-Validate `process.env` once at startup instead of trusting `string | undefined` everywhere it's read:
-```ts
-// shared/config/env.ts
-import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
-
-export const env = createEnv({
-  server: { DATABASE_URL: z.string().url() },
-  client: { NEXT_PUBLIC_API_URL: z.string().url() },
-  experimental__runtimeEnv: { NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL },
-});
-```
-
-## File naming
+## File Naming Conventions
 | Item | Convention |
 |---|---|
-| Files/folders | kebab-case (`order-status-badge.tsx`) |
-| Components | PascalCase export |
-| Hooks | `use-*.ts` file, `useCamelCase` export |
-| Absolute imports | `@/*` → `src/*`, never relative chains like `../../../` |
+| Files/folders | kebab-case (`account-status-badge.tsx`) |
+| Components | PascalCase export (`AccountStatusBadge`) |
+| Hooks | `use-*.ts` file, `useCamelCase` export (`useAccountController`) |
+| Imports | `@/*` -> `src/*`, never relative chains like `../../../` |
