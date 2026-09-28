@@ -1,0 +1,42 @@
+# Stack stg (make compose-up, ENV mặc định) — chạy tại chỗ trên máy này, không phải server riêng:
+# build app + nginx vào container, KHÔNG tự dựng Postgres/Redis — máy này đã có sẵn container dùng
+# chung cho nhiều dự án (agent-postgres, redis-stack), backend nối ra đó qua host.docker.internal
+# (đặt sẵn trong backend/.env.docker). Không join network ngoài nào (shared-infra/elearning-net
+# không tồn tại ở máy này) — network dưới đây do chính stack này tạo, chỉ để app <-> nginx nói
+# chuyện với nhau.
+#
+# Chạy: make compose-up   (hoặc: docker compose --env-file backend/.env.docker up -d --build)
+# Mở:  http://localhost:8090
+name: eduerp-stg
+
+networks:
+  eduerp-net:
+
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: eduerp-backend:stg
+    container_name: eduerp-app
+    restart: unless-stopped
+    env_file:
+      - backend/.env.docker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - eduerp-net
+
+  nginx:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: eduerp-nginx:stg
+    container_name: eduerp-nginx
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    depends_on:
+      - app
+    networks:
+      - eduerp-net

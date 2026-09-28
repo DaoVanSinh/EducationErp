@@ -44,13 +44,10 @@ class IdentitySecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/account/forgot-password",
                                 "/api/account/reset-password")
                         .permitAll()
-                        // Tài liệu API: xem được mà không cần đăng nhập, để FE/QA tra cứu contract.
-                        // Gọi thử một endpoint thật từ trang Swagger UI vẫn phải qua đúng luật ở trên.
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
-                // Mặc định Spring trả 403 cho request chưa xác thực; API này phải trả 401 để frontend
-                // biết cần refresh phiên thay vì hiểu là thiếu quyền.
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new CookieAuthenticationFilter(jwtTokenService, blacklist, access, accounts),
