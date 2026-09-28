@@ -1,35 +1,210 @@
-# Placement
+# Placement Reference
 
-The recurring question when adding code isn't "what package convention exists for this?" but **who owns the concept**. If you can name the one module that would break if this code disappeared, that's where it goes.
+The single question this file answers: **when you write a piece of code, where does it go?**
 
-## Quick table
+---
 
-| Code | Goes to | Not |
+## The Test
+
+Ask **who owns the concept**, not what shape the code has.
+- `MAX_SEATS_PER_CLASS` is an integer, and `slugify()` is a method, but neither fact decides placement.
+- What decides placement is that `MAX_SEATS_PER_CLASS` is a business rule about enrollment, and `slugify()` is a generic text transform.
+
+A second question resolves almost everything else:
+**If this module were extracted into its own independent microservice tomorrow, would this code go with it?**
+- If **yes**, it belongs inside that domain module.
+- If it would have to be duplicated or left behind because other modules also need the technical mechanism, it is **mechanism** and belongs in `core/` or `integrations/`.
+
+Which file answers "who owns the concept." A separate rule answers *how it is written once it is there*:
+- Constants are grouped inside static inner classes of `<Module>Constants.java`.
+- Business decisions live inside `<Module>Rules.java`.
+- Data transforms live inside `<Module>Util.java` or `util/` sub-package.
+- Never write loose, un-scoped constants or global utility dumping grounds.
+
+---
+
+## The Placement Decision Matrix
+
+| Code / Concept | Location | Why |
 |---|---|---|
-| `OrderStatus` enum, `MAX_SEATS` limit, an error-code enum | `<module>/<Module>Constants.java`, nested inside one class | A bare `public static final int` scattered in whatever file first needed it |
-| `OrderNotFoundException` | `<module>/<Module>Exception.java` (or its own file once the module has several) | `core/exception/` — that file is for the *base* hierarchy only |
-| `jwt.secret`, `cache.ttl` scoped to one module | `<module>/<Module>Properties.java`, `@ConfigurationProperties(prefix = "<module>")` | `application.yml`'s root-level keys |
-| `spring.datasource.url`, `server.port`, CORS origins | `application.yml` root, bound in `core/config/` | A per-module properties class |
-| `canCancelOrder(order, actor)` — a decision that changes when the business changes | `<module>/<Module>Rules.java` | Inline in the controller or the use case |
-| `normalizeEmail(raw)` — a transform that doesn't encode a decision | `<module>/util/` | `<Module>Rules.java` — keep rules small and heavily tested, keep utils boring |
-| `Page<T>`/`Pageable` wrapping, `ProblemDetail` construction | `core/` — mechanism, no business concept | Reinventing them per module |
-| `JpaRepository<X, ID>` subinterface | Inside `<module>/`, next to the entity it queries | A shared `repository/` package at the root |
-| A permission enum 3+ modules need to check | `shared/SharedConstants.java` — promotion, see below | A first draft in `shared` before a second module needs it |
+| `AccountStatus`, `EnrollmentStatus` | `<module>/<Module>Constants.java` (as an `enum`) | The enum is a core domain vocabulary owned by this module. |
+| `MAX_LOGIN_ATTEMPTS`, `PAGE_MAX_SIZE` | `<module>/<Module>Constants.java` (nested class `Limits`) | Business limit that changes with domain policy. |
+| `ErrorCode` string constants | `<module>/<Module>Constants.java` (nested class `ErrorCodes`) | Client-facing error catalog owned by this module. |
+| `AccountNotFoundException`, `EmailTakenException` | `<module>/<Module>Exception.java` (or sub-package) | Domain exceptions extending `core.exception.AppException`. |
+| `AppException`, `ConflictException` base | `core/exception/` (published via `@NamedInterface`) | Shared HTTP and error mechanism; knows no domain names. |
+| `jwt.secret`, `token.access-ttl` | `<module>/<Module>Properties.java` (`@ConfigurationProperties`) | Settings only this module reads; prefixed with module name (`identity.*`). |
+| `spring.datasource.*`, `server.port`, CORS | `application.yml` root, bound in `core/config/` | System-wide mechanism; the application process needs them to start. |
+| `canActivateAccount()`, `isEligibleForDiscount()` | `<module>/internal/rules/<Module>Rules.java` | Pure business decision; zero I/O, no database, no Spring annotations. |
+| `normalizeEmail()`, `formatPhoneNumber()` | `<module>/internal/util/` | Pure data transform; changes only if formatting specifications change. |
+| `ProblemDetail`, `GlobalExceptionHandler` | `core/exception/` | Mechanism for RFC 9457 HTTP error serialization. |
+| `RequestCorrelationFilter`, MDC keys | `core/web/` | Mechanism for request/correlation ID tracking. |
+| Redis key assembly (`CacheKeyBuilder`) | `integrations/cache/CacheKeyBuilder.java` | Infrastructure mechanism for building colon-separated key strings. |
+| Redis key namespaces (`blacklist:jti`, `perm:account`) | `<module>/<Module>Constants.CacheNamespaces` | The namespace name belongs to the domain; the assembly belongs to cache. |
+| An enum or record needed by 3+ modules (`PermissionScope`) | `shared/SharedConstants.java` | Promoted only after clearing the Rule of Three; never a first draft. |
+| JPA `@Entity` (`Account`, `Role`) | `<module>/internal/model/` | Only this module's repository queries these tables. |
+| `JpaRepository` sub-interfaces | `<module>/internal/repository/` | Persistence ports; invisible outside this module. |
+| Cross-module entrypoint (`IdentityManagement`) | `<module>/` (base package) | The Facade — the only type other modules may import. |
+| DTO request/response records | `<module>/dto/` (with `@NamedInterface("dto")`) | Wire contracts and data crossing module boundaries. |
 
-`core/exception/` naming a domain entity (`core/exception/OrderNotFoundException.java`) is the earliest visible sign the boundary has leaked — that class belongs in `order/`. So is any `Utils.java`/`Helpers.java` sitting at the application root instead of inside the module whose concept it serves.
+---
 
-## When duplication is correct
+## Grouped into a Class (No Bare Floating Constants)
 
-Two modules independently defining `PageRequest` validation, or both needing to normalize a phone number the same way, is not automatically a reason to create a shared abstraction. Promote a concept into `shared/` only when **all** of these hold:
+In Java, every variable lives in a class. But placing everything flat in a class or scattering constants across random files causes the same degradation as Python's loose constants.
 
-1. **Three or more modules** need the exact same thing (two is often coincidence, not a shared concept yet).
-2. **It's stable** — the concept hasn't changed shape across the last few times a module touched it.
-3. **Divergence would be a bug**, not a legitimate difference — e.g. every module's definition of "an active user" really must agree, versus every module happening to both have a field called `status` that means something different per module.
+Organize constants into **named static inner classes** inside `<Module>Constants.java`:
 
-Fewer than three: leave the duplication where it is. Duplication that's about to diverge is cheaper to carry than a shared abstraction that has to special-case its third caller.
+```java
+package com.eduerp.modules.identity;
 
-## `shared/` shape
+public final class IdentityConstants {
 
-Same shape as any module — its own constants class, its own exceptions if it needs any — and the same size discipline (rule #14 in `SKILL.md`). The moment `shared/` wants an `@Entity` or a `@RestController`, what's living there was a domain concept with an owner all along, not something genuinely shared; move it back into a real module.
+    private IdentityConstants() {}
 
-Declare the one-way relationship either via `@Modulithic(sharedModules = {"shared"})` on the application class (lets every module depend on it without an explicit `allowedDependencies` entry) or, if `shared` needs to be restricted to a subset of modules, via each dependent module's `allowedDependencies = "shared"`. Either way, `shared` itself must never `import com.acme.shop.<domain module>.*` — `ApplicationModules.verify()` catches the cycle if it ever happens.
+    public enum Status {
+        PENDING, ACTIVE, SUSPENDED, DELETED
+    }
+
+    public static final class Limits {
+        private Limits() {}
+        public static final int MAX_EMAIL_LENGTH = 254;
+        public static final int MAX_FAILED_LOGINS = 5;
+        public static final int PASSWORD_MIN_LENGTH = 8;
+    }
+
+    public static final class Resources {
+        private Resources() {}
+        public static final String ACCOUNT = "ACCOUNT";
+        public static final String ROLE = "ROLE";
+        public static final String GROUP = "GROUP";
+    }
+
+    public static final class Actions {
+        private Actions() {}
+        public static final String CREATE = "CREATE";
+        public static final String READ = "READ";
+        public static final String UPDATE = "UPDATE";
+        public static final String DELETE = "DELETE";
+    }
+
+    public static final class CacheNamespaces {
+        private CacheNamespaces() {}
+        public static final String SESSIONS = "sessions:account";
+        public static final String PERMISSIONS = "perm:account";
+        public static final String BLACKLIST_JTI = "blacklist:jti";
+    }
+
+    public static final class ErrorCodes {
+        private ErrorCodes() {}
+        public static final String ACCOUNT_NOT_FOUND = "IDENTITY_ACCOUNT_NOT_FOUND";
+        public static final String EMAIL_ALREADY_EXISTS = "IDENTITY_EMAIL_ALREADY_EXISTS";
+        public static final String INVALID_CREDENTIALS = "IDENTITY_INVALID_CREDENTIALS";
+    }
+}
+```
+
+This discipline provides instant clarity:
+- `IdentityConstants.Limits.MAX_EMAIL_LENGTH`
+- `IdentityConstants.CacheNamespaces.PERMISSIONS`
+- `IdentityConstants.ErrorCodes.ACCOUNT_NOT_FOUND`
+
+---
+
+## `internal/rules/` vs. `internal/util/`
+
+Both contain pure Java methods with no database I/O, so developers frequently lump them into a single `Utils` class. This is a fatal mistake.
+
+| Dimension | `internal/rules/` | `internal/util/` |
+|---|---|---|
+| **Question answered** | *May this action proceed?* (Decision) | *What does this look like in another format?* (Transform) |
+| **Examples** | `canCancelOrder()`, `isEligibleForPromotion()` | `normalizeEmail()`, `slugify()`, `maskCard()` |
+| **Why it changes** | Business policy or product rules change. | Encoding or formatting standards change. |
+| **Testing** | Heavy unit testing of edge cases and business scenarios. | Deterministic input/output unit tests. |
+
+Keeping them separate guarantees:
+1. When product owners ask "what are our business validation rules for accounts?", you open `<Module>Rules.java`.
+2. Normalizing an email never accidentally changes account eligibility logic.
+3. Neither file ever grows into a grab-bag dumping ground.
+
+---
+
+## Why Domain Exceptions Stay Inside the Module
+
+The temptation to declare all application exceptions in `core/exception/` is strong and destructive.
+
+- `AccountNotFoundException` encodes domain knowledge: it knows accounts exist, what identifies them, and when an operation cannot proceed.
+- If all domain exceptions are moved to `core/exception/`, `core` gradually accumulates knowledge of students, teachers, grades, invoices, enrollments, and payments.
+- Changing an invoice error requires modifying a shared core file that every module depends on.
+
+### The Correct Division
+1. **`core/exception/`** owns the **mechanism**:
+   - Base `AppException` (abstract class with `errorCode`, `status`, `message`).
+   - Standard HTTP bases: `NotFoundException`, `ConflictException`, `ForbiddenException`, `BadRequestException`.
+   - `GlobalExceptionHandler` and RFC 9457 `ProblemDetail` mapping.
+2. **`<module>/<Module>Exception.java`** owns the **domain catalog**:
+   - Sealed class hierarchy extending `AppException`:
+     ```java
+     public sealed class IdentityException extends AppException
+         permits AccountNotFoundException, EmailAlreadyExistsException, InvalidCredentialsException {
+         protected IdentityException(String errorCode, HttpStatus status, String message) {
+             super(errorCode, status, message);
+         }
+     }
+     ```
+
+Base classes are centralized; error catalogs are distributed.
+
+---
+
+## Integrations Are Modules, Not Utilities
+
+Infrastructure dependencies like Redis cache, RabbitMQ/Kafka messaging, S3 storage, or OpenTelemetry tracing are **first-class modules** under `integrations/`.
+
+```
+integrations/
+├── cache/
+│   ├── CacheKeyBuilder.java
+│   ├── CacheConfig.java
+│   ├── CacheProperties.java
+│   └── package-info.java (@ApplicationModule)
+├── messaging/
+│   ├── TopologyConfig.java
+│   ├── EventRelay.java
+│   ├── OutboxCleaner.java
+│   └── package-info.java (@ApplicationModule)
+└── storage/
+    ├── S3ClientConfig.java
+    ├── S3StorageService.java
+    └── package-info.java (@ApplicationModule)
+```
+
+They are modules in every sense, differing from domain modules only in what they omit:
+- No `@Entity` classes (they own no relational database tables).
+- No `@RestController` classes (they expose no HTTP endpoints).
+
+Swapping Redis for another caching provider or replacing S3 with MinIO touches only `integrations/` and does not ripple into any domain module.
+
+---
+
+## Warning Signs (Boundary Leaks)
+
+If any of the following appear during code review, the modular boundary has leaked:
+
+1. A `Utils.java` or `CommonUtils.java` appears at the root or under `core/`.
+2. `core/exception/AppException.java` mentions an `Account`, `Student`, or any domain entity by name.
+3. Global `application.yml` contains properties owned by a single domain (e.g. `jwt-secret` placed at root instead of under `identity.*`).
+4. A class in `modules.billing` imports a class from `modules.identity.internal.*`.
+5. A class in `modules.billing` executes a SQL `JOIN` against the `identities` table.
+6. A `@Repository` calls `flush()` or `@Transactional` is omitted from a multi-step use case.
+7. A domain controller returns a JPA `@Entity` directly to the HTTP client.
+8. Two domain modules import the same class from a third domain module that is neither's owner.
+
+---
+
+## When Duplication is Correct (The Rule of Three)
+
+Sharing code creates invisible coupling. When two modules share a constant or helper, any future change to that code requires synchronizing both domains.
+
+- If Module A and Module B both have `MAX_RETRY_COUNT = 3`, keep them separate in `ModuleAConstants.Limits` and `ModuleBConstants.Limits`. Their business requirements will diverge over time.
+- **The Rule of Three**: Duplicate until **three or more modules** require the exact same concept, AND it is completely stable, AND divergence between them would represent a critical system bug.
+- Only then promote the concept into `shared/SharedConstants.java`. Never make `shared/` a first draft.

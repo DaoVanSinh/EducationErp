@@ -1,76 +1,177 @@
-# Deployment
+# Deployment Reference
 
-## Profiles instead of `.env` files
+## Layered Dockerfile (Java 21 + Spring Boot 3.4)
 
-Spring's profile mechanism (`application.yml` + `application-{profile}.yml`, activated via `SPRING_PROFILES_ACTIVE`) replaces the `.env` matrix `fastapi-modular-scaffold` uses — one base file for shared defaults, one override file per environment:
-
-```
-src/main/resources/
-├── application.yml            defaults + ${ENV_VAR} placeholders, no secrets
-├── application-dev.yml        local Postgres/Redis/RabbitMQ on localhost
-├── application-staging.yml
-└── application-prod.yml
-```
-
-Secrets stay out of every one of these files — inject them as environment variables (`IDENTITY_JWT_SECRET`, `SPRING_DATASOURCE_PASSWORD`) at deploy time, matching the module-prefixed env var rule from `SKILL.md`.
-
-## Layered Docker image
-
-Spring Boot's built-in `layertools` splits the jar into layers (dependencies, resources, application classes) so a code change only invalidates the top layer, not the whole image:
+Spring Boot's layered JAR layout separates application dependencies from application code. Dependencies change infrequently and are cached across builds, while application classes change on every commit.
 
 ```dockerfile
-FROM eclipse-temurin:21-jre AS build
-WORKDIR /app
-COPY target/shop.jar app.jar
-RUN java -Djarmode=layertools -jar app.jar extract
+# Build stage
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /workspace
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
+RUN ./mvnw dependency:go-offline -B
 
-FROM eclipse-temurin:21-jre
+COPY src src
+RUN ./mvnw clean package -DskipTests -B
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination target/extracted
+
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine AS runner
 WORKDIR /app
-COPY --from=build /app/dependencies/ ./
-COPY --from=build /app/spring-boot-loader/ ./
-COPY --from=build /app/snapshot-dependencies/ ./
-COPY --from=build /app/application/ ./
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+
+# Add unprivileged user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Copy layers in order of frequency of change (least to most frequent)
+COPY --from=builder /workspace/target/extracted/dependencies/ ./
+COPY --from=builder /workspace/target/extracted/spring-boot-loader/ ./
+COPY --from=builder /workspace/target/extracted/snapshot-dependencies/ ./
+COPY --from=builder /workspace/target/extracted/application/ ./
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Dspring.threads.virtual.enabled=true"
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
 ```
 
-Enable Java 21 virtual threads (`spring.threads.virtual.enabled=true`) before reaching for a reactive rewrite — it gets most of the throughput benefit of non-blocking I/O for a servlet-stack app with zero code changes, as long as nothing synchronizes on a lock across a blocking call.
+---
 
-## Local development — `compose.yaml`
+## Local Development: `compose.yaml`
 
 ```yaml
 services:
   postgres:
-    image: postgres:16
-    environment: { POSTGRES_DB: shop, POSTGRES_PASSWORD: shop }
-    ports: ["5432:5432"]
+    image: postgres:16-alpine
+    container_name: eduerp-postgres
+    environment:
+      POSTGRES_DB: eduerp
+      POSTGRES_USER: eduerp
+      POSTGRES_PASSWORD: eduerp_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eduerp -d eduerp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
-    image: redis:7
-    ports: ["6379:6379"]
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports: ["5672:5672", "15672:15672"]
+    image: redis:7-alpine
+    container_name: eduerp-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: eduerp-mailpit
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI
+    restart: unless-stopped
+
+volumes:
+  pgdata:
 ```
 
-## Migrations
+---
 
-Flyway (`spring-boot-starter-data-jpa` + `flyway-core`) with one migration folder, `db/migration/`, versioned `V{n}__description.sql` — each domain module contributes its own migrations for the tables it owns (rule #3: one table, one owning module), but they share the single migration history table since this is one deployable, not one database per module.
+## Environment Variable Matrix
 
-## Testcontainers for integration tests
+Spring Boot's **relaxed binding** translates uppercase underscored environment variables to lowercase dot/dash properties:
 
-`@ApplicationModuleTest` and `@SpringBootTest` integration tests use Testcontainers instead of an in-memory H2 substitute — H2's SQL dialect drift from real Postgres is exactly the kind of "tests passed, prod broke" gap worth avoiding:
+| Environment Variable | Target Spring Property | Description | Production Example |
+|---|---|---|---|
+| `SPRING_DATASOURCE_URL` | `spring.datasource.url` | JDBC connection string | `jdbc:postgresql://db.prod:5432/eduerp` |
+| `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | DB user | `eduerp_app` |
+| `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | DB password (from secrets manager) | `${SECRET_DB_PASSWORD}` |
+| `SPRING_DATA_REDIS_HOST` | `spring.data.redis.host` | Redis host | `redis.prod` |
+| `SPRING_DATA_REDIS_PORT` | `spring.data.redis.port` | Redis port | `6379` |
+| `IDENTITY_JWT_SECRET` | `identity.jwt-secret` | 256-bit HMAC secret key | `v3ry-l0ng-s3cr3t-k3y-m1n-32-byt3s!!` |
+| `IDENTITY_ACCESS_TOKEN_TTL` | `identity.access-token-ttl` | Duration | `15m` |
+| `IDENTITY_SECURE_COOKIES` | `identity.secure-cookies` | HTTPS-only cookies | `true` |
 
-```java
-@Testcontainers
-@SpringBootTest
-class IdentityControllerIT {
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
-}
+---
+
+## Database Migrations (Flyway)
+
+All schema changes are versioned using Flyway in `src/main/resources/db/migration`:
+
+```
+src/main/resources/db/migration/
+├── V1__init_core_and_identity.sql
+├── V2__create_access_control_tables.sql
+└── V3__create_organization_branches.sql
 ```
 
-`@ServiceConnection` (Spring Boot 3.1+) auto-wires `spring.datasource.url`/`username`/`password`/`driver-class-name` from the container in one annotation — prefer it over hand-registering individual properties with `@DynamicPropertySource`, which is easy to leave incomplete (username/password silently falling back to the image's defaults instead of being set deliberately).
+### Migration Rules:
+1. **Never edit an applied migration**: Changing an already executed SQL script breaks checksum validation and blocks application startup.
+2. **Backward-compatible changes**: Add columns with `NULL` or default values. Drop columns only after code that references them has been fully deployed.
+3. **Hibernate Validation**: Keep `spring.jpa.hibernate.ddl-auto=validate` in production so Hibernate validates that JPA entity mappings strictly match Flyway tables.
 
-## Actuator
+---
 
-`spring-boot-starter-actuator` + `spring-modulith-starter-insight` (bundles `spring-modulith-actuator` and `spring-modulith-observability` — check the Spring Modulith BOM for your version if the starter artifact id has changed) exposes the application module structure itself as an actuator endpoint (`/actuator/modulith`) alongside the usual `/actuator/health`, `/actuator/metrics` — useful for confirming in a running system that the boundaries `ModularityTests` verified at build time are the ones actually deployed.
+## HikariCP Connection Pool Sizing
+
+Default pool size (10 connections) is suitable for small workloads. For production:
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+```
+
+Formula for sizing connection pools:
+$$\text{pool size} = T_n \times (\text{core count}) + \text{effective disk spindle count}$$
+Do not oversize database pools — 20–30 connections per pod handle thousands of req/sec with HikariCP.
+
+---
+
+## Actuator Health Probes (Kubernetes)
+
+Configure Kubernetes liveness and readiness probes in `application.yml`:
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+```
+
+Kubernetes Pod spec:
+```yaml
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+```

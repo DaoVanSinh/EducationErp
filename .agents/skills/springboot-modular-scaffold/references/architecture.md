@@ -1,81 +1,152 @@
-# Architecture
+# Architecture Reference
 
-## Bootstrapping
+## Dependency Direction
 
-```bash
-curl https://start.spring.io/starter.zip \
-  -d type=maven-project -d language=java -d bootVersion=3.4.1 \
-  -d javaVersion=21 -d groupId=com.acme -d artifactId=shop -d packageName=com.acme.shop \
-  -d dependencies=web,data-jpa,postgresql,validation,actuator,modulith \
-  -o shop.zip && unzip shop.zip -d shop
+```
+controller -> usecase -> repository -> entity
+    |           |             |
+    |      rules, util   integrations/cache
+    |
+facade (calls usecases or internal services — the only cross-module entrypoint)
 ```
 
-Add `spring-boot-starter-data-redis`, `spring-modulith-starter-amqp` + `spring-boot-starter-amqp`, or an S3 SDK dependency only when the project needs them — see `caching-and-messaging.md`.
+Modules depend on `core/` mechanism and on `integrations/`. `core/` and `integrations/` depend on no domain module. Domain modules reach each other only sideways, through the base package's **Facade** (`<Module>Management.java`) and types exposed via `@NamedInterface`.
 
-`@Modulithic` goes on the application class once there's more than one module worth naming explicitly:
+```
+modules.identity (Facade) <------ modules.billing (UseCase)
+        |
+   (package-info with @NamedInterface("dto"))
+```
+
+`usecase` orchestrates business logic: it calls domain `rules`, coordinates `repository` persistence, delegates cache calls to `integrations/cache`, and publishes application events. A use case depends on Spring Data's `JpaRepository` interface directly (which is already the abstraction). The use case is the transaction boundary via `@Transactional`.
+
+Nothing points back up. Domain rules in `internal/rules/` import nothing from Spring, web, or repositories — they are pure Java. Repositories never import use cases or controllers. If an import needs to go upward, the logic is sitting in the wrong layer.
+
+No two packages within a module import each other circularly. If two classes seem to need each other, move the shared data structure down a tier (into constants, exceptions, or DTO records) or delegate via application events.
+
+---
+
+## Avoiding the "God Module" Trap (When and How to Split)
+
+A common architecture failure in modular monoliths is creating a **God Module** — most notoriously by shoving half the system into `identity`.
+
+When you see:
+- `identity` owning audit logs (`internal/audit/`)
+- `identity` owning mail dispatch (`internal/mail/`)
+- `identity` owning branch/organization management (`Branch`, `transferBranch`)
+- `identity` owning complex RBAC matrices (Roles, Permissions, PermissionGroups, GroupAssignments)
+- `identity` owning dashboard metric aggregations (`DashboardController`)
+
+**Stop immediately.** That is no longer an application module; it is a mini-monolith hiding behind a single `@ApplicationModule` annotation.
+
+### The Bounded Context Test:
+Ask: **What is the single core responsibility of this module?**
+- **`modules.identity`**: Authenticating identities and managing credentials.
+  - *Owns*: `Account`, password hashes, login/logout, refresh tokens, session revocation.
+  - *Does NOT own*: Audit log persistence, sending emails, branch CRUD, dashboard stats.
+
+### How to Split the God Module:
+
+```
+src/main/java/com/eduerp/modules/
+├── identity/          # ONLY accounts, credentials, auth sessions, profile
+│   ├── IdentityManagement.java
+│   ├── internal/model/Account.java
+│   └── usecase/ (Login, Logout, Register, ResetPassword)
+│
+├── access/            # RBAC: roles, permissions, permission groups, assignments
+│   ├── AccessManagement.java
+│   ├── internal/model/ (Role, Permission, RolePermission, AccountRole)
+│   └── usecase/ (AssignRole, CreateRole, ComputeEffectivePermissions)
+│
+├── organization/      # Branches, departments, campus hierarchy
+│   ├── OrganizationManagement.java
+│   ├── internal/model/ (Branch, Department)
+│   └── usecase/ (CreateBranch, UpdateBranch, TransferAccountBranch)
+│
+├── audit/             # Audit trail, event history
+│   ├── internal/listener/ (Listens to IdentityEvents, AccessEvents via @ApplicationModuleListener)
+│   ├── internal/model/AuditLog.java
+│   └── usecase/QueryAuditLogs.java
+│
+└── dashboard/         # Aggregated read-models & executive statistics
+    └── web/DashboardController.java (queries Facades of other modules)
+```
+
+### Communication between Split Modules:
+1. **Asynchronous reactions via Events**:
+   - `identity` registers an account and publishes `IdentityEvents.AccountRegistered(id, email, branchId)`.
+   - `audit` module listens with `@ApplicationModuleListener` and writes an audit row.
+   - `mail` integration listens with `@ApplicationModuleListener` and sends a welcome email.
+   - `identity` has **zero imports** of `audit` or `mail`!
+2. **Synchronous checks via Facade**:
+   - When `identity` needs to know if a user has permission to log in or perform an admin action, it queries `AccessManagement.getEffectivePermissions(accountId)`.
+   - `identity.Account` stores `UUID branchId`, but never imports `Branch` entity or `BranchRepository`. When validating a branch during registration, it calls `OrganizationManagement.existsBranch(branchId)`.
+
+---
+
+## Intra-Module Package Tiers
+
+Classes inside one domain module form strict tiers. A class only imports from a class in an earlier tier; never a sibling in the same tier, never anything later.
+
+| Tier | Package / Class | May import (same module) | Why |
+|---|---|---|---|
+| **0** | `<Module>Constants.java`, `<Module>Properties.java` | Nothing from this module | The vocabulary, enums, limits, and settings everything else is written in terms of. |
+| **1** | `<Module>Exception.java`, `dto/**`, `internal/model/**`, `<Module>Events.java` | Tier 0 | Data shapes, JPA entities, sealed exceptions, and event records defined in terms of that vocabulary; no decisions. |
+| **2** | `internal/rules/**`, `internal/util/**` | Tier 0–1 | Business decisions and pure data transforms; no I/O, no database, no HTTP. |
+| **3** | `internal/repository/**` | Tier 0–2 | Persistence ports and queries, built from the JPA models and shapes above it. |
+| **4** | `usecase/**` | Tier 0–3 | Orchestration — the only place Tier 2 (rules) and Tier 3 (repository) meet. |
+| **5** | `web/**` | Tier 0–1 directly, Tier 4 via constructor injection | HTTP translation only (controllers, filters, cookies). Never imports repositories or internal rules directly. |
+| **6** | `<Module>Management.java` (Facade in base package) | Tier 0–4 | The facade that other modules see. Orchestrates use cases or internal query services. |
+
+---
+
+## Spring Modulith 1.3 Architecture & Detection Strategies
+
+Spring Modulith derives modules from package structure. In Spring Boot 3.4 and Java 21, the recommended configuration uses **explicit module detection**:
+
+```yaml
+# application.yml
+spring:
+  modulith:
+    detection-strategy: explicitly-annotated
+```
+
+### Why `explicitly-annotated` is mandatory for grouped domains
+
+By default, Spring Modulith treats each *direct* sub-package of the main application package as a module. If your domains are organized under `com.acme.shop.modules.<domain>`, the default strategy treats `modules` as a single giant module. All domain boundaries collapse, their `internal/` packages become mutually visible, and `ApplicationModules.verify()` passes while providing zero real enforcement!
+
+Setting `detection-strategy: explicitly-annotated` ensures that only packages annotated with `@ApplicationModule` in their `package-info.java` are recognized as modules, regardless of nesting depth (`com.acme.shop.modules.identity`, `com.acme.shop.integrations.cache`).
 
 ```java
-@Modulithic(systemName = "Shop", sharedModules = {"shared"})
-@SpringBootApplication
-public class ShopApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ShopApplication.class, args);
-    }
-}
+// src/main/java/com/acme/shop/modules/identity/package-info.java
+@org.springframework.modulith.ApplicationModule(
+    displayName = "Identity & Access",
+    allowedDependencies = {"integrations::cache", "shared"}
+)
+package com.acme.shop.modules.identity;
 ```
 
-## Adding a module
+---
 
-There's no generator script — a module is small enough to hand-write correctly once the rules are clear, and generating Java from a template tends to fight the IDE. Steps, in order:
+## Modularity Verification in CI
 
-1. Create the package: `com.acme.shop.<module>`.
-2. Add the entity (`@Entity`), its repository (`interface <X>Repository extends JpaRepository<X, ID>`), and a Flyway/Liquibase migration for its table — see `layer-examples.md`.
-3. Add `<Module>Constants` (enums, error codes, limits — one class, rule #10) if the module has any yet. Add `<Module>Properties` with `@ConfigurationProperties(prefix = "<module>")` only once the module actually has its own settings — most new modules don't need one on day one.
-4. Add domain exceptions extending `core.exception.AppException` only for failure modes the module actually has (a bare create/read use case with no real failure beyond Bean Validation needs none yet) — add them when the first real one shows up, not speculatively.
-5. Add `<Module>Rules` only once there's an actual decision to encode (a `boolean can...()`/`validate...()` that isn't just field validation) — see `placement.md` for the line between a rule and a plain transform. Skip it if the module is CRUD-shaped so far.
-6. Write the use case(s) under `<module>/usecase/` — one class, one **public** `@Transactional` method (proxy-based AOP requires public visibility — see `layer-examples.md`'s note on this), constructor-injected repository.
-7. Add the facade — a single public class (commonly named `<Module>Management`) in the module's *base* package that is the *only* type other modules are allowed to reference. Everything else either lives under `<module>.internal`/`<module>.usecase` or, in a module with no sub-packages, is simply not `public`. If the facade's methods take or return a DTO from a sub-package (e.g. `<module>.dto`), expose that sub-package with `@NamedInterface` — otherwise `ApplicationModules.verify()` fails on a type the facade itself requires callers to reference.
-8. Add the controller, thin, delegating to the use case.
-9. Run `ModularityTests` — it will fail loudly if step 7's `@NamedInterface` step was skipped and a DTO the facade exposes leaked in from a hidden sub-package, or if something non-facade leaked into another module's imports.
-
-## Module boundaries and verification
-
-Spring Modulith derives modules from package structure with no annotation required, in two shapes:
-
-**Simple module** (no sub-packages): every `public` type is the API, every package-private type is internal.
-
-```
-identity/
-├── IdentityManagement.java   public → API
-└── IdentityInternalCache.java (package-private) → hidden
-```
-
-**Advanced module** (has sub-packages): the base package is the API, every sub-package is internal by default.
-
-```
-identity/                     ← API package, e.g. IdentityManagement.java
-identity/internal/            ← hidden from every other module
-```
-
-To deliberately expose one extra package (a webhook payload contract, an SPI another bounded context needs), annotate its `package-info.java`:
+Every project MUST include `ModularityTests.java` in `src/test/java`:
 
 ```java
-@org.springframework.modulith.NamedInterface("spi")
-package com.acme.shop.identity.spi;
-```
+package com.eduerp;
 
-and reference it from the dependent module's own `package-info.java`:
+import static org.assertj.core.api.Assertions.assertThat;
 
-```java
-@org.springframework.modulith.ApplicationModule(allowedDependencies = "identity :: spi")
-package com.acme.shop.billing;
-```
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.docs.Documenter;
 
-Verify the whole arrangement in a plain JUnit test, checked into `src/test/java` and run in CI like any other test:
-
-```java
 class ModularityTests {
-    ApplicationModules modules = ApplicationModules.of(ShopApplication.class);
+
+    private final ApplicationModules modules = ApplicationModules.of(EduErpApplication.class);
 
     @Test
     void verifiesModularStructure() {
@@ -83,46 +154,64 @@ class ModularityTests {
     }
 
     @Test
+    void everyDomainAndIntegrationPackageIsADetectedModule() {
+        var detected = modules.stream().map(ApplicationModule::getName).collect(Collectors.toSet());
+        assertThat(detected).containsExactlyInAnyOrder(
+            "core",
+            "modules.identity",
+            "modules.access",
+            "modules.organization",
+            "modules.audit",
+            "integrations.cache"
+        );
+    }
+
+    @Test
     void writesDocumentation() {
-        new Documenter(modules).writeDocumentation(); // module canvas + C4 diagrams, optional
+        new Documenter(modules).writeDocumentation();
     }
 }
 ```
 
-A failing `verify()` names the exact offending dependency — treat it the same way a failed `lint-imports`/`check_module_boundaries.py` run is treated in `fastapi-modular-scaffold`: fix the boundary, don't suppress the check.
+---
 
-For stricter enforcement *within* a module (e.g. "adapters may call the port, never the domain rules directly"), layer `spring-modulith-module-archunit` on top rather than inventing bespoke ArchUnit rules from scratch.
+## Transaction Boundaries
 
-## Correlation-id logging
-
-Bind a request id (this hop) and a correlation id (the whole flow) to every log line the way `fastapi-modular-scaffold`'s `RequestIdMiddleware` does, using a `OncePerRequestFilter` and SLF4J's MDC:
+The Use Case is the transaction boundary. Annotate the single public `execute` method with `@Transactional`:
 
 ```java
-public class RequestCorrelationFilter extends OncePerRequestFilter {
-    @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
-            throws ServletException, IOException {
-        var requestId = UUID.randomUUID().toString();
-        var correlationId = Optional.ofNullable(req.getHeader("X-Correlation-ID")).orElse(requestId);
-        try (var ignored1 = MDC.putCloseable("requestId", requestId);
-             var ignored2 = MDC.putCloseable("correlationId", correlationId)) {
-            res.setHeader("X-Request-ID", requestId);
-            res.setHeader("X-Correlation-ID", correlationId);
-            chain.doFilter(req, res);
+package com.eduerp.modules.identity.usecase;
+
+@Service
+public class RegisterAccount {
+
+    private final AccountRepository repository;
+    private final IdentityRules rules;
+    private final ApplicationEventPublisher events;
+
+    public RegisterAccount(AccountRepository repository, IdentityRules rules, ApplicationEventPublisher events) {
+        this.repository = repository;
+        this.rules = rules;
+        this.events = events;
+    }
+
+    @Transactional
+    public AccountSummaryResponse execute(RegisterAccountRequest request) {
+        if (repository.existsByEmail(request.email())) {
+            throw new EmailAlreadyExistsException(request.email());
         }
+
+        Account account = new Account(request.email(), request.password());
+        repository.save(account);
+
+        events.publishEvent(new IdentityEvents.AccountRegistered(account.getId(), account.getEmail()));
+        return AccountSummaryResponse.from(account);
     }
 }
 ```
 
-Pair it with `logstash-logback-encoder` for JSON logs in staging/prod (plain pattern layout in dev) and add `micrometer-tracing-bridge-otel` if the project also wants `traceId`/`spanId` merged into every line — that dependency alone is enough; Spring Boot wires the MDC bridge automatically, no manual OTel merge code needed (a place this is simpler than the FastAPI equivalent). Redact `password`/`token`/`authorization`/`secret`/`apiKey`/`creditCard` fields the same way — a Logback `TurboFilter` or a Jackson mixin on the log encoder, not scattered `if` checks at each call site.
-
-## Authorization
-
-Roles/permissions are owned by whichever module is their source of truth (usually `identity`), exposed as an enum in its `Constants` class, never hardcoded as string literals at call sites. Enforce with Spring Security method security:
-
-```java
-@PreAuthorize("hasAuthority('ORDER_CANCEL')")
-public void execute(CancelOrderCommand command) { ... }
-```
-
-on the use-case method, not the controller — the same "push the check to the layer that owns the decision" instinct as `fastapi-modular-scaffold`'s `rules.py`. Org/department-scoped access (not just a flat role) is a rule in `<module>Rules`, evaluated inside the use case with the caller's `Authentication` passed in explicitly — don't reach for `SecurityContextHolder` inside a repository or rules class, since that couples pure decision logic to the servlet request thread.
+### Spring AOP Visibility Rule
+Spring's default proxy-based AOP only wraps **`public`** methods in a transaction. A `protected` or package-private method annotated with `@Transactional` will silently **NOT** execute in a transaction! Always ensure:
+1. The use case class is `public`.
+2. The `execute(...)` method is `public`.
+3. Calls from controllers or facades invoke the public method through the injected Spring bean proxy.
