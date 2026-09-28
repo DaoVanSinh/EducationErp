@@ -4,9 +4,9 @@ spring:
   modulith:
     detection-strategy: explicitly-annotated
   datasource:
-    url: jdbc:postgresql://localhost:5432/eduerp
-    username: ${DB_USERNAME:eduerp}
-    password: ${DB_PASSWORD:eduerp}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:eduerp}
+    username: ${DB_USERNAME:agent}
+    password: ${DB_PASSWORD:localdev}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,10 +18,16 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
   mail:
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:1025}
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   thymeleaf:
     prefix: "classpath:/"
     check-template-location: false
