@@ -67,3 +67,5 @@ next-env.d.ts
 
 # Isolated git worktrees for subagent-driven development
 /.worktrees/
+*/.venv
+*/node_modules
