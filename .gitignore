@@ -69,3 +69,6 @@ next-env.d.ts
 /.worktrees/
 */.venv
 */node_modules
+
+### Maven ###
+target/
