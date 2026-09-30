@@ -1,5 +1,5 @@
 import { RequirePermission } from "@/entities/permission";
-import { useDashboardStats } from "@/modules/dashboard/api/use-dashboard-stats";
+import { useDashboardController } from "@/modules/dashboard/hooks/use-dashboard-controller";
 import { DASHBOARD_STAT_CARDS } from "@/modules/dashboard/model/dashboard-schema";
 import { RecentLogins } from "@/modules/dashboard/ui/recent-logins";
 import { RoleBreakdown } from "@/modules/dashboard/ui/role-breakdown";
@@ -20,16 +20,16 @@ const STAT_ICON: Record<string, ReactNode> = {
 };
 
 export function DashboardPage() {
-  const stats = useDashboardStats();
+  const { isPending, isError, error, data } = useDashboardController();
 
   return (
     <RequirePermission {...ACCESS_RULE.readDashboard}>
       <div className="flex flex-col gap-6">
         <PageHeader title="Tổng quan" description="Tình hình tài khoản và truy cập của toàn hệ thống." />
 
-        {stats.isError ? <ErrorNotice error={stats.error} /> : null}
+        {isError ? <ErrorNotice error={error} /> : null}
 
-        {stats.isPending ? (
+        {isPending ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {DASHBOARD_STAT_CARDS.map((card) => (
               <Skeleton key={card.key} className="h-32" />
@@ -37,7 +37,7 @@ export function DashboardPage() {
           </div>
         ) : null}
 
-        {stats.data ? (
+        {data ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {DASHBOARD_STAT_CARDS.map((card, index) => (
@@ -46,15 +46,15 @@ export function DashboardPage() {
                   index={index}
                   label={card.label}
                   hint={card.hint}
-                  value={stats.data[card.key]}
+                  value={data[card.key]}
                   icon={STAT_ICON[card.key]}
                 />
               ))}
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <RoleBreakdown rows={stats.data.accountsByRole} totalAccounts={stats.data.totalAccounts} />
-              <RecentLogins rows={stats.data.recentLogins} />
+              <RoleBreakdown rows={data.accountsByRole} totalAccounts={data.totalAccounts} />
+              <RecentLogins rows={data.recentLogins} />
             </div>
           </>
         ) : null}

@@ -35,6 +35,13 @@ class ApiClient {
   private readonly sessionExpiredListeners = new Set<SessionExpiredListener>();
   /** Nhiều request 401 cùng lúc chỉ được tạo một lần refresh, nếu không token sẽ bị quay vòng chồng nhau. */
   private refreshInFlight: Promise<boolean> | null = null;
+  /**
+   * Hai lần gọi trùng URL cùng lúc (StrictMode double-mount, hai component cùng cần một dữ liệu...)
+   * chỉ được gửi một request thật. Không gộp thì hai lần 401 độc lập cùng bắn
+   * {@link onSessionExpired}, mỗi lần đều dọn cache của chính request kia đang chạy dở — loading treo
+   * vĩnh viễn vì observer thấy query của mình liên tục bị xoá rồi tạo lại.
+   */
+  private readonly inFlightGets = new Map<string, Promise<unknown>>();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -49,7 +56,18 @@ class ApiClient {
   }
 
   async get<T>(path: string, query?: QueryParams, signal?: AbortSignal): Promise<T> {
-    return this.request<T>(path, { method: HTTP_METHOD.get, query, signal });
+    const key = this.url(path, query);
+    const existing = this.inFlightGets.get(key);
+    if (existing) {
+      return existing as Promise<T>;
+    }
+    // signal chỉ thuộc về caller ĐẦU TIÊN dựng request này — caller sau trùng URL chỉ chờ chung kết
+    // quả, không được phép huỷ ngang request mà caller đầu (hoặc caller khác) vẫn đang cần.
+    const inFlight = this.request<T>(path, { method: HTTP_METHOD.get, query, signal }).finally(() => {
+      this.inFlightGets.delete(key);
+    });
+    this.inFlightGets.set(key, inFlight);
+    return inFlight;
   }
 
   async post<T>(path: string, body?: unknown): Promise<T> {

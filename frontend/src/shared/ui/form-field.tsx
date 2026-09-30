@@ -12,7 +12,7 @@ export interface FormFieldProps {
 export function FormField({ label, htmlFor, hint, error, children }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-xs font-medium tracking-wide text-mist-400 uppercase">
+      <label htmlFor={htmlFor} className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
         {label}
       </label>
       {children}
@@ -20,13 +20,13 @@ export function FormField({ label, htmlFor, hint, error, children }: FormFieldPr
         <m.p
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xs text-rose-400"
+          className="text-xs font-medium text-rose-600"
           role="alert"
         >
           {error}
         </m.p>
       ) : hint ? (
-        <p className="text-xs text-mist-500">{hint}</p>
+        <p className="text-xs text-slate-500">{hint}</p>
       ) : null}
     </div>
   );

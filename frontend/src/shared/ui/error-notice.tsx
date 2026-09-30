@@ -23,13 +23,13 @@ export function ErrorNotice({ error, action }: ErrorNoticeProps) {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       role="alert"
-      className="flex items-start gap-3 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3"
+      className="flex items-start gap-3 rounded-2xl border border-rose-200/90 bg-rose-50/90 px-4 py-3 shadow-xs"
     >
-      <TriangleAlert size={18} className="mt-0.5 shrink-0 text-rose-400" aria-hidden />
-      <div className="flex-1 text-sm text-mist-200">
-        <p>{ApiError.messageOf(error)}</p>
+      <TriangleAlert size={18} className="mt-0.5 shrink-0 text-rose-500" aria-hidden />
+      <div className="flex-1 text-sm text-rose-900">
+        <p className="font-medium">{ApiError.messageOf(error)}</p>
         {issues.length > 0 ? (
-          <ul className="mt-1 list-inside list-disc text-xs text-mist-400">
+          <ul className="mt-1 list-inside list-disc text-xs text-rose-700">
             {issues.map((issue) => (
               <li key={issue.field}>{issue.message}</li>
             ))}

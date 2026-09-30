@@ -1,10 +1,9 @@
-import { useAccounts, type AccountSummary } from "@/entities/account";
 import { RequirePermission } from "@/entities/permission";
+import { ACCOUNTS_DIALOG, useAccountsPageController } from "@/modules/rbac/hooks/use-accounts-page-controller";
 import { AccountsTable } from "@/modules/rbac/ui/accounts-table";
 import { AssignGroupDialog } from "@/modules/rbac/ui/assign-group-dialog";
 import { TransferBranchDialog } from "@/modules/rbac/ui/transfer-branch-dialog";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
-import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { GlassPanel } from "@/shared/ui/glass-panel";
@@ -12,28 +11,16 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Pagination } from "@/shared/ui/pagination";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Users } from "lucide-react";
-import { useState } from "react";
-
-/** Hộp thoại đang mở, nếu có. Một biến trạng thái thay vì hai cờ boolean rời nhau. */
-const DIALOG = {
-  none: "NONE",
-  assignGroup: "ASSIGN_GROUP",
-  transferBranch: "TRANSFER_BRANCH",
-} as const;
-
-type DialogKind = (typeof DIALOG)[keyof typeof DIALOG];
 
 export function AccountsPage() {
-  const [page, setPage] = useState(0);
-  const [dialog, setDialog] = useState<DialogKind>(DIALOG.none);
-  const [selected, setSelected] = useState<AccountSummary | null>(null);
-  const accounts = useAccounts(page, DEFAULT_PAGE_SIZE);
-
-  const openDialog = (kind: DialogKind, account: AccountSummary) => {
-    setSelected(account);
-    setDialog(kind);
-  };
-  const closeDialog = () => setDialog(DIALOG.none);
+  const {
+    setPage,
+    dialog,
+    selected,
+    accounts,
+    openDialog,
+    closeDialog,
+  } = useAccountsPageController();
 
   return (
     <RequirePermission {...ACCESS_RULE.readAccount}>
@@ -65,8 +52,8 @@ export function AccountsPage() {
               <>
                 <AccountsTable
                   rows={accounts.data.items}
-                  onAssignGroup={(account) => openDialog(DIALOG.assignGroup, account)}
-                  onTransferBranch={(account) => openDialog(DIALOG.transferBranch, account)}
+                  onAssignGroup={(account) => openDialog(ACCOUNTS_DIALOG.assignGroup, account)}
+                  onTransferBranch={(account) => openDialog(ACCOUNTS_DIALOG.transferBranch, account)}
                 />
                 <Pagination
                   page={accounts.data.page}
@@ -85,13 +72,13 @@ export function AccountsPage() {
             <AssignGroupDialog
               key={`assign-${selected.id}`}
               account={selected}
-              open={dialog === DIALOG.assignGroup}
+              open={dialog === ACCOUNTS_DIALOG.assignGroup}
               onClose={closeDialog}
             />
             <TransferBranchDialog
               key={`branch-${selected.id}`}
               account={selected}
-              open={dialog === DIALOG.transferBranch}
+              open={dialog === ACCOUNTS_DIALOG.transferBranch}
               onClose={closeDialog}
             />
           </>

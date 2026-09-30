@@ -1,5 +1,6 @@
 import { cx } from "@/shared/lib/class-names";
-import { Check } from "lucide-react";
+import { Square, SquareCheck } from "lucide";
+import { MorphIcon } from "morphicons/react";
 import type { ReactNode } from "react";
 
 export interface CheckableRowProps {
@@ -16,7 +17,9 @@ export function CheckableRow({ checked, onToggle, label, description, trailing }
     <div
       className={cx(
         "flex items-center gap-3 rounded-2xl border px-3 py-2 transition-colors",
-        checked ? "border-aqua-400/40 bg-aqua-500/10" : "border-white/10 hover:border-white/20",
+        checked
+          ? "border-orange-300 bg-orange-50/80"
+          : "border-slate-200/80 hover:border-orange-200/70 bg-white/60",
       )}
     >
       <button
@@ -28,15 +31,22 @@ export function CheckableRow({ checked, onToggle, label, description, trailing }
       >
         <span
           className={cx(
-            "flex size-5 shrink-0 items-center justify-center rounded-md border",
-            checked ? "border-aqua-400 bg-aqua-400/80 text-ink-950" : "border-white/25",
+            "flex size-6 shrink-0 items-center justify-center rounded-lg transition-colors",
+            checked ? "text-orange-600" : "text-slate-400 hover:text-slate-600",
           )}
         >
-          {checked ? <Check size={14} aria-hidden /> : null}
+          <MorphIcon
+            icon={checked ? SquareCheck : Square}
+            spring="snappy"
+            reducedMotion="user"
+            size={18}
+            strokeWidth={checked ? 2.2 : 1.75}
+            label={checked ? "Đã chọn" : "Chưa chọn"}
+          />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm text-mist-200">{label}</span>
-          {description ? <span className="block truncate text-xs text-mist-500">{description}</span> : null}
+          <span className="block truncate text-sm font-medium text-slate-800">{label}</span>
+          {description ? <span className="block truncate text-xs text-slate-500">{description}</span> : null}
         </span>
       </button>
       {trailing}

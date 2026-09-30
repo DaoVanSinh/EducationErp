@@ -3,4 +3,7 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
+
+# File thật (gitignored) — .env.example là bản mẫu được commit. Gốc .gitignore chỉ có .env*.local,
+# không khớp .env trần nên phải khai lại ở đây.
 .env

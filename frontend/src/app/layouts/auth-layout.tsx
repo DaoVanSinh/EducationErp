@@ -15,15 +15,18 @@ export function AuthLayout() {
         transition={MOTION_SPRING}
         className="w-full max-w-md"
       >
-        <div className="mb-6 flex items-center justify-center gap-2 text-mist-200">
-          <GraduationCap size={22} className="text-aqua-300" aria-hidden />
-          <span className="text-lg font-semibold tracking-tight">EduERP</span>
+        <div className="mb-6 flex flex-col items-center justify-center gap-2">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-md shadow-orange-500/25">
+            <GraduationCap size={26} aria-hidden />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-slate-900">EduERP</span>
+          <span className="text-xs font-medium text-slate-500">Hệ thống quản lý đào tạo trực tuyến</span>
         </div>
-        <GlassPanel animate={false} className="glass-sheen p-7">
+        <GlassPanel animate={false} className="glass-sheen p-7 shadow-lg">
           <Outlet />
         </GlassPanel>
-        <p className="mt-6 text-center text-xs text-mist-600">
-          Hệ thống quản lý đào tạo · Phân hệ quản trị người dùng
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Hệ thống quản lý đào tạo
         </p>
       </m.div>
     </div>

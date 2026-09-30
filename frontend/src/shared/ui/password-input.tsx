@@ -17,7 +17,7 @@ export function PasswordInput({ invalid, ...rest }: Omit<GlassInputProps, "type"
         type="button"
         onClick={() => setRevealed((previous) => !previous)}
         aria-label={revealed ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-mist-400 transition-colors hover:text-mist-100"
+        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-orange-500"
       >
         <MorphToggleIcon
           inactive={Eye}

@@ -5,10 +5,10 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 const VARIANT_CLASS = {
   primary:
-    "bg-gradient-to-br from-violet-500/90 to-aqua-500/80 text-mist-100 border-white/20 hover:from-violet-400 hover:to-aqua-400",
-  secondary: "glass text-mist-100 hover:border-white/25",
-  ghost: "border-transparent text-mist-300 hover:text-mist-100 hover:bg-white/5",
-  danger: "bg-rose-400/20 text-rose-400 border-rose-400/40 hover:bg-rose-400/30",
+    "bg-gradient-to-r from-[#FF8C42] via-[#FF755A] to-[#FF5E62] text-white border-transparent hover:from-[#FF7828] hover:to-[#FF4A4E] shadow-sm shadow-orange-500/25 active:shadow-none",
+  secondary: "glass text-slate-800 border-white/80 hover:bg-white/95 hover:border-orange-300/50 shadow-xs",
+  ghost: "border-transparent text-slate-600 hover:text-orange-600 hover:bg-orange-50/60",
+  danger: "bg-rose-50 text-rose-600 border-rose-200/80 hover:bg-rose-100/80",
 } as const;
 
 const SIZE_CLASS = {
@@ -53,7 +53,7 @@ export function GlassButton({
       whileTap={disabled === true || loading ? undefined : { scale: 0.98 }}
       className={cx(
         "inline-flex items-center justify-center gap-2 rounded-2xl border font-medium",
-        "transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+        "transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
         VARIANT_CLASS[variant],
         SIZE_CLASS[size],
         className,

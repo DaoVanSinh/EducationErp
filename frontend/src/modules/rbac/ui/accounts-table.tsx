@@ -13,26 +13,22 @@ export interface AccountsTableProps {
   readonly onTransferBranch: (account: AccountSummary) => void;
 }
 
-/**
- * Bảng ở màn hình rộng, danh sách thẻ ở màn hình hẹp - cùng một dữ liệu, dựng bằng grid nên không phải
- * viết hai lần phần nội dung.
- */
 export function AccountsTable({ rows, onAssignGroup, onTransferBranch }: AccountsTableProps) {
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col gap-2.5 min-w-0 w-full">
       {rows.map((account, index) => (
         <m.li
           key={account.id}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={staggerDelay(index)}
-          className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]"
+          className="glass grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto] min-w-0 w-full"
         >
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar fullName={account.fullName} size="sm" />
             <div className="min-w-0">
-              <p className="truncate text-sm text-mist-100">{account.fullName}</p>
-              <p className="truncate text-xs text-mist-500">{account.email}</p>
+              <p className="truncate text-sm font-semibold text-slate-800">{account.fullName}</p>
+              <p className="truncate text-xs text-slate-500">{account.email}</p>
             </div>
           </div>
 
@@ -41,11 +37,11 @@ export function AccountsTable({ rows, onAssignGroup, onTransferBranch }: Account
             <Badge tone="accent">{account.roleCode}</Badge>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="truncate text-xs text-mist-400">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="truncate text-xs font-medium text-slate-700">
               {account.branchName ?? "Chưa thuộc chi nhánh nào"}
             </p>
-            <p className="truncate text-xs text-mist-500">
+            <p className="truncate text-xs text-slate-400">
               {account.groups.length === 0
                 ? "Chưa vào nhóm nào"
                 : account.groups.map((group) => group.name).join(", ")}

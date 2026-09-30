@@ -1,8 +1,5 @@
 import type { AccountSummary } from "@/entities/account";
-import { useRbacCatalog } from "@/entities/rbac-catalog";
-import { useAssignGroup } from "@/modules/rbac/api/use-rbac-mutations";
-import { assignGroupFormSchema } from "@/modules/rbac/model/rbac-forms";
-import { useZodForm } from "@/shared/lib/use-zod-form";
+import { useAssignGroupController } from "@/modules/rbac/hooks/use-assign-group-controller";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -16,19 +13,15 @@ export interface AssignGroupDialogProps {
 }
 
 export function AssignGroupDialog({ account, open, onClose }: AssignGroupDialogProps) {
-  const catalog = useRbacCatalog();
-  const assignGroup = useAssignGroup(account.id);
-  const joinedIds = new Set(account.groups.map((group) => group.id));
-  const available = (catalog.data?.groups ?? []).filter((group) => !joinedIds.has(group.id));
-
-  const form = useZodForm({
-    schema: assignGroupFormSchema,
-    initialValues: { groupId: "" },
-    onSubmit: async (values) => {
-      await assignGroup.mutateAsync(values.groupId);
-      onClose();
-    },
-  });
+  const {
+    values,
+    fieldErrors,
+    submitError,
+    isSubmitting,
+    available,
+    handleSubmit,
+    setGroupId,
+  } = useAssignGroupController({ account, onClose });
 
   return (
     <GlassModal
@@ -37,20 +30,19 @@ export function AssignGroupDialog({ account, open, onClose }: AssignGroupDialogP
       title="Thêm vào nhóm người dùng"
       description={`${account.fullName} · ${account.email}`}
     >
-      <form id="assign-group-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
-        {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+      <form id="assign-group-form" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        {submitError ? <ErrorNotice error={submitError} /> : null}
 
         <FormField
           label="Nhóm người dùng"
           htmlFor="assign-group-id"
-          hint="Quyền của nhóm có hiệu lực ngay sau khi lưu."
-          error={form.fieldErrors.groupId}
+          error={fieldErrors.groupId}
         >
           <GlassSelect
             id="assign-group-id"
-            value={form.values.groupId}
-            invalid={form.fieldErrors.groupId !== undefined}
-            onChange={(event) => form.setValue("groupId", event.target.value)}
+            value={values.groupId}
+            invalid={fieldErrors.groupId !== undefined}
+            onChange={(event) => setGroupId(event.target.value)}
           >
             <option value="">
               {available.length === 0 ? "Không còn nhóm nào để thêm" : "-- Chọn nhóm --"}
@@ -64,7 +56,7 @@ export function AssignGroupDialog({ account, open, onClose }: AssignGroupDialogP
         </FormField>
 
         {account.groups.length > 0 ? (
-          <p className="text-xs text-mist-500">
+          <p className="text-xs text-slate-500">
             Đang thuộc: {account.groups.map((group) => group.name).join(", ")}
           </p>
         ) : null}
@@ -77,7 +69,7 @@ export function AssignGroupDialog({ account, open, onClose }: AssignGroupDialogP
         <GlassButton
           type="submit"
           form="assign-group-form"
-          loading={form.isSubmitting}
+          loading={isSubmitting}
           disabled={available.length === 0}
         >
           Thêm vào nhóm

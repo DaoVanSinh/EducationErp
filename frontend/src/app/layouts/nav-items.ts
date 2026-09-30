@@ -9,14 +9,33 @@ export interface NavItem {
   readonly requirement?: PermissionRequirement;
 }
 
-/**
- * Thanh điều hướng lọc theo quyền, dùng đúng yêu cầu mà backend kiểm tra - để không có mục nào dẫn
- * người dùng tới một trang chỉ để đọc "bạn không có quyền".
- */
-export const NAV_ITEMS: readonly NavItem[] = [
-  { path: APP_ROUTE.dashboard, label: "Tổng quan", requirement: ACCESS_RULE.readDashboard },
-  { path: APP_ROUTE.accounts, label: "Tài khoản", requirement: ACCESS_RULE.readAccount },
-  { path: APP_ROUTE.branches, label: "Chi nhánh", requirement: ACCESS_RULE.readBranch },
-  { path: APP_ROUTE.roles, label: "Vai trò và quyền", requirement: ACCESS_RULE.readRole },
-  { path: APP_ROUTE.profile, label: "Hồ sơ của tôi" },
+export interface NavSection {
+  readonly title: string;
+  readonly items: readonly NavItem[];
+}
+
+export const NAV_SECTIONS: readonly NavSection[] = [
+  {
+    title: "Điều hành & Nghiệp vụ",
+    items: [
+      { path: APP_ROUTE.dashboard, label: "Tổng quan", requirement: ACCESS_RULE.readDashboard },
+      { path: APP_ROUTE.accounts, label: "Tài khoản", requirement: ACCESS_RULE.readAccount },
+      { path: APP_ROUTE.branches, label: "Chi nhánh", requirement: ACCESS_RULE.readBranch },
+    ],
+  },
+  {
+    title: "Bảo mật & Phân quyền",
+    items: [
+      { path: APP_ROUTE.roles, label: "Vai trò và quyền", requirement: ACCESS_RULE.readRole },
+    ],
+  },
+  {
+    title: "Cá nhân",
+    items: [
+      { path: APP_ROUTE.profile, label: "Hồ sơ của tôi" },
+    ],
+  },
 ];
+
+/** Giữ tương thích ngược với mọi nơi dùng NAV_ITEMS */
+export const NAV_ITEMS: readonly NavItem[] = NAV_SECTIONS.flatMap((section) => section.items);

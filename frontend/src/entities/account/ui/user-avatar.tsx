@@ -15,7 +15,7 @@ const SIZE_CLASS = {
 
 export function UserAvatar({ fullName, avatarUrl, size = "md" }: UserAvatarProps) {
   const classes = cx(
-    "inline-flex shrink-0 items-center justify-center rounded-full border border-white/15 font-semibold",
+    "inline-flex shrink-0 items-center justify-center rounded-full border border-white/80 font-semibold shadow-xs",
     SIZE_CLASS[size],
   );
 
@@ -24,7 +24,13 @@ export function UserAvatar({ fullName, avatarUrl, size = "md" }: UserAvatarProps
   }
 
   return (
-    <span className={cx(classes, "bg-gradient-to-br from-violet-500/70 to-aqua-500/60 text-mist-100")} aria-hidden>
+    <span
+      className={cx(
+        classes,
+        "bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-xs shadow-orange-500/20",
+      )}
+      aria-hidden
+    >
       {formatter.initials(fullName)}
     </span>
   );

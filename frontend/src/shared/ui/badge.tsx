@@ -2,11 +2,11 @@ import { cx } from "@/shared/lib/class-names";
 import type { ReactNode } from "react";
 
 const TONE_CLASS = {
-  neutral: "bg-white/8 text-mist-300 border-white/12",
-  positive: "bg-aqua-500/15 text-aqua-300 border-aqua-400/30",
-  warning: "bg-amber-300/15 text-amber-300 border-amber-300/30",
-  danger: "bg-rose-400/15 text-rose-400 border-rose-400/30",
-  accent: "bg-violet-500/15 text-violet-400 border-violet-400/30",
+  neutral: "bg-slate-100/90 text-slate-700 border-slate-200/90",
+  positive: "bg-emerald-50 text-emerald-700 border-emerald-200/90",
+  warning: "bg-amber-50 text-amber-700 border-amber-200/90",
+  danger: "bg-rose-50 text-rose-600 border-rose-200/90",
+  accent: "bg-orange-50 text-orange-600 border-orange-200/90",
 } as const;
 
 export interface BadgeProps {

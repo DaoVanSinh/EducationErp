@@ -1,153 +1,185 @@
-import { permissionLabel, useRbacCatalog, type PermissionOption } from "@/entities/rbac-catalog";
-import { useCreatePermissionGroup } from "@/modules/rbac/api/use-rbac-mutations";
-import { createPermissionGroupFormSchema } from "@/modules/rbac/model/rbac-forms";
+import { permissionLabel } from "@/entities/rbac-catalog";
 import {
-  PERMISSION_SCOPE,
-  PERMISSION_SCOPE_LABEL,
-  type PermissionScope,
-} from "@/shared/constants/permissions";
-import { useZodForm } from "@/shared/lib/use-zod-form";
-import { CheckableRow } from "@/shared/ui/checkable-row";
+  RESOURCE_FILTER_ALL,
+  useCreatePermissionGroupController,
+} from "@/modules/rbac/hooks/use-create-permission-group-controller";
+import { PermissionScopeRow } from "@/modules/rbac/ui/groups/permission-scope-row";
+import { RESOURCE_LABEL } from "@/shared/constants/permissions";
+import { cx } from "@/shared/lib/class-names";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
-import { GlassSelect } from "@/shared/ui/glass-select";
-
-const SCOPE_OPTIONS: readonly PermissionScope[] = [
-  PERMISSION_SCOPE.personal,
-  PERMISSION_SCOPE.branch,
-  PERMISSION_SCOPE.organization,
-];
+import { KeyRound, Search } from "lucide-react";
 
 export interface CreatePermissionGroupDialogProps {
   readonly open: boolean;
   readonly onClose: () => void;
 }
 
-/**
- * Mỗi quyền được chọn phải kèm một scope: cùng một quyền ACCOUNT:UPDATE ở scope PERSONAL là "tự sửa
- * hồ sơ mình", còn ở ORGANIZATION là "sửa được mọi người". Vì vậy không có ô chọn nào không có scope.
- */
 export function CreatePermissionGroupDialog({ open, onClose }: CreatePermissionGroupDialogProps) {
-  const catalog = useRbacCatalog();
-  const createPermissionGroup = useCreatePermissionGroup();
-
-  const form = useZodForm({
-    schema: createPermissionGroupFormSchema,
-    initialValues: { name: "", description: "", items: [] },
-    onSubmit: async (values) => {
-      await createPermissionGroup.mutateAsync(values);
-      form.reset();
-      onClose();
-    },
-  });
-
-  const items = form.values.items;
-  const scopeOf = (permissionId: string): PermissionScope | undefined =>
-    items.find((item) => item.permissionId === permissionId)?.scope;
-
-  const togglePermission = (permission: PermissionOption) => {
-    form.setValue(
-      "items",
-      scopeOf(permission.id) === undefined
-        ? [...items, { permissionId: permission.id, scope: PERMISSION_SCOPE.branch }]
-        : items.filter((item) => item.permissionId !== permission.id),
-    );
-  };
-
-  const changeScope = (permissionId: string, scope: PermissionScope) => {
-    form.setValue(
-      "items",
-      items.map((item) => (item.permissionId === permissionId ? { ...item, scope } : item)),
-    );
-  };
+  const {
+    values,
+    fieldErrors,
+    submitError,
+    isSubmitting,
+    filteredPermissions,
+    resources,
+    searchQuery,
+    setSearchQuery,
+    selectedResource,
+    setSelectedResource,
+    items,
+    scopeOf,
+    togglePermission,
+    changeScope,
+    handleSubmit,
+    setName,
+    setDescription,
+  } = useCreatePermissionGroupController({ onClose });
 
   return (
     <GlassModal
       open={open}
       onClose={onClose}
       title="Tạo nhóm quyền"
-      description="Nhóm quyền là đơn vị được gán cho vai trò và nhóm người dùng."
-      className="max-w-2xl"
+      description="Gom các quyền hạn nghiệp vụ thành nhóm để gán linh hoạt cho vai trò và tài khoản."
+      icon={<KeyRound size={22} aria-hidden />}
+      className="max-w-3xl"
     >
       <form
         id="create-permission-group-form"
-        onSubmit={form.handleSubmit}
-        className="flex flex-col gap-4"
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-5"
         noValidate
       >
-        {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+        {submitError ? <ErrorNotice error={submitError} /> : null}
 
-        <FormField label="Tên nhóm quyền" htmlFor="permission-group-name" error={form.fieldErrors.name}>
-          <GlassInput
-            id="permission-group-name"
-            autoFocus
-            value={form.values.name}
-            invalid={form.fieldErrors.name !== undefined}
-            onChange={(event) => form.setValue("name", event.target.value)}
-          />
-        </FormField>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Tên nhóm quyền" htmlFor="permission-group-name" error={fieldErrors.name}>
+            <GlassInput
+              id="permission-group-name"
+              autoFocus
+              placeholder="Ví dụ: Quản lý học vụ, Kế toán..."
+              value={values.name}
+              invalid={fieldErrors.name !== undefined}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </FormField>
 
-        <FormField
-          label="Mô tả"
-          htmlFor="permission-group-description"
-          hint="Không bắt buộc. Một câu để người sau hiểu nhóm này dành cho ai."
-          error={form.fieldErrors.description}
-        >
-          <GlassInput
-            id="permission-group-description"
-            value={form.values.description}
-            onChange={(event) => form.setValue("description", event.target.value)}
-          />
-        </FormField>
+          <FormField
+            label="Mô tả"
+            htmlFor="permission-group-description"
+            hint="Mục đích và trách nhiệm của nhóm quyền."
+          >
+            <GlassInput
+              id="permission-group-description"
+              placeholder="Không bắt buộc..."
+              value={values.description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </FormField>
+        </div>
 
-        <FormField
-          label={`Quyền trong nhóm (${items.length})`}
-          htmlFor="permission-group-items"
-          error={form.fieldErrors.items}
-        >
-          <div id="permission-group-items" className="flex max-h-72 flex-col gap-2 overflow-y-auto pr-1">
-            {(catalog.data?.permissions ?? []).map((permission) => {
-              const scope = scopeOf(permission.id);
+        {/* Permission Selection Section */}
+        <div className="flex flex-col gap-3 rounded-3xl border border-slate-200/80 bg-slate-50/50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Danh sách quyền hạn
+              </span>
+              <span className="rounded-full bg-orange-100/80 px-2.5 py-0.5 text-xs font-bold text-orange-700">
+                Đã chọn {items.length} quyền
+              </span>
+            </div>
+
+            {/* Quick Search */}
+            <div className="relative w-full sm:w-64">
+              <GlassInput
+                type="text"
+                placeholder="Tìm quyền..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 pl-9 text-xs"
+              />
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                aria-hidden
+              />
+            </div>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setSelectedResource(RESOURCE_FILTER_ALL)}
+              className={cx(
+                "rounded-xl px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer",
+                selectedResource === RESOURCE_FILTER_ALL
+                  ? "bg-slate-900 text-white shadow-2xs"
+                  : "bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900 border border-slate-200/80",
+              )}
+            >
+              Tất cả
+            </button>
+            {resources.map((res) => {
+              const isSelected = selectedResource === res;
+              const label = RESOURCE_LABEL[res] ?? res;
               return (
-                <CheckableRow
-                  key={permission.id}
-                  label={permissionLabel(permission)}
-                  description={`${permission.resource} · ${permission.action}`}
-                  checked={scope !== undefined}
-                  onToggle={() => togglePermission(permission)}
-                  trailing={
-                    scope === undefined ? null : (
-                      <GlassSelect
-                        aria-label={`Phạm vi của quyền ${permissionLabel(permission)}`}
-                        value={scope}
-                        className="h-9 w-40 shrink-0 text-xs"
-                        onChange={(event) =>
-                          changeScope(permission.id, event.target.value as PermissionScope)
-                        }
-                      >
-                        {SCOPE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {PERMISSION_SCOPE_LABEL[option]}
-                          </option>
-                        ))}
-                      </GlassSelect>
-                    )
-                  }
-                />
+                <button
+                  key={res}
+                  type="button"
+                  onClick={() => setSelectedResource(res)}
+                  className={cx(
+                    "rounded-xl px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer",
+                    isSelected
+                      ? "bg-slate-900 text-white shadow-2xs"
+                      : "bg-white/80 text-slate-600 hover:bg-white hover:text-slate-900 border border-slate-200/80",
+                  )}
+                >
+                  {label}
+                </button>
               );
             })}
           </div>
-        </FormField>
+
+          {fieldErrors.items ? (
+            <p className="text-xs font-medium text-rose-600">{fieldErrors.items}</p>
+          ) : null}
+
+          {/* Filtered Permission List */}
+          <div className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
+            {filteredPermissions.length === 0 ? (
+              <EmptyState title="Không tìm thấy quyền phù hợp" />
+            ) : (
+              filteredPermissions.map((permission) => {
+                const scope = scopeOf(permission.id);
+                return (
+                  <PermissionScopeRow
+                    key={permission.id}
+                    permission={permission}
+                    label={permissionLabel(permission)}
+                    checked={scope !== undefined}
+                    scope={scope}
+                    onToggle={() => togglePermission(permission)}
+                    onChangeScope={(newScope) => changeScope(permission.id, newScope)}
+                  />
+                );
+              })
+            )}
+          </div>
+        </div>
       </form>
 
-      <footer className="flex justify-end gap-2">
+      <footer className="flex justify-end gap-2.5">
         <GlassButton variant="ghost" onClick={onClose}>
           Huỷ
         </GlassButton>
-        <GlassButton type="submit" form="create-permission-group-form" loading={form.isSubmitting}>
+        <GlassButton type="submit" form="create-permission-group-form" loading={isSubmitting}>
           Tạo nhóm quyền
         </GlassButton>
       </footer>
