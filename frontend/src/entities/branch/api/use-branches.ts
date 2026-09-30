@@ -13,6 +13,6 @@ export function useBranches(page: number, size: number) {
     staleTime: QUERY_STALE_TIME_MS.list,
     retry: QUERY_RETRY_COUNT,
     placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => branchApi.listBranches(page, size, signal),
+    queryFn: () => branchApi.listBranches(page, size),
   });
 }

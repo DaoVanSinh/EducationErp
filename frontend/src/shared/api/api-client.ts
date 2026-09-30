@@ -18,7 +18,6 @@ export interface ApiRequest {
   readonly method?: HttpMethod;
   readonly body?: unknown;
   readonly query?: QueryParams;
-  readonly signal?: AbortSignal;
 }
 
 type SessionExpiredListener = () => void;
@@ -55,15 +54,13 @@ class ApiClient {
     };
   }
 
-  async get<T>(path: string, query?: QueryParams, signal?: AbortSignal): Promise<T> {
+  async get<T>(path: string, query?: QueryParams): Promise<T> {
     const key = this.url(path, query);
     const existing = this.inFlightGets.get(key);
     if (existing) {
       return existing as Promise<T>;
     }
-    // signal chỉ thuộc về caller ĐẦU TIÊN dựng request này — caller sau trùng URL chỉ chờ chung kết
-    // quả, không được phép huỷ ngang request mà caller đầu (hoặc caller khác) vẫn đang cần.
-    const inFlight = this.request<T>(path, { method: HTTP_METHOD.get, query, signal }).finally(() => {
+    const inFlight = this.request<T>(path, { method: HTTP_METHOD.get, query }).finally(() => {
       this.inFlightGets.delete(key);
     });
     this.inFlightGets.set(key, inFlight);
@@ -113,12 +110,8 @@ class ApiClient {
         headers,
         credentials: "include",
         body: request.body === undefined ? undefined : JSON.stringify(request.body),
-        signal: request.signal,
       });
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") {
-        throw cause;
-      }
+    } catch {
       throw ApiError.networkUnreachable();
     }
   }

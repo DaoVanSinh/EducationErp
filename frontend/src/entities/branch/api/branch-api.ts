@@ -17,9 +17,9 @@ const createdBranchIdSchema = z.string().uuid();
  * thì lỗi hiện ra tại đúng chỗ gọi, kèm tên trường, thay vì thành lỗi render ở một component xa lắc.
  */
 export const branchApi = {
-  async listBranches(page: number, size: number, signal?: AbortSignal) {
+  async listBranches(page: number, size: number) {
     return branchPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.organization.branches, { page, size }, signal),
+      await apiClient.get<unknown>(API_ROUTE.organization.branches, { page, size }),
     );
   },
 

@@ -13,6 +13,6 @@ export function useAccounts(page: number, size: number) {
     staleTime: QUERY_STALE_TIME_MS.list,
     retry: QUERY_RETRY_COUNT,
     placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => accountApi.listAccounts(page, size, signal),
+    queryFn: () => accountApi.listAccounts(page, size),
   });
 }

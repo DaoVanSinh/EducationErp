@@ -15,14 +15,12 @@ const accountPageSchema = pageResponseSchema(accountSummarySchema);
  * thì lỗi hiện ra tại đúng chỗ gọi, kèm tên trường, thay vì thành lỗi render ở một component xa lắc.
  */
 export const accountApi = {
-  async getSession(signal?: AbortSignal) {
-    return sessionSchema.parse(await apiClient.get<unknown>(API_ROUTE.account.me, undefined, signal));
+  async getSession() {
+    return sessionSchema.parse(await apiClient.get<unknown>(API_ROUTE.account.me));
   },
 
-  async listAccounts(page: number, size: number, signal?: AbortSignal) {
-    return accountPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.rbac.accounts, { page, size }, signal),
-    );
+  async listAccounts(page: number, size: number) {
+    return accountPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.rbac.accounts, { page, size }));
   },
 
   async updateProfile(payload: ProfileUpdatePayload): Promise<void> {

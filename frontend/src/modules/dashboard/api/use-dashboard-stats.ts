@@ -8,6 +8,6 @@ export function useDashboardStats() {
     queryKey: dashboardKeys.stats(),
     staleTime: QUERY_STALE_TIME_MS.dashboard,
     retry: QUERY_RETRY_COUNT,
-    queryFn: ({ signal }) => dashboardApi.getStats(signal),
+    queryFn: () => dashboardApi.getStats(),
   });
 }
