@@ -16,9 +16,9 @@ export function useSession(): UseQueryResult<Session | null> {
     queryKey: accountKeys.session(),
     staleTime: QUERY_STALE_TIME_MS.session,
     retry: false,
-    queryFn: async ({ signal }) => {
+    queryFn: async () => {
       try {
-        return await accountApi.getSession(signal);
+        return await accountApi.getSession();
       } catch (error) {
         if (error instanceof ApiError && error.isUnauthorized) {
           return null;

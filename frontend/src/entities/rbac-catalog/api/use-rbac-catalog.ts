@@ -8,6 +8,6 @@ export function useRbacCatalog() {
   return useQuery({
     queryKey: catalogKeys.detail(),
     staleTime: QUERY_STALE_TIME_MS.catalog,
-    queryFn: ({ signal }) => catalogApi.getCatalog(signal),
+    queryFn: () => catalogApi.getCatalog(),
   });
 }
