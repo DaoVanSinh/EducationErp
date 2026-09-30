@@ -5,6 +5,7 @@ import com.eduerp.modules.audit.AuditConstants;
 import com.eduerp.modules.audit.internal.model.AuditLog;
 import com.eduerp.modules.audit.internal.repository.AuditLogRepository;
 import com.eduerp.modules.identity.IdentityEvents;
+import com.eduerp.modules.organization.OrganizationEvents;
 import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
@@ -46,5 +47,17 @@ class AuditEventListeners {
     void on(AccessEvents.AccountJoinedGroup event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_JOIN_GROUP,
                 AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(OrganizationEvents.BranchCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.BRANCH_CREATE,
+                AuditConstants.EntityTypes.BRANCH, event.branchId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(OrganizationEvents.BranchUpdated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.BRANCH_UPDATE,
+                AuditConstants.EntityTypes.BRANCH, event.branchId().toString(), event.actorBranchId()));
     }
 }

@@ -90,4 +90,15 @@ export const ACCESS_RULE = {
     action: ACTION.create,
     scope: PERMISSION_SCOPE.organization,
   },
+  readBranch: { resource: RESOURCE.branch, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  createBranch: {
+    resource: RESOURCE.branch,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateBranch: {
+    resource: RESOURCE.branch,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
 } as const;

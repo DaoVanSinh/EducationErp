@@ -16,6 +16,8 @@ public final class AuditConstants {
         public static final String PERMISSION_GROUP_CREATE = "PERMISSION_GROUP_CREATE";
         public static final String ACCOUNT_JOIN_GROUP = "ACCOUNT_JOIN_GROUP";
         public static final String ACCOUNT_TRANSFER_BRANCH = "ACCOUNT_TRANSFER_BRANCH";
+        public static final String BRANCH_CREATE = "BRANCH_CREATE";
+        public static final String BRANCH_UPDATE = "BRANCH_UPDATE";
     }
 
     public static final class EntityTypes {
@@ -25,5 +27,6 @@ public final class AuditConstants {
         public static final String ACCOUNT = "ACCOUNT";
         public static final String ROLE = "ROLE";
         public static final String PERMISSION_GROUP = "PERMISSION_GROUP";
+        public static final String BRANCH = "BRANCH";
     }
 }
