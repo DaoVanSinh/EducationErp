@@ -14,6 +14,7 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const branchLabel = session.branchName ? `Chi nhánh chính · ${session.branchName}` : "Cấp tổ chức";
 
   return (
     <div
@@ -120,7 +121,7 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
           {!sidebarCollapsed ? (
             <div className="flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="truncate">Chi nhánh chính · Hà Nội</span>
+              <span className="truncate">{branchLabel}</span>
             </div>
           ) : null}
 
@@ -198,7 +199,7 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
 
                 <div className="flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700">
                   <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <span className="truncate">Chi nhánh chính · Hà Nội</span>
+                  <span className="truncate">{branchLabel}</span>
                 </div>
 
                 <AppNav onNavigate={() => setDrawerOpen(false)} />
