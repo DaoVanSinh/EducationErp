@@ -1,13 +1,13 @@
 import { permissionLabel, useRbacCatalog, type PermissionOption } from "@/entities/rbac-catalog";
 import { useCreatePermissionGroup } from "@/modules/rbac/api/use-rbac-mutations";
 import { createPermissionGroupFormSchema } from "@/modules/rbac/model/rbac-forms";
-import { CheckableRow } from "@/modules/rbac/ui/checkable-row";
 import {
   PERMISSION_SCOPE,
   PERMISSION_SCOPE_LABEL,
   type PermissionScope,
 } from "@/shared/constants/permissions";
 import { useZodForm } from "@/shared/lib/use-zod-form";
+import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";

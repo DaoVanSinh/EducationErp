@@ -23,6 +23,10 @@ export const API_ROUTE = {
   dashboard: {
     stats: "/api/dashboard/stats",
   },
+  organization: {
+    branches: "/api/organization/branches",
+    branch: (branchId: string) => `/api/organization/branches/${branchId}`,
+  },
 } as const;
 
 /**

@@ -1,8 +1,8 @@
 import { useRbacCatalog } from "@/entities/rbac-catalog";
 import { useCreateRole } from "@/modules/rbac/api/use-rbac-mutations";
 import { createRoleFormSchema } from "@/modules/rbac/model/rbac-forms";
-import { CheckableRow } from "@/modules/rbac/ui/checkable-row";
 import { useZodForm } from "@/shared/lib/use-zod-form";
+import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";

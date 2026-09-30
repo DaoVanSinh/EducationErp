@@ -29,6 +29,9 @@ const ProfilePage = lazy(() =>
 );
 const AccountsPage = lazy(() => import("@/modules/rbac").then((module) => ({ default: module.AccountsPage })));
 const RolesPage = lazy(() => import("@/modules/rbac").then((module) => ({ default: module.RolesPage })));
+const BranchesPage = lazy(() =>
+  import("@/modules/organization").then((module) => ({ default: module.BranchesPage })),
+);
 
 function NotFoundPage() {
   return (
@@ -64,6 +67,7 @@ export function AppRouter() {
         <Route element={<RequireAuth />}>
           <Route path={APP_ROUTE.dashboard} element={<DashboardPage />} />
           <Route path={APP_ROUTE.accounts} element={<AccountsPage />} />
+          <Route path={APP_ROUTE.branches} element={<BranchesPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>

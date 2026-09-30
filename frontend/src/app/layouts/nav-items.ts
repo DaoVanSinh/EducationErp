@@ -16,6 +16,7 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { path: APP_ROUTE.dashboard, label: "Tổng quan", requirement: ACCESS_RULE.readDashboard },
   { path: APP_ROUTE.accounts, label: "Tài khoản", requirement: ACCESS_RULE.readAccount },
+  { path: APP_ROUTE.branches, label: "Chi nhánh", requirement: ACCESS_RULE.readBranch },
   { path: APP_ROUTE.roles, label: "Vai trò và quyền", requirement: ACCESS_RULE.readRole },
   { path: APP_ROUTE.profile, label: "Hồ sơ của tôi" },
 ];

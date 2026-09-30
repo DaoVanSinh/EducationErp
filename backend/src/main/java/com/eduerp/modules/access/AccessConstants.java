@@ -120,5 +120,11 @@ public final class AccessConstants {
         /** Số liệu trên dashboard là của toàn hệ thống, nên quyền đọc nó cũng phải ở cấp tổ chức. */
         public static final String READ_DASHBOARD = CHECK_PREFIX + Resources.DASHBOARD + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_BRANCH = CHECK_PREFIX + Resources.BRANCH + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_BRANCH = CHECK_PREFIX + Resources.BRANCH + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String UPDATE_BRANCH = CHECK_PREFIX + Resources.BRANCH + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
     }
 }

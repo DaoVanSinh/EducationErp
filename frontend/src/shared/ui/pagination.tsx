@@ -8,9 +8,11 @@ export interface PaginationProps {
   readonly totalPages: number;
   readonly totalItems: number;
   readonly onPageChange: (page: number) => void;
+  /** Đơn vị đếm ở cuối dòng trạng thái - mỗi trang dùng component này liệt kê một loại bản ghi khác nhau. */
+  readonly itemLabel?: string;
 }
 
-export function Pagination({ page, totalPages, totalItems, onPageChange }: PaginationProps) {
+export function Pagination({ page, totalPages, totalItems, onPageChange, itemLabel = "tài khoản" }: PaginationProps) {
   const isFirst = page <= 0;
   const isLast = page >= totalPages - 1;
 
@@ -18,7 +20,7 @@ export function Pagination({ page, totalPages, totalItems, onPageChange }: Pagin
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-xs text-mist-500">
         Trang {formatter.count(page + 1)}/{formatter.count(Math.max(totalPages, 1))} ·{" "}
-        {formatter.count(totalItems)} tài khoản
+        {formatter.count(totalItems)} {itemLabel}
       </p>
       <div className="flex items-center gap-2">
         <GlassButton

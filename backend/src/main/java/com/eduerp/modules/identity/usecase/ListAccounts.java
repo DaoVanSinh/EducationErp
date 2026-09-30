@@ -2,11 +2,11 @@ package com.eduerp.modules.identity.usecase;
 
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.dto.AccountSummaryResponse;
-import com.eduerp.modules.identity.dto.PageResponse;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.organization.OrganizationManagement;
 import com.eduerp.shared.NamedReference;
+import com.eduerp.shared.PageResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

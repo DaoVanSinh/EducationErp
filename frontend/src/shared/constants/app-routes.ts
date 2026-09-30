@@ -7,6 +7,7 @@ export const APP_ROUTE = {
   profile: "/profile",
   accounts: "/admin/accounts",
   roles: "/admin/roles",
+  branches: "/admin/branches",
   login: "/login",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",

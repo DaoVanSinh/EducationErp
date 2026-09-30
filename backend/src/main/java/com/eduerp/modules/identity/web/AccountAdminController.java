@@ -2,11 +2,11 @@ package com.eduerp.modules.identity.web;
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.identity.dto.AccountSummaryResponse;
-import com.eduerp.modules.identity.dto.PageResponse;
 import com.eduerp.modules.identity.dto.TransferBranchRequest;
 import com.eduerp.modules.identity.usecase.ListAccounts;
 import com.eduerp.modules.identity.usecase.TransferAccountBranch;
 import com.eduerp.shared.AccountPrincipal;
+import com.eduerp.shared.PageResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
