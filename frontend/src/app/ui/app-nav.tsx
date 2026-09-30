@@ -4,13 +4,14 @@ import { APP_ROUTE } from "@/shared/constants/app-routes";
 import { cx } from "@/shared/lib/class-names";
 import { MOTION_SPRING } from "@/shared/lib/motion";
 import { m } from "framer-motion";
-import { LayoutDashboard, ShieldCheck, UserCircle, Users } from "lucide-react";
+import { Building2, LayoutDashboard, ShieldCheck, UserCircle, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
 const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.dashboard]: <LayoutDashboard size={18} aria-hidden />,
   [APP_ROUTE.accounts]: <Users size={18} aria-hidden />,
+  [APP_ROUTE.branches]: <Building2 size={18} aria-hidden />,
   [APP_ROUTE.roles]: <ShieldCheck size={18} aria-hidden />,
   [APP_ROUTE.profile]: <UserCircle size={18} aria-hidden />,
 };
