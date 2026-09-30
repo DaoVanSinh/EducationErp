@@ -1,8 +1,5 @@
 import type { AccountSummary } from "@/entities/account";
-import { useRbacCatalog } from "@/entities/rbac-catalog";
-import { useTransferBranch } from "@/modules/rbac/api/use-rbac-mutations";
-import { transferBranchFormSchema } from "@/modules/rbac/model/rbac-forms";
-import { useZodForm } from "@/shared/lib/use-zod-form";
+import { useTransferBranchController } from "@/modules/rbac/hooks/use-transfer-branch-controller";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -16,17 +13,15 @@ export interface TransferBranchDialogProps {
 }
 
 export function TransferBranchDialog({ account, open, onClose }: TransferBranchDialogProps) {
-  const catalog = useRbacCatalog();
-  const transferBranch = useTransferBranch(account.id);
-
-  const form = useZodForm({
-    schema: transferBranchFormSchema,
-    initialValues: { branchId: account.branchId ?? "" },
-    onSubmit: async (values) => {
-      await transferBranch.mutateAsync(values.branchId);
-      onClose();
-    },
-  });
+  const {
+    values,
+    fieldErrors,
+    submitError,
+    isSubmitting,
+    branches,
+    handleSubmit,
+    setBranchId,
+  } = useTransferBranchController({ account, onClose });
 
   return (
     <GlassModal
@@ -35,23 +30,23 @@ export function TransferBranchDialog({ account, open, onClose }: TransferBranchD
       title="Chuyển chi nhánh"
       description={`${account.fullName} · hiện tại: ${account.branchName ?? "chưa thuộc chi nhánh nào"}`}
     >
-      <form id="transfer-branch-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
-        {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+      <form id="transfer-branch-form" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        {submitError ? <ErrorNotice error={submitError} /> : null}
 
         <FormField
           label="Chi nhánh mới"
           htmlFor="transfer-branch-id"
           hint="Chi nhánh quyết định phạm vi mà các quyền cấp chi nhánh nhìn thấy."
-          error={form.fieldErrors.branchId}
+          error={fieldErrors.branchId}
         >
           <GlassSelect
             id="transfer-branch-id"
-            value={form.values.branchId}
-            invalid={form.fieldErrors.branchId !== undefined}
-            onChange={(event) => form.setValue("branchId", event.target.value)}
+            value={values.branchId}
+            invalid={fieldErrors.branchId !== undefined}
+            onChange={(event) => setBranchId(event.target.value)}
           >
             <option value="">-- Chọn chi nhánh --</option>
-            {(catalog.data?.branches ?? []).map((branch) => (
+            {branches.map((branch) => (
               <option key={branch.id} value={branch.id}>
                 {branch.name}
               </option>
@@ -64,7 +59,7 @@ export function TransferBranchDialog({ account, open, onClose }: TransferBranchD
         <GlassButton variant="ghost" onClick={onClose}>
           Huỷ
         </GlassButton>
-        <GlassButton type="submit" form="transfer-branch-form" loading={form.isSubmitting}>
+        <GlassButton type="submit" form="transfer-branch-form" loading={isSubmitting}>
           Chuyển
         </GlassButton>
       </footer>

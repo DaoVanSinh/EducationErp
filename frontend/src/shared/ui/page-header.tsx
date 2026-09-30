@@ -14,13 +14,19 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={MOTION_SPRING}
-      className="flex flex-wrap items-end justify-between gap-4"
+      className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0 w-full"
     >
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-mist-100">{title}</h1>
-        {description ? <p className="mt-1 max-w-2xl text-sm text-mist-400">{description}</p> : null}
+      <div className="min-w-0 flex-1">
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 break-words">
+          {title}
+        </h1>
+        {description ? (
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 break-words leading-relaxed">
+            {description}
+          </p>
+        ) : null}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div> : null}
     </m.header>
   );
 }

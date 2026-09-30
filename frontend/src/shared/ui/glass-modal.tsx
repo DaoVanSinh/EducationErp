@@ -9,13 +9,23 @@ export interface GlassModalProps {
   readonly open: boolean;
   readonly title: string;
   readonly description?: string;
+  readonly icon?: ReactNode;
   readonly onClose: () => void;
   readonly children: ReactNode;
   readonly footer?: ReactNode;
   readonly className?: string;
 }
 
-export function GlassModal({ open, title, description, onClose, children, footer, className }: GlassModalProps) {
+export function GlassModal({
+  open,
+  title,
+  description,
+  icon,
+  onClose,
+  children,
+  footer,
+  className,
+}: GlassModalProps) {
   useEffect(() => {
     if (!open) {
       return;
@@ -42,7 +52,7 @@ export function GlassModal({ open, title, description, onClose, children, footer
             type="button"
             aria-label="Đóng"
             onClick={onClose}
-            className="absolute inset-0 cursor-default bg-ink-950/70 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-slate-900/40 backdrop-blur-md"
             variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
           />
           <m.div
@@ -52,21 +62,28 @@ export function GlassModal({ open, title, description, onClose, children, footer
             variants={RISE_IN}
             transition={MOTION_SPRING}
             className={cx(
-              "glass-raised relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col gap-5 overflow-y-auto rounded-3xl p-6",
+              "glass-raised relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col gap-5 overflow-y-auto rounded-3xl p-6 shadow-2xl border border-white/90 bg-white/90 backdrop-blur-2xl",
               className,
             )}
           >
-            <header className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-mist-100">{title}</h2>
-                {description ? <p className="mt-1 text-sm text-mist-400">{description}</p> : null}
+            <header className="flex items-start justify-between gap-4 border-b border-slate-100/90 pb-4">
+              <div className="flex items-center gap-3.5">
+                {icon ? (
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-md shadow-orange-500/25">
+                    {icon}
+                  </div>
+                ) : null}
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+                  {description ? <p className="mt-0.5 text-xs text-slate-500">{description}</p> : null}
+                </div>
               </div>
               <GlassButton variant="ghost" size="sm" onClick={onClose} aria-label="Đóng">
                 <X size={16} aria-hidden />
               </GlassButton>
             </header>
             <div className="flex flex-col gap-4">{children}</div>
-            {footer ? <footer className="flex justify-end gap-2">{footer}</footer> : null}
+            {footer ? <footer className="flex justify-end gap-2 border-t border-slate-100/90 pt-4">{footer}</footer> : null}
           </m.div>
         </m.div>
       ) : null}

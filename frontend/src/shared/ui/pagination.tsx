@@ -16,7 +16,7 @@ export function Pagination({ page, totalPages, totalItems, onPageChange }: Pagin
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-xs text-mist-500">
+      <p className="text-xs font-medium text-slate-500">
         Trang {formatter.count(page + 1)}/{formatter.count(Math.max(totalPages, 1))} ·{" "}
         {formatter.count(totalItems)} tài khoản
       </p>

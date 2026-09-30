@@ -27,8 +27,8 @@ export function ResetPasswordPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Đặt mật khẩu mới</h1>
-        <p className="mt-1 text-sm text-mist-400">Mật khẩu mới sẽ có hiệu lực ngay sau khi lưu.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Đặt mật khẩu mới</h1>
+        <p className="mt-1 text-sm text-slate-500">Mật khẩu mới sẽ có hiệu lực ngay sau khi lưu.</p>
       </div>
       <ResetPasswordForm token={token} />
     </div>

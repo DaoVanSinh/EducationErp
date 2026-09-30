@@ -17,8 +17,8 @@ export function LoginPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Đăng nhập</h1>
-        <p className="mt-1 text-sm text-mist-400">Hệ thống quản trị người dùng EduERP.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Đăng nhập</h1>
+        <p className="mt-1 text-sm text-slate-500">Hệ thống quản trị người dùng EduERP.</p>
       </div>
       <LoginForm redirectTo={state?.from ?? APP_ROUTE.dashboard} />
     </div>

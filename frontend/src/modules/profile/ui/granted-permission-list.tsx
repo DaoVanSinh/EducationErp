@@ -24,8 +24,8 @@ export function GrantedPermissionList() {
   const rows = permissions.list();
 
   return (
-    <GlassPanel className="flex flex-col gap-4">
-      <h2 className="text-sm font-semibold tracking-wide text-mist-300 uppercase">Quyền của bạn</h2>
+    <GlassPanel className="flex flex-col gap-4 shadow-sm">
+      <h2 className="text-sm font-bold tracking-wide text-slate-800 uppercase">Quyền của bạn</h2>
 
       {rows.length === 0 ? (
         <EmptyState title="Tài khoản chưa được cấp quyền nào" />
@@ -41,7 +41,7 @@ export function GrantedPermissionList() {
               <Badge tone={SCOPE_TONE[permission.scope]}>
                 {ACTION_LABEL[permission.action] ?? permission.action}{" "}
                 {(RESOURCE_LABEL[permission.resource] ?? permission.resource).toLowerCase()}
-                <span className="text-mist-500">· {PERMISSION_SCOPE_LABEL[permission.scope]}</span>
+                <span className="opacity-70">· {PERMISSION_SCOPE_LABEL[permission.scope]}</span>
               </Badge>
             </m.li>
           ))}
