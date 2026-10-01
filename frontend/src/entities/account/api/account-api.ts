@@ -19,8 +19,10 @@ export const accountApi = {
     return sessionSchema.parse(await apiClient.get<unknown>(API_ROUTE.account.me));
   },
 
-  async listAccounts(page: number, size: number) {
-    return accountPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.rbac.accounts, { page, size }));
+  async listAccounts(page: number, size: number, branchId: string | null) {
+    return accountPageSchema.parse(
+      await apiClient.get<unknown>(API_ROUTE.rbac.accounts, { page, size, branchId: branchId ?? undefined }),
+    );
   },
 
   async updateProfile(payload: ProfileUpdatePayload): Promise<void> {

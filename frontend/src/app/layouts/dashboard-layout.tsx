@@ -1,4 +1,5 @@
 import { AppNav } from "@/app/ui/app-nav";
+import { BranchSwitcher } from "@/app/ui/branch-switcher";
 import { SessionCard } from "@/app/ui/session-card";
 import type { Session } from "@/entities/account";
 import { cx } from "@/shared/lib/class-names";
@@ -14,7 +15,6 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const branchLabel = session.branchName ? `Chi nhánh chính · ${session.branchName}` : "Cấp tổ chức";
 
   return (
     <div
@@ -118,12 +118,7 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
           )}
 
           {/* Active Branch Indicator */}
-          {!sidebarCollapsed ? (
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="truncate">{branchLabel}</span>
-            </div>
-          ) : null}
+          {!sidebarCollapsed ? <BranchSwitcher session={session} /> : null}
 
           {/* Navigation Links */}
           <div className="w-full">
@@ -197,10 +192,7 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700">
-                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <span className="truncate">{branchLabel}</span>
-                </div>
+                <BranchSwitcher session={session} />
 
                 <AppNav onNavigate={() => setDrawerOpen(false)} />
               </div>

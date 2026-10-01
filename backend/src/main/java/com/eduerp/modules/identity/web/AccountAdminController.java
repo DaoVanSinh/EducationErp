@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -37,10 +38,12 @@ class AccountAdminController {
         this.transferAccountBranch = transferAccountBranch;
     }
 
+    /** {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. */
     @GetMapping("/accounts")
     @PreAuthorize(AccessConstants.AccessRules.READ_ACCOUNT)
-    PageResponse<AccountSummaryResponse> listAccounts(@PageableDefault(size = 20) Pageable pageable) {
-        return listAccounts.execute(pageable);
+    PageResponse<AccountSummaryResponse> listAccounts(@PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) UUID branchId) {
+        return listAccounts.execute(pageable, branchId);
     }
 
     @PostMapping("/accounts/{accountId}/transfer-branch")

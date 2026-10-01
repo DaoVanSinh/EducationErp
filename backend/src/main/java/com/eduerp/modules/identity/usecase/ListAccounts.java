@@ -34,8 +34,9 @@ public class ListAccounts {
      * được nạp theo lô cho cả trang thay vì từng account một — tránh N+1 khi ghép ba module lại.
      */
     @Transactional(readOnly = true)
-    public PageResponse<AccountSummaryResponse> execute(Pageable pageable) {
-        Page<Account> page = accounts.findAll(pageable);
+    public PageResponse<AccountSummaryResponse> execute(Pageable pageable, UUID branchId) {
+        Page<Account> page = branchId == null ? accounts.findAll(pageable)
+                : accounts.findAllByHomeBranchId(branchId, pageable);
         var accountIds = page.getContent().stream().map(Account::getId).toList();
         var branchIds = page.getContent().stream().map(Account::getHomeBranchId).filter(Objects::nonNull).toList();
 

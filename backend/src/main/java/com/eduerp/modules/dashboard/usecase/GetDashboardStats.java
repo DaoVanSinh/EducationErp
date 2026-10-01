@@ -9,6 +9,7 @@ import com.eduerp.modules.identity.IdentityManagement;
 import com.eduerp.modules.organization.OrganizationManagement;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,24 +31,35 @@ public class GetDashboardStats {
         this.audit = audit;
     }
 
-    public DashboardStatsResponse execute() {
-        var accountCounts = identity.accountCounts();
-        var roleHeadcounts = access.roleHeadcounts().stream()
+    /**
+     * {@code branchId == null} là "toàn tổ chức" (hành vi gốc, không lọc gì). Số chi nhánh
+     * ({@code organization.count()}) không bao giờ bị lọc theo branchId — đó là một con số toàn cục,
+     * không phụ thuộc đang xem chi nhánh nào.
+     */
+    public DashboardStatsResponse execute(UUID branchId) {
+        var accountCounts = branchId == null ? identity.accountCounts() : identity.accountCounts(branchId);
+        var roleHeadcountSource = branchId == null
+                ? access.roleHeadcounts()
+                : access.roleHeadcounts(identity.accountIdsByBranch(branchId));
+        var roleHeadcounts = roleHeadcountSource.stream()
                 .map(row -> new DashboardStatsResponse.RoleHeadcount(row.roleCode(), row.roleName(),
                         row.accountCount()))
                 .toList();
         return new DashboardStatsResponse(
                 accountCounts.total(), accountCounts.active(), accountCounts.disabled(),
-                organization.count(), roleHeadcounts, recentLogins());
+                organization.count(), roleHeadcounts, recentLogins(branchId));
     }
 
     /**
      * Audit log cố tình không có khoá ngoại tới accounts, nên tài khoản đã xoá vẫn còn dòng đăng nhập.
      * Những dòng đó bị bỏ qua ở đây thay vì hiện ra với tên trống.
      */
-    private List<RecentLoginResponse> recentLogins() {
-        var logins = audit.recentActions(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.LOGIN,
-                RECENT_LOGIN_LIMIT);
+    private List<RecentLoginResponse> recentLogins(UUID branchId) {
+        var logins = branchId == null
+                ? audit.recentActions(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.LOGIN,
+                        RECENT_LOGIN_LIMIT)
+                : audit.recentActions(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.LOGIN,
+                        RECENT_LOGIN_LIMIT, branchId);
         var actorIds = logins.stream().map(login -> login.actorAccountId()).filter(Objects::nonNull).toList();
         var actors = identity.summariesOf(actorIds);
         return logins.stream()

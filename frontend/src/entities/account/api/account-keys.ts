@@ -6,5 +6,6 @@ export const accountKeys = {
   all: ["account"] as const,
   session: () => [...accountKeys.all, "session"] as const,
   lists: () => [...accountKeys.all, "list"] as const,
-  list: (page: number, size: number) => [...accountKeys.lists(), { page, size }] as const,
+  list: (page: number, size: number, branchId: string | null) =>
+    [...accountKeys.lists(), { page, size, branchId }] as const,
 } as const;
