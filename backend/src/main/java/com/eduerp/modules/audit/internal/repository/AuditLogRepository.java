@@ -16,4 +16,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
      * về rỗng dù dữ liệu vẫn có.
      */
     List<AuditLog> findByEntityTypeAndActionOrderByOccurredAtDesc(String entityType, String action, Pageable pageable);
+
+    /** Bản lọc thêm theo chi nhánh của truy vấn trên — {@code branchId} là chi nhánh của người thực hiện hành động. */
+    List<AuditLog> findByEntityTypeAndActionAndBranchIdOrderByOccurredAtDesc(String entityType, String action,
+            UUID branchId, Pageable pageable);
 }

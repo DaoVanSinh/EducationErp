@@ -3,6 +3,7 @@ package com.eduerp.modules.audit;
 import com.eduerp.modules.audit.dto.RecentAuditAction;
 import com.eduerp.modules.audit.internal.repository.AuditLogRepository;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,17 @@ public class AuditManagement {
     @Transactional(readOnly = true)
     public List<RecentAuditAction> recentActions(String entityType, String action, int limit) {
         return auditLogs.findByEntityTypeAndActionOrderByOccurredAtDesc(entityType, action, PageRequest.of(0, limit))
+                .stream()
+                .map(log -> new RecentAuditAction(log.getActorAccountId(), log.getEntityId(), log.getOccurredAt()))
+                .toList();
+    }
+
+    /** Bản lọc theo chi nhánh của {@link #recentActions(String, String, int)}. */
+    @Transactional(readOnly = true)
+    public List<RecentAuditAction> recentActions(String entityType, String action, int limit, UUID branchId) {
+        return auditLogs
+                .findByEntityTypeAndActionAndBranchIdOrderByOccurredAtDesc(entityType, action, branchId,
+                        PageRequest.of(0, limit))
                 .stream()
                 .map(log -> new RecentAuditAction(log.getActorAccountId(), log.getEntityId(), log.getOccurredAt()))
                 .toList();

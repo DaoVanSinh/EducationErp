@@ -99,6 +99,23 @@ public class AccessManagement {
                 .toList();
     }
 
+    /**
+     * Bản lọc theo chi nhánh của {@link #roleHeadcounts()} — accountIds do identity cung cấp (rule
+     * #3: access không có cột chi nhánh, không tự tra được "ai thuộc chi nhánh nào"). Chi nhánh không
+     * ai thuộc (accountIds rỗng) tự trả về mọi role với 0, không query JPQL {@code IN ()} rỗng.
+     */
+    @Transactional(readOnly = true)
+    public List<RoleHeadcount> roleHeadcounts(Collection<UUID> accountIds) {
+        if (accountIds.isEmpty()) {
+            return roles.findAll().stream()
+                    .map(role -> new RoleHeadcount(role.getCode(), role.getName(), 0L))
+                    .toList();
+        }
+        return accountRoles.countAccountsByRoleForAccounts(accountIds).stream()
+                .map(row -> new RoleHeadcount(row.getRoleCode(), row.getRoleName(), row.getAccountCount()))
+                .toList();
+    }
+
     public record RoleSummary(String code, String name) {
     }
 

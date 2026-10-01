@@ -103,6 +103,45 @@ class DashboardControllerIT {
         assertThat(stats.recentLogins()).isNotEmpty().allSatisfy(login -> assertThat(login.occurredAt()).isNotNull());
     }
 
+    @Test
+    void scopesStatsToASingleBranchWhenRequested() throws Exception {
+        var admin = signIn("dashboard-branch-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var branch = branches.save(new Branch("DN03", "Chi nhánh Dashboard", null));
+        var branchAccount = accounts.save(new Account("dashboard-branch-member@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Branch Member", branch.getId()));
+        access.assignRole(branchAccount.getId(), AccessConstants.RoleCodes.TEACHER);
+
+        var result = mockMvc.perform(get("/api/dashboard/stats?branchId=" + branch.getId()).cookie(admin))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var stats = objectMapper.readValue(result.getResponse().getContentAsString(), DashboardStatsResponse.class);
+        assertThat(stats.totalAccounts()).isEqualTo(1);
+        assertThat(stats.accountsByRole())
+                .filteredOn(row -> row.roleCode().equals(AccessConstants.RoleCodes.TEACHER))
+                .extracting(DashboardStatsResponse.RoleHeadcount::accountCount)
+                .containsExactly(1L);
+        // ADMIN ký lúc signIn không thuộc chi nhánh này - phải hiện ra 0, không được biến mất (LEFT JOIN).
+        assertThat(stats.accountsByRole())
+                .filteredOn(row -> row.roleCode().equals(AccessConstants.RoleCodes.ADMIN))
+                .extracting(DashboardStatsResponse.RoleHeadcount::accountCount)
+                .containsExactly(0L);
+    }
+
+    @Test
+    void returnsAllZeroStatsForABranchWithNoAccounts() throws Exception {
+        var admin = signIn("dashboard-empty-branch-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var emptyBranch = branches.save(new Branch("DN04", "Chi nhánh trống", null));
+
+        var result = mockMvc.perform(get("/api/dashboard/stats?branchId=" + emptyBranch.getId()).cookie(admin))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var stats = objectMapper.readValue(result.getResponse().getContentAsString(), DashboardStatsResponse.class);
+        assertThat(stats.totalAccounts()).isZero();
+        assertThat(stats.accountsByRole()).allSatisfy(row -> assertThat(row.accountCount()).isZero());
+    }
+
     /** Role thường có ACCOUNT:UPDATE nhưng không có DASHBOARD:READ — không được nhìn số liệu toàn hệ thống. */
     @Test
     void refusesARoleWithoutDashboardPermission() throws Exception {

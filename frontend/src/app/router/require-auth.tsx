@@ -1,6 +1,7 @@
 import { DashboardLayout } from "@/app/layouts/dashboard-layout";
 import { FullScreenLoader } from "@/app/ui/full-screen-loader";
 import { useSession } from "@/entities/account";
+import { SelectedBranchProvider } from "@/entities/branch";
 import { PermissionProvider } from "@/entities/permission";
 import { APP_ROUTE } from "@/shared/constants/app-routes";
 import { ErrorNotice } from "@/shared/ui/error-notice";
@@ -46,7 +47,9 @@ export function RequireAuth() {
 
   return (
     <PermissionProvider permissions={session.data.permissions}>
-      <DashboardLayout session={session.data} />
+      <SelectedBranchProvider>
+        <DashboardLayout session={session.data} />
+      </SelectedBranchProvider>
     </PermissionProvider>
   );
 }

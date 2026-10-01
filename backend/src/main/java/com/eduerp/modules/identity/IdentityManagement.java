@@ -2,6 +2,7 @@ package com.eduerp.modules.identity;
 
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,6 +26,19 @@ public class IdentityManagement {
         return new AccountCounts(accounts.count(),
                 accounts.countByStatus(IdentityConstants.AccountStatus.ACTIVE),
                 accounts.countByStatus(IdentityConstants.AccountStatus.DISABLED));
+    }
+
+    @Transactional(readOnly = true)
+    public AccountCounts accountCounts(UUID branchId) {
+        return new AccountCounts(accounts.countByHomeBranchId(branchId),
+                accounts.countByHomeBranchIdAndStatus(branchId, IdentityConstants.AccountStatus.ACTIVE),
+                accounts.countByHomeBranchIdAndStatus(branchId, IdentityConstants.AccountStatus.DISABLED));
+    }
+
+    /** Id của mọi account thuộc một chi nhánh — dùng để module access tự lọc role headcount theo chi nhánh đó. */
+    @Transactional(readOnly = true)
+    public List<UUID> accountIdsByBranch(UUID branchId) {
+        return accounts.findIdsByHomeBranchId(branchId);
     }
 
     /** Email/tên của một loạt account theo id — tránh N+1 khi module khác cần hiển thị "ai đã làm việc này". */

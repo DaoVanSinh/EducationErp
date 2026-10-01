@@ -106,6 +106,23 @@ class AccountAdminControllerIT {
         assertThat(page.get("items").get(0).hasNonNull("roleCode")).isTrue();
     }
 
+    @Test
+    void filtersAccountsByBranchId() throws Exception {
+        var admin = signIn("rbac-branch-filter-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var branch = branches.save(new Branch("DN02", "Chi nhánh lọc", null));
+        var inBranch = accounts.save(new Account("rbac-branch-filter-in@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "In Branch", branch.getId()));
+        accounts.save(new Account("rbac-branch-filter-out@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Out Of Branch", null));
+
+        var result = mockMvc.perform(get("/api/rbac/accounts?branchId=" + branch.getId()).cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var page = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(page.get("totalItems").asLong()).isEqualTo(1);
+        assertThat(page.get("items").get(0).get("id").asText()).isEqualTo(inBranch.getId().toString());
+    }
+
     /** Danh sách tài khoản lộ dữ liệu cả tổ chức, nên quyền PERSONAL không được mở. */
     @Test
     void refusesToListAccountsForAPersonalScopedRole() throws Exception {
