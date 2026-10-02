@@ -27,6 +27,12 @@ export const API_ROUTE = {
     branches: "/api/organization/branches",
     branch: (branchId: string) => `/api/organization/branches/${branchId}`,
   },
+  courses: {
+    courses: "/api/courses/courses",
+    course: (courseId: string) => `/api/courses/courses/${courseId}`,
+    classes: "/api/courses/classes",
+    class: (classId: string) => `/api/courses/classes/${classId}`,
+  },
 } as const;
 
 /**
