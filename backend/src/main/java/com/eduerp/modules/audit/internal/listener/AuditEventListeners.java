@@ -4,6 +4,7 @@ import com.eduerp.modules.access.AccessEvents;
 import com.eduerp.modules.audit.AuditConstants;
 import com.eduerp.modules.audit.internal.model.AuditLog;
 import com.eduerp.modules.audit.internal.repository.AuditLogRepository;
+import com.eduerp.modules.courses.CoursesEvents;
 import com.eduerp.modules.identity.IdentityEvents;
 import com.eduerp.modules.organization.OrganizationEvents;
 import org.springframework.modulith.ApplicationModuleListener;
@@ -59,5 +60,29 @@ class AuditEventListeners {
     void on(OrganizationEvents.BranchUpdated event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.BRANCH_UPDATE,
                 AuditConstants.EntityTypes.BRANCH, event.branchId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(CoursesEvents.CourseCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.COURSE_CREATE,
+                AuditConstants.EntityTypes.COURSE, event.courseId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(CoursesEvents.CourseUpdated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.COURSE_UPDATE,
+                AuditConstants.EntityTypes.COURSE, event.courseId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(CoursesEvents.ClassCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CLASS_CREATE,
+                AuditConstants.EntityTypes.CLASS, event.classId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(CoursesEvents.ClassUpdated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CLASS_UPDATE,
+                AuditConstants.EntityTypes.CLASS, event.classId().toString(), event.actorBranchId()));
     }
 }

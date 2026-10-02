@@ -18,6 +18,10 @@ public final class AuditConstants {
         public static final String ACCOUNT_TRANSFER_BRANCH = "ACCOUNT_TRANSFER_BRANCH";
         public static final String BRANCH_CREATE = "BRANCH_CREATE";
         public static final String BRANCH_UPDATE = "BRANCH_UPDATE";
+        public static final String COURSE_CREATE = "COURSE_CREATE";
+        public static final String COURSE_UPDATE = "COURSE_UPDATE";
+        public static final String CLASS_CREATE = "CLASS_CREATE";
+        public static final String CLASS_UPDATE = "CLASS_UPDATE";
     }
 
     public static final class EntityTypes {
@@ -28,5 +32,7 @@ public final class AuditConstants {
         public static final String ROLE = "ROLE";
         public static final String PERMISSION_GROUP = "PERMISSION_GROUP";
         public static final String BRANCH = "BRANCH";
+        public static final String COURSE = "COURSE";
+        public static final String CLASS = "CLASS";
     }
 }
