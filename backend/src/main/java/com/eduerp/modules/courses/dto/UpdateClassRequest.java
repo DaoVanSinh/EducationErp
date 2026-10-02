@@ -8,5 +8,5 @@ import java.util.UUID;
 
 /** Không có {@code courseId}/{@code branchId}/{@code code}: bất biến sau khi tạo (xem spec §2.2). */
 public record UpdateClassRequest(@NotNull UUID teacherId, @Positive int maxSeats, boolean active,
-        @Valid List<WeeklyScheduleSlot> schedule) {
+        @NotNull @Valid List<WeeklyScheduleSlot> schedule) {
 }

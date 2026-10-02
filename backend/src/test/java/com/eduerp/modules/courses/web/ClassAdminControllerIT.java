@@ -23,6 +23,7 @@ import com.eduerp.modules.organization.internal.model.Branch;
 import com.eduerp.modules.organization.internal.repository.BranchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalTime;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -43,6 +45,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestPropertySource(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 class ClassAdminControllerIT {
 
     private static final String PASSWORD = "Password123!";
@@ -75,6 +78,9 @@ class ClassAdminControllerIT {
 
     @Autowired
     AccessManagement access;
+
+    @Autowired
+    EntityManagerFactory entityManagerFactory;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -150,6 +156,26 @@ class ClassAdminControllerIT {
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
     }
 
+    /** Thiếu hẳn trường schedule (không phải mảng rỗng) phải là 400 tử tế, không phải NPE thành 500. */
+    @Test
+    void rejectsAMissingScheduleFieldOnCreate() throws Exception {
+        var admin = signIn("class-null-schedule@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var course = courses.save(new Course("TA-GT6", "Tiếng Anh giao tiếp 6", null, null));
+        var branch = branches.save(new Branch("CG06", "Chi nhánh 6", null));
+        var teacher = accounts.save(new Account("teacher-7@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Cô Yến", null));
+
+        var result = mockMvc.perform(post("/api/courses/classes")
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"courseId":"%s","code":"TA-GT6-K1","branchId":"%s","teacherId":"%s","maxSeats":20}
+                                """.formatted(course.getId(), branch.getId(), teacher.getId())))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+    }
+
     /** Lớp mới mở có thể chưa biết lịch học, thêm sau qua PATCH - schedule rỗng không phải lỗi. */
     @Test
     void acceptsAnEmptyScheduleOnCreate() throws Exception {
@@ -184,8 +210,11 @@ class ClassAdminControllerIT {
                 passwordEncoder.encode(PASSWORD), "Thầy Nam", null));
         var teacher2 = accounts.save(new Account("teacher-3@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Cô Hoa", null));
-        var classId = classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-GT3-K1",
-                branch.getId(), teacher1.getId(), 15)).getId();
+        var seedClass = new com.eduerp.modules.courses.internal.model.Class(course, "TA-GT3-K1",
+                branch.getId(), teacher1.getId(), 15);
+        seedClass.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
+        seedClass.addSchedule(CoursesConstants.DayOfWeek.WED, LocalTime.of(18, 0), LocalTime.of(20, 0));
+        var classId = classes.save(seedClass).getId();
 
         var updateRequest = new UpdateClassRequest(teacher2.getId(), 25, true,
                 List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.TUE, LocalTime.of(19, 0), LocalTime.of(21, 0))));
@@ -201,6 +230,9 @@ class ClassAdminControllerIT {
         assertThat(updated.get("teacherId").asText()).isEqualTo(teacher2.getId().toString());
         assertThat(updated.get("maxSeats").asInt()).isEqualTo(25);
         assertThat(updated.get("schedule")).hasSize(1);
+        assertThat(updated.get("schedule").get(0).get("dayOfWeek").asText())
+                .as("lịch cũ (MON, WED) phải bị xoá hẳn, chỉ còn lại đúng lịch mới (TUE)")
+                .isEqualTo(CoursesConstants.DayOfWeek.TUE.name());
     }
 
     private com.fasterxml.jackson.databind.JsonNode findClassNode(
@@ -228,5 +260,68 @@ class ClassAdminControllerIT {
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(404);
+    }
+
+    /**
+     * Danh sách lớp không được N+1: javadoc của ListClasses tự nhận "tránh N+1 - đúng pattern
+     * ListAccounts" - test này buộc lời tự nhận đó phải đúng bằng số, không chỉ bằng lời.
+     *
+     * <p>Dùng {@code getQueryExecutionCount()} (số lượt thực thi JPQL/Criteria qua tầng ORM), KHÔNG
+     * dùng {@code getPrepareStatementCount()} (tổng số câu SQL JDBC thô): đã xác nhận bằng cách bật
+     * {@code logging.level.org.hibernate.SQL=DEBUG} và soi log rằng trong 9 câu SQL thô của 1 request
+     * GET đã đăng nhập, 5 câu đầu (account theo id, account_roles join roles, account_groups join
+     * user_groups, role_permission_groups join permission_groups, permission_group_items join
+     * permissions) là chi phí cố định của pipeline xác thực/phân quyền Spring Security cho MỌI request
+     * có đăng nhập - không liên quan gì đến số lớp hay logic của ListClasses. Chỉ 4 câu còn lại mới
+     * đúng là phần ListClasses tự kiểm soát: 1 câu trang (classes JOIN courses qua entity graph), 1
+     * batch tên chi nhánh, 1 batch tên giáo viên, 1 batch lịch học - đúng bằng
+     * {@code getQueryExecutionCount()} đo được. 3 lớp thuộc 3 khóa học/chi nhánh/giáo viên KHÁC NHAU mà
+     * vẫn giữ nguyên ở 4 câu (không tăng theo số lớp) mới là bằng chứng N+1 đã hết; ngưỡng ≤ 4 phản ánh
+     * đúng con số sàn này, không giòn trước các câu phụ của tầng xác thực (vốn không do module này sinh
+     * ra và không nên tính vào chuẩn N+1 của ListClasses).
+     */
+    @Test
+    void listsClassesWithoutNPlusOneQueries() throws Exception {
+        var admin = signIn("class-n-plus-one@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        for (int i = 0; i < 3; i++) {
+            var course = courses.save(new Course("NPO-" + i, "Khóa N+1 " + i, null, null));
+            var branch = branches.save(new Branch("NPO-B" + i, "Chi nhánh N+1 " + i, null));
+            var teacher = accounts.save(new Account("npo-teacher-" + i + "@eduerp.local",
+                    passwordEncoder.encode(PASSWORD), "Giáo viên N+1 " + i, null));
+            var cls = new com.eduerp.modules.courses.internal.model.Class(course, "NPO-K" + i,
+                    branch.getId(), teacher.getId(), 20);
+            cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
+            classes.save(cls);
+        }
+
+        var statistics = entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        var result = mockMvc.perform(get("/api/courses/classes?size=50").cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(statistics.getQueryExecutionCount())
+                .as("số lượt truy vấn ORM riêng của ListClasses khi liệt kê 3 lớp ở 3 khóa học khác nhau")
+                .isLessThanOrEqualTo(4);
+    }
+
+    @Test
+    void refusesAnAccountWithOnlyPersonalScopePermissions() throws Exception {
+        var teacher = signIn("class-outsider@eduerp.local", AccessConstants.RoleCodes.TEACHER);
+        var course = courses.save(new Course("TA-GT7", "Tiếng Anh giao tiếp 7", null, null));
+        var branch = branches.save(new Branch("CG07", "Chi nhánh 7", null));
+        var teacherAccount = accounts.save(new Account("teacher-8@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Thầy Dũng", null));
+
+        var request = new CreateClassRequest(course.getId(), "TA-GT7-K1", branch.getId(), teacherAccount.getId(),
+                20, List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0))));
+        var result = mockMvc.perform(post("/api/courses/classes")
+                        .cookie(teacher).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(403);
+        assertThat(classes.findByCode("TA-GT7-K1")).isEmpty();
     }
 }

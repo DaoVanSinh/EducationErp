@@ -20,6 +20,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.UuidGenerator;
 
 /**
@@ -63,6 +64,9 @@ public class Class {
     @OneToMany(mappedBy = "parentClass", cascade = CascadeType.ALL, orphanRemoval = true,
             fetch = FetchType.LAZY)
     @OrderBy("dayOfWeek ASC, startTime ASC")
+    // Gộp lazy-load của nhiều Class thành một câu IN duy nhất khi liệt kê một trang - không batch thì
+    // mỗi lớp trong trang tự bắn một câu SELECT lịch học riêng (N+1), xem ListClasses.
+    @BatchSize(size = 50)
     private final List<ClassSchedule> schedule = new ArrayList<>();
 
     public Class(Course course, String code, UUID branchId, UUID teacherId, int maxSeats) {

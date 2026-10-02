@@ -8,5 +8,6 @@ import java.util.List;
 import java.util.UUID;
 
 public record CreateClassRequest(@NotNull UUID courseId, @NotBlank String code, @NotNull UUID branchId,
-        @NotNull UUID teacherId, @Positive int maxSeats, @Valid List<WeeklyScheduleSlot> schedule) {
+        @NotNull UUID teacherId, @Positive int maxSeats,
+        @NotNull @Valid List<WeeklyScheduleSlot> schedule) {
 }
