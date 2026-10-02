@@ -1,4 +1,4 @@
-import { DAY_OF_WEEK_LABEL, type WeeklyScheduleSlot } from "@/entities/class";
+import { DAY_OF_WEEK, DAY_OF_WEEK_LABEL, type WeeklyScheduleSlot } from "@/entities/class";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassSelect } from "@/shared/ui/glass-select";
@@ -15,7 +15,7 @@ const DAY_OPTIONS = Object.entries(DAY_OF_WEEK_LABEL) as [WeeklyScheduleSlot["da
 
 export function ScheduleSlotEditor({ slots, onChange }: ScheduleSlotEditorProps) {
   const addSlot = () => {
-    onChange([...slots, { dayOfWeek: "MON", startTime: "18:00", endTime: "20:00" }]);
+    onChange([...slots, { dayOfWeek: DAY_OF_WEEK.mon, startTime: "18:00", endTime: "20:00" }]);
   };
 
   const updateSlot = (index: number, patch: Partial<WeeklyScheduleSlot>) => {
