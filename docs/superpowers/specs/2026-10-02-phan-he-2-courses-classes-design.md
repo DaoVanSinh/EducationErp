@@ -72,10 +72,11 @@ Mirror cấu trúc `modules.organization`:
 modules/courses/
 ├── package-info.java              @ApplicationModule(displayName = "Courses & Classes")
 ├── CoursesManagement.java         facade — cửa duy nhất cho module khác
-├── CourseConstants.java           Resources/Actions nếu cần hằng riêng module (phần lớn dùng chung AccessConstants)
+├── CoursesConstants.java          DayOfWeek enum — base package chứ không internal, vì dto cũng
+│                                   cần tham chiếu (giống IdentityConstants.AccountStatus)
 ├── CoursesException.java          sealed base
 ├── CourseNotFoundException.java / ClassNotFoundException.java / CourseCodeAlreadyExistsException.java / ClassCodeAlreadyExistsException.java
-├── CoursesEvents.java             CourseCreated/ClassCreated/ClassUpdated — cho audit lắng nghe
+├── CoursesEvents.java             CourseCreated/CourseUpdated/ClassCreated/ClassUpdated — cho audit lắng nghe
 ├── dto/                           @NamedInterface("dto")
 │   ├── CourseResponse, CreateCourseRequest, UpdateCourseRequest
 │   ├── ClassResponse, CreateClassRequest, UpdateClassRequest
@@ -86,17 +87,19 @@ modules/courses/
 ├── web/
 │   └── CourseAdminController, ClassAdminController
 └── internal/
-    ├── model/        Course, Class, ClassSchedule, DayOfWeek (enum)
+    ├── model/        Course, Class, ClassSchedule
     └── repository/    CourseRepository, ClassRepository, ClassScheduleRepository
 ```
 
 **Phụ thuộc một chiều**: `courses → access` (dùng `AccessConstants.AccessRules` cho `@PreAuthorize`,
-giống tiền lệ `organization`/`identity`) và `courses → identity` — nhưng theo đúng cách tránh vòng lặp
-đã áp dụng cho `organization ↔ access` (xem `access.BranchCatalog`): nếu `identity` không bao giờ cần
-đọc ngược từ `courses` thì **không cần** cổng port/adapter gì cả, `courses` cứ import thẳng
-`IdentityManagement` để xác nhận `teacherId` tồn tại — một chiều, không có cạnh ngược, không có nguy
-cơ vòng lặp. Việc này cần xác nhận lại lúc code: nếu sau này `identity` cần biết "account này có đang
-dạy lớp nào không" thì mới áp dụng port pattern.
+giống tiền lệ `organization`/`identity`), `courses → identity` (xác nhận `teacherId` tồn tại qua
+`IdentityManagement.summariesOf`), và `courses → organization` (xác nhận `branchId` tồn tại qua
+`OrganizationManagement.exists`, lấy tên chi nhánh qua `.namesOf` để hiển thị trong `ClassResponse`) —
+cùng cách tránh vòng lặp đã áp dụng cho `organization ↔ access` (xem `access.BranchCatalog`): vì
+không module nào trong ba module đó cần đọc ngược từ `courses`, **không cần** cổng port/adapter gì cả,
+`courses` cứ import thẳng facade của cả ba — một chiều, không có cạnh ngược, không có nguy cơ vòng
+lặp. Việc này cần xác nhận lại lúc code: nếu sau này `identity`/`access`/`organization` cần biết "có
+lớp nào đang dùng account/chi nhánh này không" thì mới áp dụng port pattern.
 
 Validate ở use case: `CreateClass`/`UpdateClass` gọi `identity.summariesOf(List.of(teacherId))` (đã
 có sẵn) để xác nhận account tồn tại — **không** validate account đó có role TEACHER hay không ở phase
@@ -136,9 +139,10 @@ Response shape dùng `PageResponse<T>` từ `shared` (đã có sẵn).
 
 ## 7. Audit
 
-`CoursesEvents.CourseCreated`, `ClassCreated`, `ClassUpdated` — publish, `audit` module lắng nghe qua
-`@ApplicationModuleListener` giống hệt `OrganizationEvents`. Thêm `AuditConstants.Actions.COURSE_CREATE`,
-`CLASS_CREATE`, `CLASS_UPDATE` và `AuditConstants.EntityTypes.COURSE`, `CLASS`.
+`CoursesEvents.CourseCreated`, `CourseUpdated`, `ClassCreated`, `ClassUpdated` — publish, `audit`
+module lắng nghe qua `@ApplicationModuleListener` giống hệt `OrganizationEvents`. Thêm
+`AuditConstants.Actions.COURSE_CREATE`, `COURSE_UPDATE`, `CLASS_CREATE`, `CLASS_UPDATE` và
+`AuditConstants.EntityTypes.COURSE`, `CLASS`.
 
 ## 8. Frontend
 
