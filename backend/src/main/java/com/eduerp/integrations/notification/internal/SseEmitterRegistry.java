@@ -40,7 +40,10 @@ public class SseEmitterRegistry {
         for (var emitter : list) {
             try {
                 emitter.send(SseEmitter.event().name(type).data(payload == null ? "" : payload));
-            } catch (IOException e) {
+            } catch (IOException | IllegalStateException e) {
+                // IOException: kết nối đã rớt. IllegalStateException: emitter đã complete/timeout
+                // nhưng callback dọn dẹp (onCompletion/onTimeout) chưa kịp chạy. Cả hai chỉ là một
+                // tab/thiết bị đã chết - không được để nó chặn các tab khác của cùng account.
                 remove(accountId, emitter);
             }
         }
