@@ -37,6 +37,8 @@ public final class AccessConstants {
         public static final String BRANCH = "BRANCH";
         public static final String COURSE = "COURSE";
         public static final String CLASS = "CLASS";
+        public static final String TEACHER = "TEACHER";
+        public static final String STUDENT = "STUDENT";
         public static final String AUDIT_LOG = "AUDIT_LOG";
         public static final String DASHBOARD = "DASHBOARD";
     }
@@ -141,6 +143,18 @@ public final class AccessConstants {
         public static final String READ_CLASS = CHECK_PREFIX + Resources.CLASS + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String UPDATE_CLASS = CHECK_PREFIX + Resources.CLASS + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_TEACHER = CHECK_PREFIX + Resources.TEACHER + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_TEACHER = CHECK_PREFIX + Resources.TEACHER + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String UPDATE_TEACHER = CHECK_PREFIX + Resources.TEACHER + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_STUDENT = CHECK_PREFIX + Resources.STUDENT + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_STUDENT = CHECK_PREFIX + Resources.STUDENT + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String UPDATE_STUDENT = CHECK_PREFIX + Resources.STUDENT + CHECK_SEPARATOR
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
     }
 }
