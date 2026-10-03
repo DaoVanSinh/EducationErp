@@ -86,25 +86,28 @@ function InvoiceActions({
     return <p className="text-xs text-mist-500">Hoá đơn đã chốt, không còn thao tác thu tiền.</p>;
   }
   return (
-    <div className="flex flex-wrap gap-2">
-      <OnlinePaymentPicker onPay={controller.onPayOnline} isPaying={controller.isPayingOnline} />
-      <GlassButton
-        variant="secondary"
-        size="sm"
-        onClick={controller.openManualDialog}
-        icon={<Banknote size={14} aria-hidden />}
-      >
-        Ghi nhận thanh toán thủ công
-      </GlassButton>
-      <GlassButton
-        variant="ghost"
-        size="sm"
-        disabled={!controller.canCancel || controller.isCancelling}
-        onClick={controller.onCancel}
-        icon={<Ban size={14} aria-hidden />}
-      >
-        Huỷ hoá đơn
-      </GlassButton>
+    <div className="flex flex-col gap-2">
+      {controller.onlinePaymentError ? <ErrorNotice error={controller.onlinePaymentError} /> : null}
+      <div className="flex flex-wrap gap-2">
+        <OnlinePaymentPicker onPay={controller.onPayOnline} isPaying={controller.isPayingOnline} />
+        <GlassButton
+          variant="secondary"
+          size="sm"
+          onClick={controller.openManualDialog}
+          icon={<Banknote size={14} aria-hidden />}
+        >
+          Ghi nhận thanh toán thủ công
+        </GlassButton>
+        <GlassButton
+          variant="ghost"
+          size="sm"
+          disabled={!controller.canCancel || controller.isCancelling}
+          onClick={controller.onCancel}
+          icon={<Ban size={14} aria-hidden />}
+        >
+          Huỷ hoá đơn
+        </GlassButton>
+      </div>
     </div>
   );
 }

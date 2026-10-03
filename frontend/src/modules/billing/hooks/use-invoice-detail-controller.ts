@@ -30,10 +30,27 @@ export function useInvoiceDetailController(invoiceId: string) {
 
   const onPayOnline = useCallback(
     (gateway: OnlineGateway) => {
-      void initiateOnlinePayment.mutateAsync({ gateway }).then((result) => {
-        // Mở tab mới thay vì điều hướng cả SPA: kế toán vẫn giữ trang hoá đơn đang mở.
-        window.open(result.payUrl, "_blank", "noopener,noreferrer");
-      });
+      // Final review I5: window.open sau khi await mutateAsync chạy NGOÀI user-activation của cú
+      // click, nên Safari/Firefox (và thường cả Chrome) âm thầm chặn popup. Mở tab rỗng NGAY trong
+      // handler để giữ user-activation, rồi điều hướng tab đó sang payUrl khi mutation xong. Không
+      // dùng "noopener" ở đây vì flag đó khiến window.open trả về null - mất luôn tham chiếu để điều
+      // hướng sau; tự đặt opener=null để đạt hiệu quả cô lập tương đương mà vẫn giữ được handle.
+      const paymentTab = window.open("", "_blank");
+      if (paymentTab) {
+        paymentTab.opener = null;
+      }
+      void initiateOnlinePayment.mutateAsync({ gateway }).then(
+        (result) => {
+          if (paymentTab) {
+            paymentTab.location.href = result.payUrl;
+          } else {
+            window.open(result.payUrl, "_blank", "noopener,noreferrer");
+          }
+        },
+        () => {
+          paymentTab?.close();
+        },
+      );
     },
     [initiateOnlinePayment],
   );
@@ -52,6 +69,7 @@ export function useInvoiceDetailController(invoiceId: string) {
     closeManualDialog,
     onPayOnline,
     isPayingOnline: initiateOnlinePayment.isPending,
+    onlinePaymentError: initiateOnlinePayment.error,
     onCancel,
     isCancelling: cancelInvoice.isPending,
   };
