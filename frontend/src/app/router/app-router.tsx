@@ -53,6 +53,18 @@ const PayrollRunsPage = lazy(() =>
 const PayrollRunDetailPage = lazy(() =>
   import("@/modules/payroll").then((module) => ({ default: module.PayrollRunDetailPage })),
 );
+const EnrollmentsPage = lazy(() =>
+  import("@/modules/enrollment").then((module) => ({ default: module.EnrollmentsPage })),
+);
+const InvoicesPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.InvoicesPage })),
+);
+const InvoiceDetailPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.InvoiceDetailPage })),
+);
+const PaymentReturnPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
+);
 
 function NotFoundPage() {
   return (
@@ -83,6 +95,7 @@ export function AppRouter() {
             <Route path={APP_ROUTE.forgotPassword} element={<ForgotPasswordPage />} />
           </Route>
           <Route path={APP_ROUTE.resetPassword} element={<ResetPasswordPage />} />
+          <Route path={APP_ROUTE.paymentReturn} element={<PaymentReturnPage />} />
         </Route>
 
         <Route element={<RequireAuth />}>
@@ -96,6 +109,9 @@ export function AppRouter() {
           <Route path={APP_ROUTE.payrollContracts} element={<ContractsPage />} />
           <Route path={APP_ROUTE.payrollRuns} element={<PayrollRunsPage />} />
           <Route path={APP_ROUTE.payrollRunDetail} element={<PayrollRunDetailPage />} />
+          <Route path={APP_ROUTE.enrollments} element={<EnrollmentsPage />} />
+          <Route path={APP_ROUTE.invoices} element={<InvoicesPage />} />
+          <Route path={APP_ROUTE.invoiceDetail} element={<InvoiceDetailPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>
