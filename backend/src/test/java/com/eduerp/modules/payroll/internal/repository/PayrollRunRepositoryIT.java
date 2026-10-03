@@ -9,6 +9,7 @@ import com.eduerp.modules.payroll.PayrollConstants;
 import com.eduerp.modules.payroll.internal.model.Payslip;
 import com.eduerp.modules.payroll.internal.model.PayrollRun;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,5 +69,29 @@ class PayrollRunRepositoryIT {
 
         assertThat(runs.existsByYearAndMonth(2026, 3)).isTrue();
         assertThat(runs.existsByYearAndMonth(2026, 4)).isFalse();
+    }
+
+    /** Review finding Important #6: ListPayrollRuns đếm/cộng grossPay bằng một query theo lô cho cả
+     * trang thay vì một query riêng cho từng dòng (N+1). Query này xuất phát FROM Payslip nên một kỳ
+     * lương chưa có phiếu nào tự nhiên không xuất hiện trong kết quả - usecase (không phải query này)
+     * là nơi lấp khoảng trống đó bằng count=0/total=0, không phải JOIN rỗng ở đây. */
+    @Test
+    void aggregateByPayrollRunIdsCountsAndSumsGrossPayPerRun() {
+        var runWithPayslips = runs.save(new PayrollRun(2026, 5));
+        var emptyRun = runs.save(new PayrollRun(2026, 6));
+        payslips.save(new Payslip(runWithPayslips, newAccountId("agg1@eduerp.local"),
+                PayrollConstants.ContractType.OFFICIAL, new BigDecimal("10000000"), BigDecimal.ZERO,
+                new BigDecimal("1050000"), new BigDecimal("2150000"), null, false));
+        payslips.save(new Payslip(runWithPayslips, newAccountId("agg2@eduerp.local"),
+                PayrollConstants.ContractType.COLLABORATOR, new BigDecimal("3000000"), BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("20"), false));
+
+        var aggregates = payslips.aggregateByPayrollRunIds(List.of(runWithPayslips.getId(), emptyRun.getId()));
+
+        var withPayslipsRow = aggregates.stream()
+                .filter(row -> row.getPayrollRunId().equals(runWithPayslips.getId())).findFirst().orElseThrow();
+        assertThat(withPayslipsRow.getPayslipCount()).isEqualTo(2);
+        assertThat(withPayslipsRow.getTotalGrossPay()).isEqualByComparingTo(new BigDecimal("13000000"));
+        assertThat(aggregates.stream().anyMatch(row -> row.getPayrollRunId().equals(emptyRun.getId()))).isFalse();
     }
 }
