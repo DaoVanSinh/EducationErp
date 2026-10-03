@@ -1,4 +1,4 @@
-import { useLoginFormController } from "@/modules/auth/hooks/use-login-form-controller";
+import type { useLoginFormController } from "@/modules/auth/hooks/use-login-form-controller";
 import { APP_ROUTE } from "@/shared/constants/app-routes";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
@@ -8,16 +8,12 @@ import { PasswordInput } from "@/shared/ui/password-input";
 import { LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export function LoginForm({ redirectTo }: { readonly redirectTo: string }) {
-  const {
-    values,
-    fieldErrors,
-    submitError,
-    isSubmitting,
-    handleSubmit,
-    setEmail,
-    setPassword,
-  } = useLoginFormController(redirectTo);
+export interface LoginFormProps {
+  readonly controller: ReturnType<typeof useLoginFormController>;
+}
+
+export function LoginForm({ controller }: LoginFormProps) {
+  const { values, fieldErrors, submitError, isSubmitting, handleSubmit, setEmail, setPassword } = controller;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>

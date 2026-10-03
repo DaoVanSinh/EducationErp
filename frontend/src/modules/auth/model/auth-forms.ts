@@ -24,3 +24,13 @@ export const resetPasswordFormSchema = z
     path: ["confirmPassword"],
     message: "Hai mật khẩu chưa giống nhau",
   });
+
+export const completeInviteFormSchema = z
+  .object({
+    newPassword: z.string().min(PASSWORD_MIN_LENGTH, `Mật khẩu cần tối thiểu ${PASSWORD_MIN_LENGTH} ký tự`),
+    confirmPassword: z.string(),
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Hai mật khẩu chưa giống nhau",
+  });

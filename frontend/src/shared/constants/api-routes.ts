@@ -2,6 +2,7 @@
 export const API_ROUTE = {
   auth: {
     login: "/api/auth/login",
+    completeInvite: "/api/auth/complete-invite",
     refresh: "/api/auth/refresh",
     logout: "/api/auth/logout",
   },
