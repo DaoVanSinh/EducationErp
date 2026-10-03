@@ -52,6 +52,7 @@ export const API_ROUTE = {
  */
 export const ENDPOINTS_WITHOUT_SESSION_RETRY: readonly string[] = [
   API_ROUTE.auth.login,
+  API_ROUTE.auth.completeInvite,
   API_ROUTE.auth.refresh,
   API_ROUTE.account.forgotPassword,
   API_ROUTE.account.resetPassword,
