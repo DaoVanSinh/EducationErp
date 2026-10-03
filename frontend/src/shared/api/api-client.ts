@@ -75,6 +75,22 @@ class ApiClient {
     return this.request<T>(path, { method: HTTP_METHOD.patch, body });
   }
 
+  async postForm<T>(path: string, formData: FormData): Promise<T> {
+    return this.request<T>(path, { method: HTTP_METHOD.post, body: formData });
+  }
+
+  async patchForm<T>(path: string, formData: FormData): Promise<T> {
+    return this.request<T>(path, { method: HTTP_METHOD.patch, body: formData });
+  }
+
+  async getBlob(path: string): Promise<Blob> {
+    const response = await this.send(path, { method: HTTP_METHOD.get });
+    if (!response.ok) {
+      throw await ApiError.fromResponse(response);
+    }
+    return response.blob();
+  }
+
   async request<T>(path: string, request: ApiRequest = {}): Promise<T> {
     let response = await this.send(path, request);
 
@@ -93,8 +109,9 @@ class ApiClient {
   private async send(path: string, request: ApiRequest): Promise<Response> {
     const method = request.method ?? HTTP_METHOD.get;
     const headers = new Headers({ [HTTP_HEADER.accept]: MEDIA_TYPE.json });
+    const isFormData = request.body instanceof FormData;
 
-    if (request.body !== undefined) {
+    if (request.body !== undefined && !isFormData) {
       headers.set(HTTP_HEADER.contentType, MEDIA_TYPE.json);
     }
     if (MUTATING_METHODS.includes(method)) {
@@ -109,7 +126,8 @@ class ApiClient {
         method,
         headers,
         credentials: "include",
-        body: request.body === undefined ? undefined : JSON.stringify(request.body),
+        body: request.body === undefined ? undefined
+          : isFormData ? (request.body as FormData) : JSON.stringify(request.body),
       });
     } catch {
       throw ApiError.networkUnreachable();
