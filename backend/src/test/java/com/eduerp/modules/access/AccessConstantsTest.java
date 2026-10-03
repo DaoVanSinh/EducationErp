@@ -48,4 +48,27 @@ class AccessConstantsTest {
         assertThat(AccessConstants.AccessRules.APPROVE_PAYROLL)
                 .contains("PAYROLL", "APPROVE", "@ORGANIZATION");
     }
+
+    @Test
+    void enrollmentAndInvoiceRulesRequireOrganizationScope() {
+        assertThat(AccessConstants.AccessRules.CREATE_ENROLLMENT)
+                .contains("ENROLLMENT", "CREATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.READ_ENROLLMENT)
+                .contains("ENROLLMENT", "READ", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.UPDATE_ENROLLMENT)
+                .contains("ENROLLMENT", "UPDATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.CREATE_INVOICE)
+                .contains("INVOICE", "CREATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.READ_INVOICE)
+                .contains("INVOICE", "READ", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.UPDATE_INVOICE)
+                .contains("INVOICE", "UPDATE", "@ORGANIZATION");
+    }
+
+    /** Phân hệ 3 không có luồng duyệt - không rule nào ở đây được đòi APPROVE (spec mục 7). */
+    @Test
+    void enrollmentAndInvoiceHaveNoApproveRule() {
+        assertThat(AccessConstants.AccessRules.UPDATE_ENROLLMENT).doesNotContain(AccessConstants.Actions.APPROVE);
+        assertThat(AccessConstants.AccessRules.UPDATE_INVOICE).doesNotContain(AccessConstants.Actions.APPROVE);
+    }
 }

@@ -40,6 +40,8 @@ public final class AccessConstants {
         public static final String TEACHER = "TEACHER";
         public static final String STUDENT = "STUDENT";
         public static final String PAYROLL = "PAYROLL";
+        public static final String ENROLLMENT = "ENROLLMENT";
+        public static final String INVOICE = "INVOICE";
         public static final String AUDIT_LOG = "AUDIT_LOG";
         public static final String DASHBOARD = "DASHBOARD";
     }
@@ -165,5 +167,19 @@ public final class AccessConstants {
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String APPROVE_PAYROLL = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
                 + Actions.APPROVE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_ENROLLMENT = CHECK_PREFIX + Resources.ENROLLMENT + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_ENROLLMENT = CHECK_PREFIX + Resources.ENROLLMENT + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        /** Rút/hoàn tất ghi danh là chuyển state, dùng UPDATE - hệ thống chưa dùng DELETE ở đâu. */
+        public static final String UPDATE_ENROLLMENT = CHECK_PREFIX + Resources.ENROLLMENT + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_INVOICE = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_INVOICE = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        /** Thu tiền/huỷ hoá đơn cũng là chuyển state của Invoice, dùng UPDATE (spec mục 5). */
+        public static final String UPDATE_INVOICE = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
     }
 }
