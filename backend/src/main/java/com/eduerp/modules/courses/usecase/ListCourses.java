@@ -24,6 +24,7 @@ public class ListCourses {
 
     private static CourseResponse toResponse(Course course) {
         return new CourseResponse(course.getId(), course.getCode(), course.getName(),
-                course.getDescription(), course.getStandardSessionCount(), course.isActive());
+                course.getDescription(), course.getStandardSessionCount(), course.getTuitionFee(),
+                course.isActive());
     }
 }

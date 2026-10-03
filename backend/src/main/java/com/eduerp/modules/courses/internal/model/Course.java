@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,15 +37,22 @@ public class Course {
     @Setter
     private Integer standardSessionCount;
 
+    /** Học phí toàn khoá, VND, scale 0. Nullable - khoá học có thể chưa chốt giá (spec mục 5). */
+    @Setter
+    @Column(name = "tuition_fee")
+    private BigDecimal tuitionFee;
+
     @Column(nullable = false)
     @Setter
     private boolean active = true;
 
-    public Course(String code, String name, String description, Integer standardSessionCount) {
+    public Course(String code, String name, String description, Integer standardSessionCount,
+            BigDecimal tuitionFee) {
         this.code = code;
         this.name = name;
         this.description = description;
         this.standardSessionCount = standardSessionCount;
+        this.tuitionFee = tuitionFee;
         this.active = true;
     }
 }

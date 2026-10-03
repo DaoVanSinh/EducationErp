@@ -86,7 +86,7 @@ class CourseAdminControllerIT {
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreateCourseRequest("TA-GT", "Tiếng Anh giao tiếp", "Mô tả", 24))))
+                                new CreateCourseRequest("TA-GT", "Tiếng Anh giao tiếp", "Mô tả", 24, null))))
                 .andReturn();
         assertThat(createResult.getResponse().getStatus()).isEqualTo(200);
         var courseId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
@@ -101,13 +101,13 @@ class CourseAdminControllerIT {
     void updatesACourse() throws Exception {
         var admin = signIn("course-editor@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var course = courses.save(new com.eduerp.modules.courses.internal.model.Course("TOAN-9",
-                "Toán lớp 9", null, null));
+                "Toán lớp 9", null, null, null));
 
         var updateResult = mockMvc.perform(patch("/api/courses/courses/" + course.getId())
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdateCourseRequest("Toán lớp 9 (mới)", "Cập nhật", 30, false))))
+                                new UpdateCourseRequest("Toán lớp 9 (mới)", "Cập nhật", 30, null, false))))
                 .andReturn();
 
         assertThat(updateResult.getResponse().getStatus()).isEqualTo(200);
@@ -123,7 +123,7 @@ class CourseAdminControllerIT {
         var result = mockMvc.perform(post("/api/courses/courses")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateCourseRequest("X01", "", null, null))))
+                        .content(objectMapper.writeValueAsString(new CreateCourseRequest("X01", "", null, null, null))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
@@ -137,7 +137,7 @@ class CourseAdminControllerIT {
                         .cookie(teacher).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreateCourseRequest("XX01", "Không được phép", null, null))))
+                                new CreateCourseRequest("XX01", "Không được phép", null, null, null))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(403);

@@ -26,6 +26,7 @@ public class UpdateCourse {
         course.setName(request.name());
         course.setDescription(request.description());
         course.setStandardSessionCount(request.standardSessionCount());
+        course.setTuitionFee(request.tuitionFee());
         course.setActive(request.active());
         events.publishEvent(new CoursesEvents.CourseUpdated(courseId, actorAccountId, actorBranchId));
     }

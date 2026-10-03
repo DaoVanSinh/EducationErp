@@ -101,7 +101,7 @@ class ClassAdminControllerIT {
     @Test
     void createsAClassWithScheduleThenListsIt() throws Exception {
         var admin = signIn("class-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var course = courses.save(new Course("TA-GT", "Tiếng Anh giao tiếp", null, null));
+        var course = courses.save(new Course("TA-GT", "Tiếng Anh giao tiếp", null, null, null));
         var branch = branches.save(new Branch("CG01", "Chi nhánh Cầu Giấy", null));
         var teacher = accounts.save(new Account("teacher-1@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Cô Lan", null));
@@ -126,7 +126,7 @@ class ClassAdminControllerIT {
     @Test
     void rejectsACreateWithANonExistentTeacher() throws Exception {
         var admin = signIn("class-bad-teacher@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var course = courses.save(new Course("TA-GT2", "Tiếng Anh giao tiếp 2", null, null));
+        var course = courses.save(new Course("TA-GT2", "Tiếng Anh giao tiếp 2", null, null, null));
         var branch = branches.save(new Branch("CG02", "Chi nhánh 2", null));
 
         var request = new CreateClassRequest(course.getId(), "TA-GT2-K1", branch.getId(), UUID.randomUUID(),
@@ -143,7 +143,7 @@ class ClassAdminControllerIT {
     @Test
     void rejectsACreateWithANonExistentBranch() throws Exception {
         var admin = signIn("class-bad-branch@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var course = courses.save(new Course("TA-GT4", "Tiếng Anh giao tiếp 4", null, null));
+        var course = courses.save(new Course("TA-GT4", "Tiếng Anh giao tiếp 4", null, null, null));
         var teacher = accounts.save(new Account("teacher-5@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Cô Mai", null));
 
@@ -162,7 +162,7 @@ class ClassAdminControllerIT {
     @Test
     void rejectsAMissingScheduleFieldOnCreate() throws Exception {
         var admin = signIn("class-null-schedule@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var course = courses.save(new Course("TA-GT6", "Tiếng Anh giao tiếp 6", null, null));
+        var course = courses.save(new Course("TA-GT6", "Tiếng Anh giao tiếp 6", null, null, null));
         var branch = branches.save(new Branch("CG06", "Chi nhánh 6", null));
         var teacher = accounts.save(new Account("teacher-7@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Cô Yến", null));
@@ -182,7 +182,7 @@ class ClassAdminControllerIT {
     @Test
     void acceptsAnEmptyScheduleOnCreate() throws Exception {
         var admin = signIn("class-empty-schedule@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var course = courses.save(new Course("TA-GT5", "Tiếng Anh giao tiếp 5", null, null));
+        var course = courses.save(new Course("TA-GT5", "Tiếng Anh giao tiếp 5", null, null, null));
         var branch = branches.save(new Branch("CG05", "Chi nhánh 5", null));
         var teacher = accounts.save(new Account("teacher-6@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Đức", null));
@@ -206,7 +206,7 @@ class ClassAdminControllerIT {
     @Test
     void updatesTeacherScheduleAndMaxSeats() throws Exception {
         var admin = signIn("class-update-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var course = courses.save(new Course("TA-GT3", "Tiếng Anh giao tiếp 3", null, null));
+        var course = courses.save(new Course("TA-GT3", "Tiếng Anh giao tiếp 3", null, null, null));
         var branch = branches.save(new Branch("CG03", "Chi nhánh 3", null));
         var teacher1 = accounts.save(new Account("teacher-2@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Nam", null));
@@ -286,7 +286,7 @@ class ClassAdminControllerIT {
     void listsClassesWithoutNPlusOneQueries() throws Exception {
         var admin = signIn("class-n-plus-one@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         for (int i = 0; i < 3; i++) {
-            var course = courses.save(new Course("NPO-" + i, "Khóa N+1 " + i, null, null));
+            var course = courses.save(new Course("NPO-" + i, "Khóa N+1 " + i, null, null, null));
             var branch = branches.save(new Branch("NPO-B" + i, "Chi nhánh N+1 " + i, null));
             var teacher = accounts.save(new Account("npo-teacher-" + i + "@eduerp.local",
                     passwordEncoder.encode(PASSWORD), "Giáo viên N+1 " + i, null));
@@ -310,7 +310,7 @@ class ClassAdminControllerIT {
     @Test
     void refusesAnAccountWithOnlyPersonalScopePermissions() throws Exception {
         var teacher = signIn("class-outsider@eduerp.local", AccessConstants.RoleCodes.TEACHER);
-        var course = courses.save(new Course("TA-GT7", "Tiếng Anh giao tiếp 7", null, null));
+        var course = courses.save(new Course("TA-GT7", "Tiếng Anh giao tiếp 7", null, null, null));
         var branch = branches.save(new Branch("CG07", "Chi nhánh 7", null));
         var teacherAccount = accounts.save(new Account("teacher-8@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Dũng", null));

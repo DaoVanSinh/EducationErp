@@ -27,7 +27,7 @@ public class CreateCourse {
             throw new CourseCodeAlreadyExistsException(request.code());
         }
         var saved = courses.save(new Course(request.code(), request.name(), request.description(),
-                request.standardSessionCount()));
+                request.standardSessionCount(), request.tuitionFee()));
         events.publishEvent(new CoursesEvents.CourseCreated(saved.getId(), actorAccountId, actorBranchId));
         return saved.getId();
     }
