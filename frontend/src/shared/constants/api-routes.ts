@@ -33,6 +33,14 @@ export const API_ROUTE = {
     classes: "/api/courses/classes",
     class: (classId: string) => `/api/courses/classes/${classId}`,
   },
+  teachers: {
+    profiles: "/api/teachers/profiles",
+    profile: (profileId: string) => `/api/teachers/profiles/${profileId}`,
+  },
+  students: {
+    profiles: "/api/students/profiles",
+    profile: (profileId: string) => `/api/students/profiles/${profileId}`,
+  },
 } as const;
 
 /**
