@@ -29,6 +29,7 @@ public final class IdentityConstants {
         public static final String BLACKLISTED_JTI = "blacklist:jti";
         public static final String ACCOUNT_SESSIONS = "sessions:account";
         public static final String PASSWORD_RESET_TOKEN = "pwreset:token";
+        public static final String ACCOUNT_INVITE = "invite:account";
     }
 
     public static final class Cookies {

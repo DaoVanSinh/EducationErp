@@ -51,6 +51,7 @@ identity:
   access-token-ttl: 15m
   refresh-token-ttl: 30d
   password-reset-ttl: 30m
+  account-invite-ttl: 7d
   secure-cookies: ${IDENTITY_SECURE_COOKIES:true}
   mail-from: ${IDENTITY_MAIL_FROM:no-reply@eduerp.local}
   frontend-reset-url: ${IDENTITY_FRONTEND_RESET_URL:http://localhost:5173/reset-password}

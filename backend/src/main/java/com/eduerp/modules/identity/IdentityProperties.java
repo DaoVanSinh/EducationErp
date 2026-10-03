@@ -9,6 +9,7 @@ public record IdentityProperties(
         Duration accessTokenTtl,
         Duration refreshTokenTtl,
         Duration passwordResetTtl,
+        Duration accountInviteTtl,
         String mailFrom,
         String frontendResetUrl,
         String defaultAdminEmail,
