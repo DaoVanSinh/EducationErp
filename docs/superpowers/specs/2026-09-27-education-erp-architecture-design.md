@@ -20,12 +20,13 @@ Hệ quả cho spec này:
 | # | Phân hệ | Phụ thuộc | Ghi chú phạm vi |
 |---|---|---|---|
 | 1 | **Core: Định danh & Quản trị** | — | Tài khoản, RBAC linh hoạt, Audit Log, Dashboard khung. **Đang thiết kế ở spec này.** |
-| 2 | **Khóa học & Lớp học** | 1 | Danh mục khóa học, tạo lớp, phân công giảng viên, thời khóa biểu |
-| 3 | **Tuyển sinh & Học phí** | 1, 2 | Đăng ký, tiếp nhận học viên, tình trạng học phí, lịch sử thanh toán, **thanh toán học phí online** (cổng thanh toán VN, chọn cụ thể khi tới lượt spec phân hệ này) |
-| 4 | **Quản lý Học tập** | 1, 2, 3 | Danh sách lớp, điểm danh, theo dõi tiến độ bài tập/mini-test, nhập điểm cuối khóa do giảng viên thực hiện. **Không** xây engine học viên làm bài/thi trong hệ thống. Cân nhắc kế thừa cơ chế điểm danh QR + theo dõi real-time từ hệ cũ khi thiết kế chi tiết phân hệ này |
+| 2 | **Khóa học & Lớp học** | 1 | Danh mục khóa học, tạo lớp, phân công giảng viên, thời khóa biểu. **Đã xây xong** (nhánh `feature/courses-classes`, merge vào `develop` ngày 2026-10-03). |
+| 2.5 | **Hồ sơ Giáo viên & Học viên + Thông báo** | 1 | `modules.teachers`/`modules.students` — hồ sơ nghiệp vụ riêng của giáo viên/học viên (không phải chỉ `Account` chung của Phân hệ 1), CRUD đầy đủ. `integrations.mail` — gửi email theo template (welcome/onboarding khi tạo tài khoản + thông báo nghiệp vụ dùng lại ở Phân hệ 3/4). `integrations.notification` — kênh SSE dùng chung, phục vụ cả đổi quyền tức thì (mục 6.4) lẫn sự kiện nghiệp vụ các phân hệ sau. Thêm vào roadmap ngày 2026-10-03 theo yêu cầu người dùng, dựa trên khảo sát thực tế Education ERP (Student là bounded context riêng, Teacher có module hồ sơ riêng, tách khỏi RBAC thuần phân quyền). **Lưu ý: đây là ERP trung tâm dạy (tutoring center), không phải trường/đại học** — tránh field kiểu khoa/niên khóa/mã số trường. |
+| 3 | **Tuyển sinh & Học phí** | 1, 2, 2.5 | Đăng ký, tiếp nhận học viên (dựa trên `modules.students` của 2.5), tình trạng học phí, lịch sử thanh toán, **thanh toán học phí online** (cổng thanh toán VN, chọn cụ thể khi tới lượt spec phân hệ này) |
+| 4 | **Quản lý Học tập** | 1, 2, 2.5, 3 | Danh sách lớp, điểm danh, theo dõi tiến độ bài tập/mini-test, nhập điểm cuối khóa do giảng viên thực hiện. **Không** xây engine học viên làm bài/thi trong hệ thống. Cân nhắc kế thừa cơ chế điểm danh QR + theo dõi real-time từ hệ cũ khi thiết kế chi tiết phân hệ này |
 | 5 | **AI Chatbot** | 1, 2 | Chat cho học viên, RAG trên danh mục khóa học đang mở |
 
-Phân hệ 2-5 chỉ có ghi chú phạm vi sơ bộ ở mục 8 — mỗi phân hệ sẽ có vòng brainstorm → spec → plan riêng khi tới lượt xây, theo đúng thứ tự phụ thuộc trên.
+Phân hệ 2.5-5 chỉ có ghi chú phạm vi sơ bộ ở mục 8 — mỗi phân hệ sẽ có vòng brainstorm → spec → plan riêng khi tới lượt xây, theo đúng thứ tự phụ thuộc trên.
 
 ## 3. Stack kỹ thuật
 
@@ -118,10 +119,11 @@ src/entities/permission/  RESOURCES/ACTIONS/SCOPES constants + <Can>/useCan (the
 - `@ApplicationModuleTest` kiểm tra biên giới module `identity`.
 - `@SpringBootTest` + Testcontainers (Postgres + Redis) cho luồng login → refresh → logout thật, và luồng force-logout/đổi quyền có hiệu lực ngay.
 
-## 8. Ghi chú phạm vi các Phân hệ 2-5 (sơ bộ — spec chi tiết sẽ làm riêng khi tới lượt)
+## 8. Ghi chú phạm vi các Phân hệ 2.5-5 (sơ bộ — spec chi tiết sẽ làm riêng khi tới lượt)
 
-- **Phân hệ 2 — Khóa học & Lớp học**: danh mục khóa học, tạo lớp, phân công giảng viên (không giới hạn theo chi nhánh chủ quản giáo viên — mục 4), thời khóa biểu.
-- **Phân hệ 3 — Tuyển sinh & Học phí**: đăng ký, tiếp nhận học viên, tình trạng học phí, lịch sử thanh toán, **thanh toán học phí online** — chọn cổng thanh toán cụ thể (VNPay/MoMo/ZaloPay...) khi vào spec phân hệ này.
+- **Phân hệ 2 — Khóa học & Lớp học**: danh mục khóa học, tạo lớp, phân công giảng viên (không giới hạn theo chi nhánh chủ quản giáo viên — mục 4), thời khóa biểu. **Đã xây xong.**
+- **Phân hệ 2.5 — Hồ sơ Giáo viên & Học viên + Thông báo**: CRUD hồ sơ nghiệp vụ Teacher (môn dạy/chuyên môn, không phải "khoa" kiểu trường học) và Student (ngày sinh, liên hệ phụ huynh nếu là trẻ em, nguồn biết đến trung tâm) — tách khỏi `Account` chung của Phân hệ 1. Email template cho cả onboarding (tài khoản + mật khẩu tạm) lẫn thông báo nghiệp vụ. Hạ tầng SSE dùng chung cho đổi quyền tức thì và sự kiện nghiệp vụ các phân hệ sau.
+- **Phân hệ 3 — Tuyển sinh & Học phí**: đăng ký, tiếp nhận học viên (dựa trên hồ sơ Student của Phân hệ 2.5), tình trạng học phí, lịch sử thanh toán, **thanh toán học phí online** — chọn cổng thanh toán cụ thể (VNPay/MoMo/ZaloPay...) khi vào spec phân hệ này.
 - **Phân hệ 4 — Quản lý Học tập**: danh sách lớp, điểm danh, theo dõi tiến độ bài tập/mini-test, nhập điểm cuối khóa do giảng viên thực hiện. Ràng buộc cứng: **không** xây engine học viên làm bài/thi trong hệ thống. Cân nhắc kế thừa cơ chế điểm danh QR + theo dõi điểm danh real-time + xuất Excel từ hệ cũ khi thiết kế chi tiết.
 - **Phân hệ 5 — AI Chatbot**: chat cho học viên, RAG trên danh mục khóa học đang mở, cần dữ liệu từ Phân hệ 2.
 
