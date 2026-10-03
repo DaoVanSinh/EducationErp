@@ -43,6 +43,7 @@ export const accountSummarySchema = z.object({
   branchId: z.string().uuid().nullable(),
   branchName: z.string().nullable(),
   groups: z.array(namedReferenceSchema),
+  lastLogin: z.string().nullable(),
 });
 
 export type AccountSummary = z.infer<typeof accountSummarySchema>;
@@ -55,4 +56,11 @@ export interface ProfileUpdatePayload {
 export interface ChangePasswordPayload {
   readonly currentPassword: string;
   readonly newPassword: string;
+}
+
+export interface CreateAccountPayload {
+  readonly email: string;
+  readonly fullName: string;
+  readonly homeBranchId: string | null;
+  readonly roleId: string;
 }

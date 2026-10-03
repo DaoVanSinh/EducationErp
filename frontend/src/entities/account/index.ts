@@ -8,6 +8,7 @@ export {
   type AccountStatus,
   type AccountSummary,
   type ChangePasswordPayload,
+  type CreateAccountPayload,
   type ProfileUpdatePayload,
   type Session,
 } from "@/entities/account/model/account-schema";

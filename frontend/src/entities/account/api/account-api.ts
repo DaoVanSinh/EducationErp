@@ -1,12 +1,14 @@
 import {
   accountSummarySchema,
   type ChangePasswordPayload,
+  type CreateAccountPayload,
   type ProfileUpdatePayload,
   sessionSchema,
 } from "@/entities/account/model/account-schema";
 import { apiClient } from "@/shared/api/api-client";
 import { pageResponseSchema } from "@/shared/api/schemas";
 import { API_ROUTE } from "@/shared/constants/api-routes";
+import { z } from "zod";
 
 const accountPageSchema = pageResponseSchema(accountSummarySchema);
 
@@ -31,5 +33,17 @@ export const accountApi = {
 
   async changePassword(payload: ChangePasswordPayload): Promise<void> {
     await apiClient.post<void>(API_ROUTE.account.changePassword, payload);
+  },
+
+  async createAccount(payload: CreateAccountPayload): Promise<string> {
+    return z.string().uuid().parse(await apiClient.post<unknown>(API_ROUTE.rbac.accounts, payload));
+  },
+
+  async resendInvite(accountId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.rbac.accountResendInvite(accountId));
+  },
+
+  async revokeInvite(accountId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.rbac.accountRevokeInvite(accountId));
   },
 } as const;

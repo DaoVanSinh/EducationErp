@@ -19,6 +19,8 @@ export const API_ROUTE = {
     permissionGroups: "/api/rbac/permission-groups",
     accountGroups: (accountId: string) => `/api/rbac/accounts/${accountId}/groups`,
     accountBranch: (accountId: string) => `/api/rbac/accounts/${accountId}/transfer-branch`,
+    accountResendInvite: (accountId: string) => `/api/rbac/accounts/${accountId}/resend-invite`,
+    accountRevokeInvite: (accountId: string) => `/api/rbac/accounts/${accountId}/revoke-invite`,
   },
   dashboard: {
     stats: "/api/dashboard/stats",
