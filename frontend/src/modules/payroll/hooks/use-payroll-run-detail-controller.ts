@@ -1,4 +1,4 @@
-import { usePayrollRunDetail } from "@/entities/payroll";
+import { PAYROLL_RUN_STATUS, usePayrollRunDetail } from "@/entities/payroll";
 import {
   useApprovePayrollRun,
   useRejectPayrollRun,
@@ -16,7 +16,7 @@ export function usePayrollRunDetailController(runId: string) {
   const approve = useApprovePayrollRun(runId);
   const reject = useRejectPayrollRun(runId);
 
-  const isDraft = detail.data?.run.status === "DRAFT";
+  const isDraft = detail.data?.run.status === PAYROLL_RUN_STATUS.draft;
 
   const onSubmitForApproval = useCallback(() => {
     void submitForApproval.mutateAsync();

@@ -1,5 +1,5 @@
 import { Can, RequirePermission } from "@/entities/permission";
-import { PAYROLL_RUN_STATUS_LABEL } from "@/entities/payroll";
+import { PAYROLL_RUN_STATUS, PAYROLL_RUN_STATUS_LABEL } from "@/entities/payroll";
 import { usePayrollRunDetailController } from "@/modules/payroll/hooks/use-payroll-run-detail-controller";
 import { PayslipsTable } from "@/modules/payroll/ui/payslips-table";
 import { RejectPayrollRunDialog } from "@/modules/payroll/ui/reject-payroll-run-dialog";
@@ -34,7 +34,7 @@ export function PayrollRunDetailPage() {
                     </GlassButton>
                   ) : null}
                   <Can {...ACCESS_RULE.approvePayroll}>
-                    {controller.detail.data.run.status === "PENDING_APPROVAL" ? (
+                    {controller.detail.data.run.status === PAYROLL_RUN_STATUS.pendingApproval ? (
                       <>
                         <GlassButton onClick={controller.onApprove} loading={controller.isApproving}>
                           Duyệt
