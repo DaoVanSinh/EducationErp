@@ -197,4 +197,30 @@ class BillingRepositoryIT {
                 BillingConstants.PaymentMethod.VNPAY, "order-dup", BillingConstants.PaymentStatus.PENDING)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    /**
+     * Final review Important #3: hai request đồng thời đều đọc count=1 sẽ cùng tính
+     * installmentNumber=2 - usecase không khoá gì, nên lớp phòng thủ DB này là thứ duy nhất chặn được
+     * một trong hai, đúng tinh thần Review Focus #1 (defense in depth) áp dụng cho bất biến "tối đa 3
+     * đợt, tổng không vượt học phí".
+     */
+    @Test
+    void rejectsASecondLiveInvoiceWithTheSameInstallmentNumberAtDatabaseLevel() {
+        invoices.saveAndFlush(newInvoice(2, "3000000"));
+
+        assertThatThrownBy(() -> invoices.saveAndFlush(newInvoice(2, "3000000")))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    /** Mặt còn lại: một đợt đã HUỶ không chiếm số đợt nữa - phát hành lại cùng số đợt phải được. */
+    @Test
+    void allowsReissuingTheSameInstallmentNumberAfterTheFirstIsCancelled() {
+        var cancelled = invoices.saveAndFlush(newInvoice(2, "3000000"));
+        cancelled.cancel();
+        invoices.saveAndFlush(cancelled);
+
+        var reissued = invoices.saveAndFlush(newInvoice(2, "3000000"));
+
+        assertThat(reissued.getInstallmentNumber()).isEqualTo(2);
+    }
 }

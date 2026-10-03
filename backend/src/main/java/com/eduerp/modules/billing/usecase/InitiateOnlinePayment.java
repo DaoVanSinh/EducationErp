@@ -1,15 +1,20 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.integrations.payment.PaymentGatewayClient;
+import com.eduerp.integrations.payment.PaymentGatewayException;
 import com.eduerp.integrations.payment.PaymentRequest;
+import com.eduerp.integrations.payment.PaymentUrlResult;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.InvoiceNotFoundException;
 import com.eduerp.modules.billing.InvoiceNotPayableException;
+import com.eduerp.modules.billing.PaymentGatewayUnavailableException;
 import com.eduerp.modules.billing.dto.InitiateOnlinePaymentResponse;
 import com.eduerp.modules.billing.internal.PaymentGatewayClientResolver;
 import com.eduerp.modules.billing.internal.model.Payment;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
 import com.eduerp.modules.billing.internal.rules.BillingRules;
+import java.math.BigDecimal;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -50,9 +55,23 @@ public class InitiateOnlinePayment {
                 System.currentTimeMillis());
         var orderInfo = BillingConstants.OrderInfo.PREFIX + invoice.getInstallmentNumber();
 
-        var urlResult = client.createPaymentUrl(PaymentRequest.withGatewayDefaults(orderId, remaining, orderInfo));
+        var urlResult = createPaymentUrl(client, orderId, remaining, orderInfo);
         payments.save(new Payment(invoice, remaining, gateway, urlResult.gatewayOrderId(),
                 BillingConstants.PaymentStatus.PENDING));
         return new InitiateOnlinePaymentResponse(urlResult.payUrl());
+    }
+
+    /**
+     * Final review Critical #1: cổng có thể từ chối tạo link (chữ ký cấu hình sai, amount không hợp
+     * lệ, đối tác bị khoá...). Dịch sang lỗi nghiệp vụ TRƯỚC khi lưu {@code Payment} - nếu không, một
+     * lần cổng từ chối vẫn để lại một bản ghi PENDING mồ côi mà không ai biết để đối soát.
+     */
+    private static PaymentUrlResult createPaymentUrl(PaymentGatewayClient client, String orderId,
+            BigDecimal remaining, String orderInfo) {
+        try {
+            return client.createPaymentUrl(PaymentRequest.withGatewayDefaults(orderId, remaining, orderInfo));
+        } catch (PaymentGatewayException gatewayFailure) {
+            throw new PaymentGatewayUnavailableException(gatewayFailure.getMessage());
+        }
     }
 }

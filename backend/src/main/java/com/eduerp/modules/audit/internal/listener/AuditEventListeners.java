@@ -164,4 +164,11 @@ class AuditEventListeners {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.INVOICE_OVERDUE,
                 AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
     }
+
+    /** Final review Important #9: huỷ hoá đơn là voiding một chứng từ tài chính - phải có dấu vết. */
+    @ApplicationModuleListener
+    void on(BillingEvents.InvoiceCancelled event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.INVOICE_CANCEL,
+                AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
+    }
 }

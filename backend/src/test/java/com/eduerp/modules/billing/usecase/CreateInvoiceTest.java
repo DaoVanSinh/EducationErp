@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 
 class CreateInvoiceTest {
 
@@ -77,7 +78,7 @@ class CreateInvoiceTest {
     }
 
     private void stubSaveEchoesBack() {
-        when(invoices.save(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(invoices.saveAndFlush(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -192,6 +193,24 @@ class CreateInvoiceTest {
         assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(new BigDecimal("1000000"))))
                 .isInstanceOf(InstallmentLimitExceededException.class)
                 .hasMessageContaining("3");
+    }
+
+    /**
+     * Final review Important #3: khi race condition giữa hai request đồng thời vẫn lọt qua được các
+     * kiểm tra đếm/tổng ở trên (cả hai đọc cùng một trạng thái trước khi ai kịp ghi), lớp phòng thủ DB
+     * (migration V20, partial unique index) là thứ chặn một trong hai ở bước lưu - usecase phải dịch
+     * {@code DataIntegrityViolationException} đó sang đúng lỗi nghiệp vụ, không để lọt ra thành 500.
+     */
+    @Test
+    void translatesADatabaseRaceOnTheInstallmentNumberIntoAnInstallmentLimitExceededException() {
+        stubActiveEnrollment();
+        stubTuition(TUITION);
+        stubExistingInvoices(List.of());
+        when(invoices.saveAndFlush(any(Invoice.class)))
+                .thenThrow(new DataIntegrityViolationException("uq_invoices_enrollment_installment"));
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
+                .isInstanceOf(InstallmentLimitExceededException.class);
     }
 
     /** Hoá đơn đã huỷ không chiếm chỗ trong 3 đợt và không tính vào tổng (spec mục 5). */

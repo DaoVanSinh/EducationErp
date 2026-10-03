@@ -20,8 +20,13 @@ public final class BillingConstants {
         MOMO, VNPAY, MANUAL
     }
 
+    /** {@code REJECTED} (final review Critical #2): cổng xác nhận thành công bằng chữ ký hợp lệ,
+     * nhưng hoá đơn không còn ở trạng thái nhận tiền được (đã huỷ/đã trả đủ) lúc callback tới - tiền
+     * có thật nhưng KHÔNG được tự cộng vào một hoá đơn đã chốt, cần kế toán đối soát thủ công. Khác
+     * {@code FAILED}: đó là cổng tự báo giao dịch thất bại, còn đây là hệ thống từ chối một giao dịch
+     * mà cổng nói là thành công. */
     public enum PaymentStatus {
-        PENDING, SUCCESS, FAILED
+        PENDING, SUCCESS, FAILED, REJECTED
     }
 
     public static final class Limits {

@@ -9,11 +9,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.eduerp.integrations.payment.PaymentGatewayClient;
+import com.eduerp.integrations.payment.PaymentGatewayException;
+import com.eduerp.integrations.payment.PaymentGatewayType;
 import com.eduerp.integrations.payment.PaymentRequest;
 import com.eduerp.integrations.payment.PaymentUrlResult;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.InvoiceNotFoundException;
 import com.eduerp.modules.billing.InvoiceNotPayableException;
+import com.eduerp.modules.billing.PaymentGatewayUnavailableException;
 import com.eduerp.modules.billing.internal.PaymentGatewayClientResolver;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
@@ -132,6 +135,25 @@ class InitiateOnlinePaymentTest {
         useCase.execute(invoice.getId(), BillingConstants.PaymentMethod.VNPAY, actorAccountId, actorBranchId);
 
         verify(events, never()).publishEvent(any());
+    }
+
+    /**
+     * Final review Critical #1, nửa còn lại ở tầng usecase: khi cổng từ chối tạo link, phải dịch sang
+     * một lỗi nghiệp vụ RÕ RÀNG và KHÔNG được ghi {@code Payment} PENDING mồ côi - trước bản vá, lỗi
+     * của cổng chưa từng được ném (MoMo trả chuỗi {@code "null"} thay vì ném), nên nhánh này chưa từng
+     * được test chạm tới.
+     */
+    @Test
+    void translatesAGatewayFailureIntoABillingExceptionWithoutSavingAPendingPayment() {
+        var invoice = invoiceOf("6000000");
+        when(invoices.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(resolver.resolve(BillingConstants.PaymentMethod.VNPAY)).thenReturn(client);
+        when(client.createPaymentUrl(any(PaymentRequest.class)))
+                .thenThrow(new PaymentGatewayException(PaymentGatewayType.VNPAY, "Cổng từ chối"));
+
+        assertThatThrownBy(() -> useCase.execute(invoice.getId(), BillingConstants.PaymentMethod.VNPAY,
+                actorAccountId, actorBranchId)).isInstanceOf(PaymentGatewayUnavailableException.class);
+        verify(payments, never()).save(any());
     }
 
     @Test

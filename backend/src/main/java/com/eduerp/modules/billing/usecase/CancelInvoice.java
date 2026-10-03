@@ -1,9 +1,12 @@
 package com.eduerp.modules.billing.usecase;
 
 import com.eduerp.modules.billing.BillingConstants;
+import com.eduerp.modules.billing.BillingEvents;
+import com.eduerp.modules.billing.InvoiceHasPendingPaymentException;
 import com.eduerp.modules.billing.InvoiceNotFoundException;
 import com.eduerp.modules.billing.InvoiceNotPayableException;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.repository.PaymentRepository;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -19,10 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CancelInvoice {
 
     private final InvoiceRepository invoices;
+    private final PaymentRepository payments;
     private final ApplicationEventPublisher events;
 
-    CancelInvoice(InvoiceRepository invoices, ApplicationEventPublisher events) {
+    CancelInvoice(InvoiceRepository invoices, PaymentRepository payments, ApplicationEventPublisher events) {
         this.invoices = invoices;
+        this.payments = payments;
         this.events = events;
     }
 
@@ -32,6 +37,12 @@ public class CancelInvoice {
         if (invoice.getStatus() != BillingConstants.InvoiceStatus.UNPAID) {
             throw new InvoiceNotPayableException(invoiceId, invoice.getStatus());
         }
+        // Final review Critical #2: một giao dịch online còn PENDING mở đường cho callback đến muộn
+        // hồi sinh hoá đơn đã huỷ - chặn ở đây trước, không chỉ dựa vào lớp phòng thủ ở callback.
+        if (payments.existsByInvoice_IdAndStatus(invoiceId, BillingConstants.PaymentStatus.PENDING)) {
+            throw new InvoiceHasPendingPaymentException(invoiceId);
+        }
         invoice.cancel();
+        events.publishEvent(new BillingEvents.InvoiceCancelled(invoiceId, actorAccountId, actorBranchId));
     }
 }

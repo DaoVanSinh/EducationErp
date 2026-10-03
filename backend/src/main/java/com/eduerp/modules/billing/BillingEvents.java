@@ -20,4 +20,9 @@ public final class BillingEvents {
 
     public record InvoiceOverdue(UUID invoiceId, UUID actorAccountId, UUID actorBranchId) {
     }
+
+    /** Final review Important #9: huỷ hoá đơn là voiding một chứng từ tài chính - phải có dấu vết ai
+     * đã làm, không được lẳng lặng (khác InvoiceOverdue, huỷ luôn có người bấm, không null). */
+    public record InvoiceCancelled(UUID invoiceId, UUID actorAccountId, UUID actorBranchId) {
+    }
 }

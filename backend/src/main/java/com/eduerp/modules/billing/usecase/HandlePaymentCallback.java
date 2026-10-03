@@ -10,6 +10,7 @@ import com.eduerp.modules.billing.internal.PaymentGatewayClientResolver;
 import com.eduerp.modules.billing.internal.model.Payment;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.rules.BillingRules;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,12 +76,27 @@ public class HandlePaymentCallback {
         }
     }
 
+    /**
+     * Final review Critical #2: chữ ký hợp lệ và {@code Payment} còn PENDING KHÔNG đủ để cộng tiền -
+     * hoá đơn có thể đã bị huỷ hoặc đã trả đủ qua một kênh khác (thu tay) trong lúc giao dịch này còn
+     * treo. Cộng tiền vào một hoá đơn không còn {@link BillingRules#isPayable} nghĩa là hồi sinh một
+     * chứng từ đã chốt và có thể đẩy tổng các đợt vượt học phí - đúng bất biến mà Review Focus #3 bảo
+     * vệ, bị lách qua đường này. Tiền vẫn có thật nên không được lẳng lặng bỏ qua: đánh dấu
+     * {@code REJECTED} để kế toán đối soát thủ công, không tự động áp vào sổ.
+     */
     private void applySuccess(Payment payment) {
-        payment.markSucceeded();
         var invoice = payment.getInvoice();
+        if (!BillingRules.isPayable(invoice.getStatus())) {
+            payment.markRejected();
+            log.error("Callback báo thành công nhưng hoá đơn {} không còn nhận thanh toán (trạng thái {})"
+                    + " - cần đối soát thủ công, KHÔNG tự động cộng tiền", invoice.getId(), invoice.getStatus());
+            return;
+        }
+        payment.markSucceeded();
         invoice.applyPayment(payment.getAmount());
         invoices.save(invoice);
-        events.publishEvent(new BillingEvents.PaymentReceived(invoice.getId(), invoice.getCreatedByAccountId(),
-                invoice.getBranchId()));
+        // actorAccountId = null: callback không có người gọi, không được mượn id người đã tạo hoá đơn
+        // (final review Important #8) - cùng chuẩn InvoiceOverdue đã áp dụng cho sự kiện hệ thống tự sinh.
+        events.publishEvent(new BillingEvents.PaymentReceived(invoice.getId(), null, invoice.getBranchId()));
     }
 }

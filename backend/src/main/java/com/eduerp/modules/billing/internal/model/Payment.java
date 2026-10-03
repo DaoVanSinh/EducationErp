@@ -80,4 +80,11 @@ public class Payment {
     public void markFailed() {
         this.status = BillingConstants.PaymentStatus.FAILED;
     }
+
+    /** Final review Critical #2: cổng báo thành công (chữ ký hợp lệ) nhưng hoá đơn không còn nhận
+     * tiền được nữa (đã huỷ/đã trả đủ qua kênh khác) - tiền có thật, không bị mất, nhưng cần kế toán
+     * đối soát thủ công thay vì tự động cộng vào một hoá đơn đã chốt. */
+    public void markRejected() {
+        this.status = BillingConstants.PaymentStatus.REJECTED;
+    }
 }

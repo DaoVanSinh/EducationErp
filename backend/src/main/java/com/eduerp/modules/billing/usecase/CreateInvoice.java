@@ -18,6 +18,7 @@ import com.eduerp.modules.enrollment.EnrollmentManagement;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,11 +73,27 @@ public class CreateInvoice {
         }
 
         var installmentNumber = Math.toIntExact(liveInvoiceCount) + 1;
-        var saved = invoices.save(new Invoice(request.enrollmentId(), enrollment.studentProfileId(),
+        var saved = saveInvoice(new Invoice(request.enrollmentId(), enrollment.studentProfileId(),
                 enrollment.courseId(), enrollment.branchId(), installmentNumber, request.amount(),
-                request.dueDate(), actorAccountId));
+                request.dueDate(), actorAccountId), request.enrollmentId());
         events.publishEvent(new BillingEvents.InvoiceCreated(saved.getId(), actorAccountId, actorBranchId));
         return toResponse(saved);
+    }
+
+    /**
+     * Final review Important #3: hai request đồng thời có thể cùng đọc count=1 và cùng tính
+     * installmentNumber=2, vượt qua mọi kiểm tra ở trên vì cả hai đọc TRƯỚC khi ai kịp ghi. Migration
+     * V20 (partial unique index trên {@code (enrollment_id, installment_number)}) là lớp chặn cuối -
+     * dùng {@code saveAndFlush} để buộc INSERT chạy ngay ở đây, trong khối try/catch này, thay vì trôi
+     * tới lúc transaction commit (ngoài tầm với của catch) rồi rơi thành 500.
+     */
+    private Invoice saveInvoice(Invoice invoice, UUID enrollmentId) {
+        try {
+            return invoices.saveAndFlush(invoice);
+        } catch (DataIntegrityViolationException raceLostToAnotherRequest) {
+            throw new InstallmentLimitExceededException(enrollmentId,
+                    BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT);
+        }
     }
 
     /** Dùng lại ở mọi usecase billing khác - một chỗ map duy nhất (mirror CreateEnrollment.toResponse). */

@@ -2,6 +2,8 @@ package com.eduerp.integrations.payment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +12,8 @@ import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -160,5 +164,61 @@ class MomoPaymentGatewayClientTest {
         assertThat(payload).isEqualTo("accessKey=ACCESS123&amount=&extraData=&message=&orderId=order-1"
                 + "&orderInfo=&orderType=&partnerCode=&payType=&requestId=&responseTime=&resultCode="
                 + "&transId=");
+    }
+
+    /**
+     * Final review Critical #1: trước bản vá này, {@code createPaymentUrl} không hề được một test nào
+     * gọi tới - mọi test trước đó chỉ chạm các hàm thuần (chữ ký). Ba test dưới đây khoá lại hành vi
+     * gọi mạng thật qua {@code MockRestServiceServer}.
+     */
+    @Test
+    void createPaymentUrlReturnsThePayUrlWhenMomoReportsSuccess() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var momoClient = new MomoPaymentGatewayClient(properties, builder);
+        server.expect(requestTo(ENDPOINT))
+                .andRespond(withSuccess("{\"resultCode\":0,\"payUrl\":\"https://test-payment.momo.vn/pay/abc\"}",
+                        MediaType.APPLICATION_JSON));
+
+        var result = momoClient.createPaymentUrl(
+                PaymentRequest.withGatewayDefaults("order-1", new BigDecimal("50000"), "Hoc phi dot 1"));
+
+        assertThat(result.payUrl()).isEqualTo("https://test-payment.momo.vn/pay/abc");
+        assertThat(result.gatewayOrderId()).isEqualTo("order-1");
+        server.verify();
+    }
+
+    /**
+     * Review Critical #1: MoMo báo lỗi nghiệp vụ (chữ ký sai, amount không hợp lệ, đối tác bị khoá...)
+     * bằng HTTP 200 kèm {@code resultCode != 0}, KHÔNG có {@code payUrl}. Trước bản vá, điều này lọt
+     * qua thành chuỗi {@code "null"} được trả thẳng cho trình duyệt - không lỗi, không log, một
+     * {@code Payment} PENDING mồ côi vẫn được ghi.
+     */
+    @Test
+    void createPaymentUrlThrowsWhenMomoReportsANonZeroResultCode() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var momoClient = new MomoPaymentGatewayClient(properties, builder);
+        server.expect(requestTo(ENDPOINT))
+                .andRespond(withSuccess("{\"resultCode\":41,\"message\":\"Invalid signature\"}",
+                        MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> momoClient.createPaymentUrl(
+                PaymentRequest.withGatewayDefaults("order-1", new BigDecimal("50000"), "Hoc phi dot 1")))
+                .isInstanceOf(PaymentGatewayException.class)
+                .hasMessageContaining("41");
+    }
+
+    @Test
+    void createPaymentUrlThrowsWhenMomoOmitsThePayUrlDespiteReportingSuccess() {
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var momoClient = new MomoPaymentGatewayClient(properties, builder);
+        server.expect(requestTo(ENDPOINT))
+                .andRespond(withSuccess("{\"resultCode\":0}", MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> momoClient.createPaymentUrl(
+                PaymentRequest.withGatewayDefaults("order-1", new BigDecimal("50000"), "Hoc phi dot 1")))
+                .isInstanceOf(PaymentGatewayException.class);
     }
 }

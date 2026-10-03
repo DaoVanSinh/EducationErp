@@ -133,4 +133,13 @@ class EnrollmentBillingEventAuditingIT {
 
         assertAudited(AuditConstants.EntityTypes.INVOICE, AuditConstants.Actions.INVOICE_OVERDUE, invoiceId);
     }
+
+    /** Final review Important #9: huỷ hoá đơn giờ phải để lại dấu vết trong audit log. */
+    @Test
+    void auditsInvoiceCancelled() {
+        var invoiceId = UUID.randomUUID();
+        events.publish(new BillingEvents.InvoiceCancelled(invoiceId, UUID.randomUUID(), UUID.randomUUID()));
+
+        assertAudited(AuditConstants.EntityTypes.INVOICE, AuditConstants.Actions.INVOICE_CANCEL, invoiceId);
+    }
 }

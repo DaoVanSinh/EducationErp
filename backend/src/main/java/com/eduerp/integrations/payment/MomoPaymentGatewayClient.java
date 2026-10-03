@@ -92,11 +92,13 @@ class MomoPaymentGatewayClient implements PaymentGatewayClient {
                 amount, Values.EXTRA_DATA, ipnUrl, request.orderId(), request.orderInfo(),
                 properties.partnerCode(), redirectUrl, requestId, Values.REQUEST_TYPE));
 
-        var body = new LinkedHashMap<String, String>();
+        var body = new LinkedHashMap<String, Object>();
         body.put(Params.PARTNER_CODE, properties.partnerCode());
         body.put(Params.ACCESS_KEY, properties.accessKey());
         body.put(Params.REQUEST_ID, requestId);
-        body.put(Params.AMOUNT, amount);
+        // Số, không phải chuỗi: tài liệu MoMo v2 khai amount là kiểu số trong JSON body - chuỗi ký thì
+        // vẫn ghép "amount=50000" như cũ, chữ ký không phụ thuộc kiểu JSON của body.
+        body.put(Params.AMOUNT, Long.valueOf(amount));
         body.put(Params.ORDER_ID, request.orderId());
         body.put(Params.ORDER_INFO, request.orderInfo());
         body.put(Params.REDIRECT_URL, redirectUrl);
@@ -113,8 +115,30 @@ class MomoPaymentGatewayClient implements PaymentGatewayClient {
                 .body(body)
                 .retrieve()
                 .body(Map.class);
-        var payUrl = response == null ? null : String.valueOf(response.get(Params.PAY_URL));
-        return new PaymentUrlResult(payUrl, request.orderId());
+        return toPaymentUrlResult(request.orderId(), response);
+    }
+
+    /**
+     * Final review Critical #1: MoMo báo lỗi nghiệp vụ (chữ ký sai, amount không hợp lệ, đối tác bị
+     * khoá...) bằng HTTP 200 kèm {@code resultCode != 0} và KHÔNG có {@code payUrl}. Code cũ không đọc
+     * {@code resultCode} của response tạo link (chỉ đọc ở {@code verifyCallback}), nên một lần bị MoMo
+     * từ chối biến thành chuỗi {@code "null"} trả thẳng cho trình duyệt - không lỗi, không log, và một
+     * {@code Payment} PENDING mồ côi vẫn được ghi ở tầng gọi (xem {@code InitiateOnlinePayment}).
+     */
+    private static PaymentUrlResult toPaymentUrlResult(String orderId, Map<String, Object> response) {
+        if (response == null) {
+            throw new PaymentGatewayException(PaymentGatewayType.MOMO, "Không nhận được phản hồi từ MoMo");
+        }
+        var resultCode = String.valueOf(response.get(Params.RESULT_CODE));
+        if (!Values.SUCCESS_RESULT_CODE.equals(resultCode)) {
+            throw new PaymentGatewayException(PaymentGatewayType.MOMO,
+                    "MoMo từ chối yêu cầu tạo link (resultCode=" + resultCode + "): " + response.get(Params.MESSAGE));
+        }
+        var payUrl = response.get(Params.PAY_URL);
+        if (payUrl == null) {
+            throw new PaymentGatewayException(PaymentGatewayType.MOMO, "MoMo không trả về payUrl dù resultCode=0");
+        }
+        return new PaymentUrlResult(String.valueOf(payUrl), orderId);
     }
 
     @Override

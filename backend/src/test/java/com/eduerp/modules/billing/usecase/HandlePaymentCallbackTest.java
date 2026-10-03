@@ -104,6 +104,64 @@ class HandlePaymentCallbackTest {
         verify(events, times(1)).publishEvent(any(BillingEvents.PaymentReceived.class));
     }
 
+    /** Final review Important #8: callback không có người gọi - actor phải là null, không phải người
+     * đã tạo hoá đơn (họ không hề chạm vào giao dịch MoMo/VNPay này). Cùng chuẩn mà InvoiceOverdue đã
+     * áp dụng cho sự kiện do hệ thống tự sinh. */
+    @Test
+    void publishesPaymentReceivedWithoutAnActorBecauseNoHumanTriggeredTheCallback() {
+        var invoice = invoiceOf("6000000");
+        var payment = pendingPaymentFor(invoice, "6000000");
+        stubVerifiedResult(true, "6000000");
+        when(payments.findByGatewayTransactionId(ORDER_ID)).thenReturn(Optional.of(payment));
+
+        useCase.execute(PaymentGatewayType.VNPAY, RAW_PARAMS);
+
+        var published = org.mockito.ArgumentCaptor.forClass(BillingEvents.PaymentReceived.class);
+        verify(events).publishEvent(published.capture());
+        assertThat(published.getValue().actorAccountId()).isNull();
+        assertThat(published.getValue().invoiceId()).isEqualTo(invoice.getId());
+        assertThat(published.getValue().actorBranchId()).isEqualTo(invoice.getBranchId());
+    }
+
+    /**
+     * Final review Critical #2: một hoá đơn đã bị HUỶ (hoặc đã PAID qua đường khác - thu tay) trong
+     * lúc một Payment PENDING của cổng vẫn còn treo. Callback đến sau, chữ ký hợp lệ, orderId khớp -
+     * NHƯNG hoá đơn không còn nhận tiền được nữa. Trước bản vá, applySuccess chỉ kiểm tra
+     * Payment.status mà không kiểm tra Invoice.status, nên hoá đơn đã huỷ bị "hồi sinh" thành PAID.
+     */
+    @Test
+    void rejectsTheCreditWhenTheInvoiceIsNoLongerPayableAndLeavesItUntouched() {
+        var invoice = invoiceOf("6000000");
+        invoice.cancel();
+        var payment = pendingPaymentFor(invoice, "6000000");
+        stubVerifiedResult(true, "6000000");
+        when(payments.findByGatewayTransactionId(ORDER_ID)).thenReturn(Optional.of(payment));
+
+        useCase.execute(PaymentGatewayType.VNPAY, RAW_PARAMS);
+
+        assertThat(invoice.getStatus()).isEqualTo(BillingConstants.InvoiceStatus.CANCELLED);
+        assertThat(invoice.getAmountPaid()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(payment.getStatus()).isEqualTo(BillingConstants.PaymentStatus.REJECTED);
+        verify(events, never()).publishEvent(any());
+    }
+
+    /** Mặt khác của Critical #2: hoá đơn đã PAID qua thu tay trong lúc một Payment online khác vẫn
+     * PENDING - callback thành công đến sau không được cộng tiền chồng lên mức đã PAID. */
+    @Test
+    void rejectsTheCreditWhenTheInvoiceIsAlreadyFullyPaidThroughAnotherChannel() {
+        var invoice = invoiceOf("6000000");
+        var payment = pendingPaymentFor(invoice, "6000000");
+        invoice.applyPayment(new BigDecimal("6000000"));
+        stubVerifiedResult(true, "6000000");
+        when(payments.findByGatewayTransactionId(ORDER_ID)).thenReturn(Optional.of(payment));
+
+        useCase.execute(PaymentGatewayType.VNPAY, RAW_PARAMS);
+
+        assertThat(invoice.getAmountPaid()).isEqualByComparingTo(new BigDecimal("6000000"));
+        assertThat(payment.getStatus()).isEqualTo(BillingConstants.PaymentStatus.REJECTED);
+        verify(events, never()).publishEvent(any());
+    }
+
     @Test
     void leavesTheInvoicePartiallyPaidWhenTheInstallmentIsNotFullyCovered() {
         var invoice = invoiceOf("6000000");
