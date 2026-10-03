@@ -17,7 +17,7 @@ export function CreateCourseDialog({ open, onClose }: CreateCourseDialogProps) {
 
   const form = useZodForm({
     schema: createCourseFormSchema,
-    initialValues: { code: "", name: "", description: "", standardSessionCount: "" },
+    initialValues: { code: "", name: "", description: "", standardSessionCount: "", tuitionFee: "" },
     onSubmit: async (values) => {
       await createCourse.mutateAsync(values);
       form.reset();
@@ -64,6 +64,18 @@ export function CreateCourseDialog({ open, onClose }: CreateCourseDialogProps) {
             min={0}
             value={form.values.standardSessionCount}
             onChange={(event) => form.setValue("standardSessionCount", event.target.value)}
+          />
+        </FormField>
+
+        <FormField label="Học phí toàn khoá (VND)" htmlFor="course-tuition-fee" hint="Không bắt buộc. Để trống nếu chưa chốt giá." error={form.fieldErrors.tuitionFee}>
+          <GlassInput
+            id="course-tuition-fee"
+            type="number"
+            min={0}
+            step={1000}
+            value={form.values.tuitionFee}
+            invalid={form.fieldErrors.tuitionFee !== undefined}
+            onChange={(event) => form.setValue("tuitionFee", event.target.value)}
           />
         </FormField>
       </form>

@@ -15,6 +15,11 @@ export const APP_ROUTE = {
   payrollContracts: "/admin/payroll/contracts",
   payrollRuns: "/admin/payroll/runs",
   payrollRunDetail: "/admin/payroll/runs/:runId",
+  enrollments: "/admin/enrollments",
+  invoices: "/admin/billing/invoices",
+  invoiceDetail: "/admin/billing/invoices/:invoiceId",
+  /** Public: phụ huynh quay về từ cổng thanh toán, có thể chưa đăng nhập (spec mục 10). */
+  paymentReturn: "/payment/return/:gateway",
   login: "/login",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
@@ -27,3 +32,16 @@ export function buildPayrollRunDetailPath(runId: string): string {
 
 /** Tham số query mang token trong link email đặt lại mật khẩu. */
 export const RESET_TOKEN_PARAM = "token";
+
+/** Link thật tới trang chi tiết một hoá đơn - APP_ROUTE.invoiceDetail chỉ là route template. */
+export function buildInvoiceDetailPath(invoiceId: string): string {
+  return `/admin/billing/invoices/${invoiceId}`;
+}
+
+/** Link thật tới trang Return URL của một cổng - phải khớp payment.*.redirect-url/return-url ở backend. */
+export function buildPaymentReturnPath(gateway: string): string {
+  return `/payment/return/${gateway}`;
+}
+
+/** Tên param cổng thanh toán trong APP_ROUTE.paymentReturn, dùng với useParams(). */
+export const PAYMENT_RETURN_GATEWAY_PARAM = "gateway";

@@ -6,6 +6,8 @@ export const courseSummarySchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   standardSessionCount: z.number().int().nullable(),
+  /** Học phí toàn khoá, VND. null = khoá học chưa chốt giá (backend: Course.tuitionFee nullable). */
+  tuitionFee: z.number().nullable(),
   active: z.boolean(),
 });
 
@@ -16,11 +18,13 @@ export interface CreateCoursePayload {
   readonly name: string;
   readonly description: string | null;
   readonly standardSessionCount: number | null;
+  readonly tuitionFee: number | null;
 }
 
 export interface UpdateCoursePayload {
   readonly name: string;
   readonly description: string | null;
   readonly standardSessionCount: number | null;
+  readonly tuitionFee: number | null;
   readonly active: boolean;
 }

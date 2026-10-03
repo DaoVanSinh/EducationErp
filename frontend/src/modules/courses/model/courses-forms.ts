@@ -32,6 +32,11 @@ export const createCourseFormSchema = z.object({
     .string()
     .trim()
     .transform((value) => (value.length === 0 ? null : Number(value))),
+  tuitionFee: z
+    .string()
+    .trim()
+    .transform((value) => (value.length === 0 ? null : Number(value)))
+    .refine((value) => value === null || value >= 0, "Học phí không được âm"),
 });
 
 export const updateCourseFormSchema = z.object({
@@ -44,6 +49,11 @@ export const updateCourseFormSchema = z.object({
     .string()
     .trim()
     .transform((value) => (value.length === 0 ? null : Number(value))),
+  tuitionFee: z
+    .string()
+    .trim()
+    .transform((value) => (value.length === 0 ? null : Number(value)))
+    .refine((value) => value === null || value >= 0, "Học phí không được âm"),
   active: z.boolean(),
 });
 

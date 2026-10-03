@@ -24,6 +24,7 @@ export function EditCourseDialog({ course, open, onClose }: EditCourseDialogProp
       name: course.name,
       description: course.description ?? "",
       standardSessionCount: course.standardSessionCount?.toString() ?? "",
+      tuitionFee: course.tuitionFee?.toString() ?? "",
       active: course.active,
     },
     onSubmit: async (values) => {
@@ -62,6 +63,18 @@ export function EditCourseDialog({ course, open, onClose }: EditCourseDialogProp
             min={0}
             value={form.values.standardSessionCount}
             onChange={(event) => form.setValue("standardSessionCount", event.target.value)}
+          />
+        </FormField>
+
+        <FormField label="Học phí toàn khoá (VND)" htmlFor="edit-course-tuition-fee" hint="Để trống nếu chưa chốt giá." error={form.fieldErrors.tuitionFee}>
+          <GlassInput
+            id="edit-course-tuition-fee"
+            type="number"
+            min={0}
+            step={1000}
+            value={form.values.tuitionFee}
+            invalid={form.fieldErrors.tuitionFee !== undefined}
+            onChange={(event) => form.setValue("tuitionFee", event.target.value)}
           />
         </FormField>
 

@@ -1,6 +1,6 @@
 import { ApiError } from "@/shared/api/api-error";
 import { ENV } from "@/shared/config/env";
-import { API_ROUTE, ENDPOINTS_WITHOUT_SESSION_RETRY } from "@/shared/constants/api-routes";
+import { API_ROUTE, ENDPOINTS_WITHOUT_SESSION_RETRY, PUBLIC_PATH_PREFIXES } from "@/shared/constants/api-routes";
 import {
   CSRF_COOKIE,
   HTTP_HEADER,
@@ -107,7 +107,7 @@ class ApiClient {
   private async sendWithSessionRetry(path: string, request: ApiRequest): Promise<Response> {
     let response = await this.send(path, request);
 
-    if (response.status === HTTP_STATUS.unauthorized && !ENDPOINTS_WITHOUT_SESSION_RETRY.includes(path)) {
+    if (response.status === HTTP_STATUS.unauthorized && !this.skipsSessionRetry(path)) {
       if (await this.refreshSession()) {
         response = await this.send(path, request);
       } else {
@@ -117,6 +117,13 @@ class ApiClient {
     }
 
     return response;
+  }
+
+  private skipsSessionRetry(path: string): boolean {
+    return (
+      ENDPOINTS_WITHOUT_SESSION_RETRY.includes(path) ||
+      PUBLIC_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
+    );
   }
 
   private async send(path: string, request: ApiRequest): Promise<Response> {

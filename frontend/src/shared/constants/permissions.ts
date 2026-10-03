@@ -13,6 +13,8 @@ export const RESOURCE = {
   teacher: "TEACHER",
   student: "STUDENT",
   payroll: "PAYROLL",
+  enrollment: "ENROLLMENT",
+  invoice: "INVOICE",
 } as const;
 
 /** Bản sao của IdentityConstants.Actions. */
@@ -62,6 +64,8 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.teacher]: "Giáo viên",
   [RESOURCE.student]: "Học viên",
   [RESOURCE.payroll]: "Lương & Hợp đồng",
+  [RESOURCE.enrollment]: "Ghi danh",
+  [RESOURCE.invoice]: "Hoá đơn học phí",
 };
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -174,6 +178,32 @@ export const ACCESS_RULE = {
   approvePayroll: {
     resource: RESOURCE.payroll,
     action: ACTION.approve,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  readEnrollment: {
+    resource: RESOURCE.enrollment,
+    action: ACTION.read,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  createEnrollment: {
+    resource: RESOURCE.enrollment,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateEnrollment: {
+    resource: RESOURCE.enrollment,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  readInvoice: { resource: RESOURCE.invoice, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  createInvoice: {
+    resource: RESOURCE.invoice,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateInvoice: {
+    resource: RESOURCE.invoice,
+    action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
   },
 } as const;

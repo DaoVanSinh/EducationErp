@@ -56,6 +56,22 @@ export const API_ROUTE = {
     runReject: (runId: string) => `/api/payroll/runs/${runId}/reject`,
     payslip: (runId: string, payslipId: string) => `/api/payroll/runs/${runId}/payslips/${payslipId}`,
   },
+  enrollment: {
+    enrollments: "/api/enrollment/enrollments",
+    enrollment: (enrollmentId: string) => `/api/enrollment/enrollments/${enrollmentId}`,
+    enrollmentWithdraw: (enrollmentId: string) => `/api/enrollment/enrollments/${enrollmentId}/withdraw`,
+    enrollmentComplete: (enrollmentId: string) => `/api/enrollment/enrollments/${enrollmentId}/complete`,
+  },
+  billing: {
+    invoices: "/api/billing/invoices",
+    invoice: (invoiceId: string) => `/api/billing/invoices/${invoiceId}`,
+    invoiceOnlinePayment: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/online-payment`,
+    invoiceManualPayment: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/manual-payment`,
+    invoiceCancel: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/cancel`,
+    /** Public ở backend - trang Return URL gọi được khi phụ huynh chưa đăng nhập. */
+    paymentStatus: (gatewayTransactionId: string) =>
+      `/api/billing/payments/${gatewayTransactionId}/status`,
+  },
 } as const;
 
 /**
@@ -69,3 +85,9 @@ export const ENDPOINTS_WITHOUT_SESSION_RETRY: readonly string[] = [
   API_ROUTE.account.forgotPassword,
   API_ROUTE.account.resetPassword,
 ];
+
+/**
+ * Endpoint public có path động nên không so khớp được bằng danh sách chuỗi ở trên -
+ * {@code apiClient} tự bỏ qua lượt refresh với mọi path bắt đầu bằng tiền tố này.
+ */
+export const PUBLIC_PATH_PREFIXES: readonly string[] = ["/api/billing/payments/"];

@@ -1,6 +1,7 @@
 import type { CourseSummary } from "@/entities/course";
 import { Can } from "@/entities/permission";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
+import { formatter } from "@/shared/lib/format";
 import { staggerDelay } from "@/shared/lib/motion";
 import { Badge } from "@/shared/ui/badge";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -28,6 +29,11 @@ export function CoursesTable({ rows, onEdit }: CoursesTableProps) {
             <p className="truncate text-sm text-mist-100">{course.name}</p>
             <p className="truncate text-xs text-mist-500">
               {course.standardSessionCount ? `${course.standardSessionCount} buổi chuẩn` : "Chưa có số buổi chuẩn"}
+            </p>
+            <p className="truncate text-xs text-mist-500">
+              {course.tuitionFee === null
+                ? "Chưa gắn học phí"
+                : `${formatter.count(course.tuitionFee)} đ`}
             </p>
           </div>
           <Badge tone={course.active ? "positive" : "neutral"}>
