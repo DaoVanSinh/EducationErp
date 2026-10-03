@@ -2,6 +2,7 @@ package com.eduerp.modules.identity.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import static org.mockito.BDDMockito.given;
@@ -9,8 +10,11 @@ import static org.mockito.BDDMockito.given;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.dto.CreateAccountRequest;
+import com.eduerp.modules.identity.dto.TransferBranchRequest;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
+import com.eduerp.modules.organization.internal.model.Branch;
+import com.eduerp.modules.organization.internal.repository.BranchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.mail.Session;
@@ -58,6 +62,9 @@ class AccountAdminControllerIT {
 
     @Autowired
     AccountRepository accounts;
+
+    @Autowired
+    BranchRepository branches;
 
     @Autowired
     AccessManagement access;
@@ -112,6 +119,20 @@ class AccountAdminControllerIT {
     }
 
     @Test
+    void rejectsANonExistentRoleIdWithAProblemDetailNotA500() throws Exception {
+        var admin = signIn("account-admin-bad-role@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var request = new CreateAccountRequest("bad-role@eduerp.local", "Role sai", null, UUID.randomUUID());
+
+        var result = mockMvc.perform(post("/api/rbac/accounts").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(404);
+        assertThat(result.getResponse().getContentAsString()).contains("ACCESS_ROLE_NOT_FOUND");
+    }
+
+    @Test
     void rejectsADuplicateEmail() throws Exception {
         var admin = signIn("account-admin-2@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var request = new CreateAccountRequest("account-admin-2@eduerp.local", "Trùng email", null,
@@ -136,12 +157,18 @@ class AccountAdminControllerIT {
                 .andReturn();
         var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
 
+        var passwordHashBeforeResend = accounts.findById(accountId).orElseThrow().getPasswordHash();
+
         var result = mockMvc.perform(post("/api/rbac/accounts/" + accountId + "/resend-invite")
                         .cookie(admin).with(csrf()))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         assertThat(stringRedisTemplate.hasKey("invite:account:" + accountId)).isTrue();
+        // "Mật khẩu mới" phải thật sự mới - không chỉ Redis key được chạm vào mà hash mật khẩu đứng yên,
+        // vì khi đó mật khẩu cũ (có thể đã lộ qua email trước) vẫn còn dùng được.
+        var passwordHashAfterResend = accounts.findById(accountId).orElseThrow().getPasswordHash();
+        assertThat(passwordHashAfterResend).isNotEqualTo(passwordHashBeforeResend);
     }
 
     @Test
@@ -203,5 +230,64 @@ class AccountAdminControllerIT {
                                 com.eduerp.modules.audit.AuditConstants.Actions.ACCOUNT_CREATE, 20))
                         .extracting(a -> a.entityId())
                         .contains(accountId.toString()));
+    }
+
+    @Test
+    void transfersAnAccountToAnotherBranch() throws Exception {
+        var admin = signIn("rbac-transfer-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var branch = branches.save(new Branch("HCM01", "Chi nhánh Hồ Chí Minh", null));
+        var teacherAccount = accounts.save(new Account("rbac-transfer@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Rbac Transfer", null));
+        access.assignRole(teacherAccount.getId(), AccessConstants.RoleCodes.TEACHER);
+
+        var result = mockMvc.perform(post("/api/rbac/accounts/" + teacherAccount.getId() + "/transfer-branch")
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new TransferBranchRequest(branch.getId()))))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(accounts.findById(teacherAccount.getId()).orElseThrow().getHomeBranchId())
+                .isEqualTo(branch.getId());
+    }
+
+    @Test
+    void listsAccountsForTheAdminScreen() throws Exception {
+        var admin = signIn("rbac-read@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+
+        var accountsPage = mockMvc.perform(get("/api/rbac/accounts?page=0&size=5").cookie(admin)).andReturn();
+
+        assertThat(accountsPage.getResponse().getStatus()).isEqualTo(200);
+        var page = objectMapper.readTree(accountsPage.getResponse().getContentAsString());
+        assertThat(page.get("items")).hasSizeLessThanOrEqualTo(5);
+        assertThat(page.get("totalItems").asLong()).isEqualTo(accounts.count());
+        assertThat(page.get("items").get(0).hasNonNull("roleCode")).isTrue();
+    }
+
+    @Test
+    void filtersAccountsByBranchId() throws Exception {
+        var admin = signIn("rbac-branch-filter-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var branch = branches.save(new Branch("DN02", "Chi nhánh lọc", null));
+        var inBranch = accounts.save(new Account("rbac-branch-filter-in@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "In Branch", branch.getId()));
+        accounts.save(new Account("rbac-branch-filter-out@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Out Of Branch", null));
+
+        var result = mockMvc.perform(get("/api/rbac/accounts?branchId=" + branch.getId()).cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var page = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(page.get("totalItems").asLong()).isEqualTo(1);
+        assertThat(page.get("items").get(0).get("id").asText()).isEqualTo(inBranch.getId().toString());
+    }
+
+    /** Danh sách tài khoản lộ dữ liệu cả tổ chức, nên quyền PERSONAL không được mở. */
+    @Test
+    void refusesToListAccountsForAPersonalScopedRole() throws Exception {
+        var teacher = signIn("rbac-read-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
+
+        var result = mockMvc.perform(get("/api/rbac/accounts").cookie(teacher)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(403);
     }
 }

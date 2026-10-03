@@ -61,7 +61,7 @@ public class AccessManagement {
     @Transactional
     public void assignRole(UUID accountId, UUID roleId) {
         var role = roles.findById(roleId)
-                .orElseThrow(() -> new IllegalStateException("Role " + roleId + " không tồn tại"));
+                .orElseThrow(() -> new AccessReferenceNotFoundException("ROLE", roleId));
         assignRole(accountId, role);
     }
 
