@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -21,16 +23,30 @@ public class StorageClient {
 
     StorageClient(StorageProperties properties) {
         this.properties = properties;
-        var credentials = AwsBasicCredentials.create(properties.accessKey(), properties.secretKey());
         var builder = S3Client.builder()
                 .region(Region.of(properties.region()))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials));
+                .credentialsProvider(resolveCredentialsProvider(properties));
         if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
             // MinIO (dev) cần endpoint riêng + path-style; AWS S3 thật (prod) để trống endpoint, dùng
             // virtual-hosted-style mặc định của SDK - cùng một đoạn code chạy đúng cả hai môi trường.
             builder.endpointOverride(URI.create(properties.endpoint())).forcePathStyle(true);
         }
         this.s3Client = builder.build();
+    }
+
+    /**
+     * AccessKey/secretKey trống = để SDK tự lấy credentials theo chuỗi mặc định (biến môi trường,
+     * profile, IAM role trên EC2/ECS...) - đúng cách AWS thật thường chạy production, và cũng tránh
+     * {@code AwsBasicCredentials.create} ném NullPointerException ngay khi app khởi động mà chưa cấu
+     * hình storage (mọi test/@SpringBootTest khác không liên quan tới payroll cũng phải khởi động
+     * được bean này).
+     */
+    private static AwsCredentialsProvider resolveCredentialsProvider(StorageProperties properties) {
+        if (properties.accessKey() == null || properties.accessKey().isBlank()) {
+            return DefaultCredentialsProvider.create();
+        }
+        return StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(properties.accessKey(), properties.secretKey()));
     }
 
     public String upload(String keyPrefix, String fileName, byte[] content, String contentType) {
