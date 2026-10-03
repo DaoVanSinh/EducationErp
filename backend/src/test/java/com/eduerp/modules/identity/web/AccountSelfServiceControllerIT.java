@@ -40,6 +40,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
+@org.springframework.test.context.TestPropertySource(properties = "management.health.mail.enabled=false")
 class AccountSelfServiceControllerIT {
 
     @Container
@@ -84,8 +85,10 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void changePasswordThenLoginWithNewPassword() throws Exception {
-        accounts.save(new Account("selfservice@eduerp.local", passwordEncoder.encode("OldPass123!"), "Self Service",
-                null));
+        var account = new Account("selfservice@eduerp.local", passwordEncoder.encode("OldPass123!"), "Self Service",
+                null);
+        account.recordFirstLogin();
+        accounts.save(account);
         var access = login("selfservice@eduerp.local", "OldPass123!");
 
         var result = mockMvc.perform(post("/api/account/change-password")
@@ -102,8 +105,10 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void changePasswordWithoutCsrfTokenIsRejected() throws Exception {
-        accounts.save(new Account("csrf-guard@eduerp.local", passwordEncoder.encode("OldPass123!"), "Csrf Guard",
-                null));
+        var account = new Account("csrf-guard@eduerp.local", passwordEncoder.encode("OldPass123!"), "Csrf Guard",
+                null);
+        account.recordFirstLogin();
+        accounts.save(account);
         var access = login("csrf-guard@eduerp.local", "OldPass123!");
 
         var result = mockMvc.perform(post("/api/account/change-password")
@@ -118,8 +123,10 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void forgotPasswordThenResetPassword() throws Exception {
-        accounts.save(new Account("forgot@eduerp.local", passwordEncoder.encode("Whatever123!"), "Forgot Test",
-                null));
+        var account = new Account("forgot@eduerp.local", passwordEncoder.encode("Whatever123!"), "Forgot Test",
+                null);
+        account.recordFirstLogin();
+        accounts.save(account);
 
         mockMvc.perform(post("/api/account/forgot-password")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -140,8 +147,10 @@ class AccountSelfServiceControllerIT {
 
     @Test
     void updatesProfile() throws Exception {
-        accounts.save(new Account("profile@eduerp.local", passwordEncoder.encode("Password123!"), "Old Name",
-                null));
+        var account = new Account("profile@eduerp.local", passwordEncoder.encode("Password123!"), "Old Name",
+                null);
+        account.recordFirstLogin();
+        accounts.save(account);
         var access = login("profile@eduerp.local", "Password123!");
 
         var result = mockMvc.perform(patch("/api/account/profile")
