@@ -51,5 +51,6 @@ export function useAccountsPageController() {
     closeCreateAccountDialog: () => setCreateAccountDialogOpen(false),
     onResendInvite: (account: AccountSummary) => resendInvite.mutate(account.id),
     onRevokeInvite: (account: AccountSummary) => revokeInvite.mutate(account.id),
+    inviteActionError: resendInvite.error ?? revokeInvite.error,
   };
 }

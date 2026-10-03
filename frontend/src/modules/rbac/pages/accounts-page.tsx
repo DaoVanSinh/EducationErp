@@ -27,6 +27,7 @@ export function AccountsPage() {
     closeCreateAccountDialog,
     onResendInvite,
     onRevokeInvite,
+    inviteActionError,
   } = useAccountsPageController();
 
   return (
@@ -45,6 +46,7 @@ export function AccountsPage() {
         />
 
         {accounts.isError ? <ErrorNotice error={accounts.error} /> : null}
+        {inviteActionError ? <ErrorNotice error={inviteActionError} /> : null}
 
         <GlassPanel className="flex flex-col gap-4">
           {accounts.isPending ? (
