@@ -4,7 +4,9 @@ import com.eduerp.modules.access.AccessEvents;
 import com.eduerp.modules.audit.AuditConstants;
 import com.eduerp.modules.audit.internal.model.AuditLog;
 import com.eduerp.modules.audit.internal.repository.AuditLogRepository;
+import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.courses.CoursesEvents;
+import com.eduerp.modules.enrollment.EnrollmentEvents;
 import com.eduerp.modules.identity.IdentityEvents;
 import com.eduerp.modules.organization.OrganizationEvents;
 import com.eduerp.modules.payroll.PayrollEvents;
@@ -121,5 +123,45 @@ class AuditEventListeners {
     void on(PayrollEvents.PayrollRunApproved event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PAYROLL_RUN_APPROVE,
                 AuditConstants.EntityTypes.PAYROLL_RUN, event.payrollRunId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(EnrollmentEvents.EnrollmentCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ENROLLMENT_CREATE,
+                AuditConstants.EntityTypes.ENROLLMENT, event.enrollmentId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(EnrollmentEvents.EnrollmentWithdrawn event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ENROLLMENT_WITHDRAW,
+                AuditConstants.EntityTypes.ENROLLMENT, event.enrollmentId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(EnrollmentEvents.EnrollmentCompleted event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ENROLLMENT_COMPLETE,
+                AuditConstants.EntityTypes.ENROLLMENT, event.enrollmentId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(BillingEvents.InvoiceCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.INVOICE_CREATE,
+                AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(BillingEvents.PaymentReceived event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PAYMENT_RECEIVED,
+                AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
+    }
+
+    /** {@code actorAccountId} là {@code null} (scheduler tự sinh, không ai bấm) - truyền thẳng, cột
+     * {@code audit_logs.actor_account_id} nullable từ V7 nên dòng log vẫn ghi được. Đây là sự kiện hệ
+     * thống đầu tiên trong dự án không có actor; không được thay bằng một UUID giả, vì khi đó nhật ký
+     * sẽ nói rằng một người đã làm việc này. */
+    @ApplicationModuleListener
+    void on(BillingEvents.InvoiceOverdue event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.INVOICE_OVERDUE,
+                AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
     }
 }
