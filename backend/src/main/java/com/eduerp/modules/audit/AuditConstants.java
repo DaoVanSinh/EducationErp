@@ -25,6 +25,9 @@ public final class AuditConstants {
         public static final String ACCOUNT_CREATE = "ACCOUNT_CREATE";
         public static final String ACCOUNT_INVITE_RESEND = "ACCOUNT_INVITE_RESEND";
         public static final String ACCOUNT_INVITE_REVOKE = "ACCOUNT_INVITE_REVOKE";
+        public static final String CONTRACT_CREATE = "CONTRACT_CREATE";
+        public static final String CONTRACT_TERMINATE = "CONTRACT_TERMINATE";
+        public static final String PAYROLL_RUN_APPROVE = "PAYROLL_RUN_APPROVE";
     }
 
     public static final class EntityTypes {
@@ -37,5 +40,7 @@ public final class AuditConstants {
         public static final String BRANCH = "BRANCH";
         public static final String COURSE = "COURSE";
         public static final String CLASS = "CLASS";
+        public static final String CONTRACT = "CONTRACT";
+        public static final String PAYROLL_RUN = "PAYROLL_RUN";
     }
 }

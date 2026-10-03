@@ -7,6 +7,7 @@ import com.eduerp.modules.audit.internal.repository.AuditLogRepository;
 import com.eduerp.modules.courses.CoursesEvents;
 import com.eduerp.modules.identity.IdentityEvents;
 import com.eduerp.modules.organization.OrganizationEvents;
+import com.eduerp.modules.payroll.PayrollEvents;
 import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
@@ -102,5 +103,23 @@ class AuditEventListeners {
     void on(CoursesEvents.ClassUpdated event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CLASS_UPDATE,
                 AuditConstants.EntityTypes.CLASS, event.classId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(PayrollEvents.ContractCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CONTRACT_CREATE,
+                AuditConstants.EntityTypes.CONTRACT, event.contractId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(PayrollEvents.ContractTerminated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CONTRACT_TERMINATE,
+                AuditConstants.EntityTypes.CONTRACT, event.contractId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(PayrollEvents.PayrollRunApproved event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PAYROLL_RUN_APPROVE,
+                AuditConstants.EntityTypes.PAYROLL_RUN, event.payrollRunId().toString(), event.actorBranchId()));
     }
 }
