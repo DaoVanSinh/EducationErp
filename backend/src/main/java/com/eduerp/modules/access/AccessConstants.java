@@ -39,6 +39,7 @@ public final class AccessConstants {
         public static final String CLASS = "CLASS";
         public static final String TEACHER = "TEACHER";
         public static final String STUDENT = "STUDENT";
+        public static final String PAYROLL = "PAYROLL";
         public static final String AUDIT_LOG = "AUDIT_LOG";
         public static final String DASHBOARD = "DASHBOARD";
     }
@@ -156,5 +157,13 @@ public final class AccessConstants {
                 + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String UPDATE_STUDENT = CHECK_PREFIX + Resources.STUDENT + CHECK_SEPARATOR
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_PAYROLL = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String READ_PAYROLL = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String UPDATE_PAYROLL = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String APPROVE_PAYROLL = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
+                + Actions.APPROVE + MINIMUM_SCOPE + CHECK_SUFFIX;
     }
 }

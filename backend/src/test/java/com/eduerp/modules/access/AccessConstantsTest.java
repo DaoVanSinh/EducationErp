@@ -36,4 +36,16 @@ class AccessConstantsTest {
         assertThat(AccessConstants.AccessRules.UPDATE_CLASS)
                 .contains("CLASS", "UPDATE", "@ORGANIZATION");
     }
+
+    @Test
+    void payrollRulesRequireOrganizationScope() {
+        assertThat(AccessConstants.AccessRules.CREATE_PAYROLL)
+                .contains("PAYROLL", "CREATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.READ_PAYROLL)
+                .contains("PAYROLL", "READ", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.UPDATE_PAYROLL)
+                .contains("PAYROLL", "UPDATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.APPROVE_PAYROLL)
+                .contains("PAYROLL", "APPROVE", "@ORGANIZATION");
+    }
 }
