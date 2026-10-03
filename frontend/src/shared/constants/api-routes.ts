@@ -44,6 +44,18 @@ export const API_ROUTE = {
     profiles: "/api/students/profiles",
     profile: (profileId: string) => `/api/students/profiles/${profileId}`,
   },
+  payroll: {
+    contracts: "/api/payroll/contracts",
+    contract: (contractId: string) => `/api/payroll/contracts/${contractId}`,
+    contractTerminate: (contractId: string) => `/api/payroll/contracts/${contractId}/terminate`,
+    contractFile: (contractId: string) => `/api/payroll/contracts/${contractId}/file`,
+    runs: "/api/payroll/runs",
+    run: (runId: string) => `/api/payroll/runs/${runId}`,
+    runSubmit: (runId: string) => `/api/payroll/runs/${runId}/submit`,
+    runApprove: (runId: string) => `/api/payroll/runs/${runId}/approve`,
+    runReject: (runId: string) => `/api/payroll/runs/${runId}/reject`,
+    payslip: (runId: string, payslipId: string) => `/api/payroll/runs/${runId}/payslips/${payslipId}`,
+  },
 } as const;
 
 /**
