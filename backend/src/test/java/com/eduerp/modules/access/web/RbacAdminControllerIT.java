@@ -131,6 +131,29 @@ class RbacAdminControllerIT {
     }
 
     @Test
+    void accountJoiningAGroupPushesPermissionChangedToThatAccount() throws Exception {
+        var admin = signIn("rbac-sse-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var teacherCookie = signIn("rbac-sse-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
+        var teacherAccountId = accounts.findByTypedEmail("rbac-sse-teacher@eduerp.local").orElseThrow().getId();
+
+        var group = new Group("Phòng SSE", null);
+        group.addPermissionGroup(permissionGroups.findById(FULL_RIGHTS_PERMISSION_GROUP).orElseThrow());
+        groups.save(group);
+
+        var stream = mockMvc.perform(get("/api/notifications/stream").cookie(teacherCookie)).andReturn();
+
+        var result = mockMvc.perform(post("/api/rbac/accounts/" + teacherAccountId + "/groups")
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AssignGroupRequest(group.getId()))))
+                .andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(stream.getResponse().getContentAsString()).contains("PERMISSION_CHANGED"));
+    }
+
+    @Test
     void createsAPermissionGroupThenARoleUsingIt() throws Exception {
         var admin = signIn("rbac-create@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var permission = permissions
