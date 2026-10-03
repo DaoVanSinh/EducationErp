@@ -56,6 +56,6 @@ public class ListAccounts {
         return new AccountSummaryResponse(account.getId(), account.getEmail(), account.getFullName(),
                 account.getStatus(), role == null ? null : role.code(),
                 branchId, branchId == null ? null : branchNames.get(branchId),
-                groups.getOrDefault(account.getId(), List.of()));
+                groups.getOrDefault(account.getId(), List.of()), account.getLastLogin());
     }
 }

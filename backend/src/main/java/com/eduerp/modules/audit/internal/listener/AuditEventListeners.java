@@ -32,6 +32,24 @@ class AuditEventListeners {
     }
 
     @ApplicationModuleListener
+    void on(IdentityEvents.AccountCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_CREATE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(IdentityEvents.AccountInviteResent event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_INVITE_RESEND,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(IdentityEvents.AccountInviteRevoked event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_INVITE_REVOKE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
     void on(AccessEvents.RoleCreated event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ROLE_CREATE,
                 AuditConstants.EntityTypes.ROLE, event.roleId().toString(), event.actorBranchId()));

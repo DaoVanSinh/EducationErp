@@ -22,6 +22,9 @@ public final class AuditConstants {
         public static final String COURSE_UPDATE = "COURSE_UPDATE";
         public static final String CLASS_CREATE = "CLASS_CREATE";
         public static final String CLASS_UPDATE = "CLASS_UPDATE";
+        public static final String ACCOUNT_CREATE = "ACCOUNT_CREATE";
+        public static final String ACCOUNT_INVITE_RESEND = "ACCOUNT_INVITE_RESEND";
+        public static final String ACCOUNT_INVITE_REVOKE = "ACCOUNT_INVITE_REVOKE";
     }
 
     public static final class EntityTypes {

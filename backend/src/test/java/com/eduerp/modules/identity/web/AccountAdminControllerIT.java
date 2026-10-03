@@ -68,6 +68,9 @@ class AccountAdminControllerIT {
     @Autowired
     StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    com.eduerp.modules.audit.AuditManagement audit;
+
     @MockBean
     JavaMailSender mailSender;
 
@@ -175,5 +178,30 @@ class AccountAdminControllerIT {
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(409);
+    }
+
+    @Test
+    void listIncludesLastLoginAndAuditsAccountCreation() throws Exception {
+        var admin = signIn("audit-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var created = mockMvc.perform(post("/api/rbac/accounts").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateAccountRequest("audited@eduerp.local", "Có audit", null,
+                                        access.roleIdOf(AccessConstants.RoleCodes.TEACHER)))))
+                .andReturn();
+        var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
+
+        var listResult = mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/rbac/accounts")
+                                .cookie(admin))
+                .andReturn();
+        assertThat(listResult.getResponse().getContentAsString()).contains("\"lastLogin\":null");
+
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(audit.recentActions(
+                                com.eduerp.modules.audit.AuditConstants.EntityTypes.ACCOUNT,
+                                com.eduerp.modules.audit.AuditConstants.Actions.ACCOUNT_CREATE, 20))
+                        .extracting(a -> a.entityId())
+                        .contains(accountId.toString()));
     }
 }

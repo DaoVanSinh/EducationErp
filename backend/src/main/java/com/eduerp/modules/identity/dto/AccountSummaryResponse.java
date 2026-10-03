@@ -2,6 +2,7 @@ package com.eduerp.modules.identity.dto;
 
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.shared.NamedReference;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,5 +15,6 @@ public record AccountSummaryResponse(
         String roleCode,
         UUID branchId,
         String branchName,
-        List<NamedReference> groups) {
+        List<NamedReference> groups,
+        Instant lastLogin) {
 }
