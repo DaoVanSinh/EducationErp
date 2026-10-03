@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -68,6 +69,7 @@ class VnPayPaymentGatewayClient implements PaymentGatewayClient {
     private final VnPayProperties properties;
     private final Clock clock;
 
+    @Autowired
     VnPayPaymentGatewayClient(VnPayProperties properties) {
         this(properties, Clock.systemDefaultZone());
     }
