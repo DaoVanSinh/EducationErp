@@ -33,7 +33,7 @@ class ModularityTests {
 
         assertThat(detected).containsExactlyInAnyOrder("core", "shared", "modules.identity", "modules.access",
                 "modules.organization", "modules.audit", "modules.dashboard", "modules.courses",
-                "modules.teachers", "modules.students", "integrations.cache", "integrations.mail",
-                "integrations.notification");
+                "modules.teachers", "modules.students", "modules.payroll", "integrations.cache",
+                "integrations.mail", "integrations.notification", "integrations.storage");
     }
 }
