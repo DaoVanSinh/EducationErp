@@ -26,6 +26,8 @@ public class UpdateContract {
     public ContractResponse execute(UUID contractId, UUID actorAccountId, UUID actorBranchId,
             UpdateContractRequest request) {
         var contract = contracts.findById(contractId).orElseThrow(() -> new ContractNotFoundException(contractId));
+        CreateContract.validateContractTerms(contract.getContractType(), request.baseSalary(), request.hourlyRate(),
+                contract.getProbationStartDate(), request.probationEndDate());
         contract.setBaseSalary(request.baseSalary());
         contract.setHourlyRate(request.hourlyRate());
         contract.setProbationEndDate(request.probationEndDate());

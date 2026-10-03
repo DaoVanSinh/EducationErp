@@ -55,7 +55,7 @@ public class CreateContract {
         return toResponse(saved, accountInfo);
     }
 
-    private static void validateContractTerms(PayrollConstants.ContractType type, BigDecimal baseSalary,
+    static void validateContractTerms(PayrollConstants.ContractType type, BigDecimal baseSalary,
             BigDecimal hourlyRate, LocalDate probationStartDate, LocalDate probationEndDate) {
         if (type == PayrollConstants.ContractType.OFFICIAL) {
             if (baseSalary == null) {
