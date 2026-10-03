@@ -36,9 +36,13 @@ public class SeedDefaultAdmin {
         if (access.hasAnyAccountWithRole(AccessConstants.RoleCodes.ADMIN)) {
             return;
         }
-        var admin = accounts.save(new Account(properties.defaultAdminEmail(),
+        var account = new Account(properties.defaultAdminEmail(),
                 passwordEncoder.encode(properties.defaultAdminPassword()),
-                IdentityConstants.Defaults.ADMIN_FULL_NAME, null));
+                IdentityConstants.Defaults.ADMIN_FULL_NAME, null);
+        // Mật khẩu đến từ cấu hình, không qua email mời - không được đi qua cổng lastLogin==null của
+        // Login, nếu không chưa ai từng đăng nhập thì cũng chưa ai đăng nhập được.
+        account.recordFirstLogin();
+        var admin = accounts.save(account);
         access.assignRole(admin.getId(), AccessConstants.RoleCodes.ADMIN);
     }
 }
