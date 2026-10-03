@@ -11,9 +11,17 @@ export interface AccountsTableProps {
   readonly rows: readonly AccountSummary[];
   readonly onAssignGroup: (account: AccountSummary) => void;
   readonly onTransferBranch: (account: AccountSummary) => void;
+  readonly onResendInvite: (account: AccountSummary) => void;
+  readonly onRevokeInvite: (account: AccountSummary) => void;
 }
 
-export function AccountsTable({ rows, onAssignGroup, onTransferBranch }: AccountsTableProps) {
+export function AccountsTable({
+  rows,
+  onAssignGroup,
+  onTransferBranch,
+  onResendInvite,
+  onRevokeInvite,
+}: AccountsTableProps) {
   return (
     <ul className="flex flex-col gap-2.5 min-w-0 w-full">
       {rows.map((account, index) => (
@@ -22,7 +30,7 @@ export function AccountsTable({ rows, onAssignGroup, onTransferBranch }: Account
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={staggerDelay(index)}
-          className="glass grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto] min-w-0 w-full"
+          className="glass grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto_auto] min-w-0 w-full"
         >
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar fullName={account.fullName} size="sm" />
@@ -71,6 +79,19 @@ export function AccountsTable({ rows, onAssignGroup, onTransferBranch }: Account
                 </GlassButton>
               </div>
             </Can>
+          </Can>
+
+          <Can {...ACCESS_RULE.updateAccount}>
+            {account.lastLogin === null ? (
+              <div className="flex items-center gap-2 justify-self-start lg:justify-self-end">
+                <GlassButton variant="secondary" size="sm" onClick={() => onResendInvite(account)}>
+                  Gửi lại mời
+                </GlassButton>
+                <GlassButton variant="ghost" size="sm" onClick={() => onRevokeInvite(account)}>
+                  Thu hồi
+                </GlassButton>
+              </div>
+            ) : null}
           </Can>
         </m.li>
       ))}

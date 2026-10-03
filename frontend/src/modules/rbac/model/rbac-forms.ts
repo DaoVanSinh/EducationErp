@@ -37,3 +37,10 @@ export const assignGroupFormSchema = z.object({
 export const transferBranchFormSchema = z.object({
   branchId: z.string().uuid("Chọn một chi nhánh"),
 });
+
+export const createAccountFormSchema = z.object({
+  email: z.string().min(1, "Nhập email").email("Email không đúng định dạng"),
+  fullName: z.string().min(1, "Nhập họ tên"),
+  homeBranchId: z.string(),
+  roleId: z.string().uuid("Chọn vai trò"),
+});

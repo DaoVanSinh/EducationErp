@@ -1,16 +1,18 @@
-import { RequirePermission } from "@/entities/permission";
+import { Can, RequirePermission } from "@/entities/permission";
 import { ACCOUNTS_DIALOG, useAccountsPageController } from "@/modules/rbac/hooks/use-accounts-page-controller";
 import { AccountsTable } from "@/modules/rbac/ui/accounts-table";
 import { AssignGroupDialog } from "@/modules/rbac/ui/assign-group-dialog";
+import { CreateAccountDialog } from "@/modules/rbac/ui/create-account-dialog";
 import { TransferBranchDialog } from "@/modules/rbac/ui/transfer-branch-dialog";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorNotice } from "@/shared/ui/error-notice";
+import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassPanel } from "@/shared/ui/glass-panel";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Pagination } from "@/shared/ui/pagination";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 export function AccountsPage() {
   const {
@@ -20,6 +22,11 @@ export function AccountsPage() {
     accounts,
     openDialog,
     closeDialog,
+    createAccountDialogOpen,
+    openCreateAccountDialog,
+    closeCreateAccountDialog,
+    onResendInvite,
+    onRevokeInvite,
   } = useAccountsPageController();
 
   return (
@@ -28,6 +35,13 @@ export function AccountsPage() {
         <PageHeader
           title="Tài khoản"
           description="Danh sách người dùng, nhóm quyền đang thuộc và chi nhánh đang làm việc."
+          actions={
+            <Can {...ACCESS_RULE.createAccount}>
+              <GlassButton onClick={openCreateAccountDialog} icon={<Plus size={16} aria-hidden />}>
+                Tạo tài khoản
+              </GlassButton>
+            </Can>
+          }
         />
 
         {accounts.isError ? <ErrorNotice error={accounts.error} /> : null}
@@ -54,6 +68,8 @@ export function AccountsPage() {
                   rows={accounts.data.items}
                   onAssignGroup={(account) => openDialog(ACCOUNTS_DIALOG.assignGroup, account)}
                   onTransferBranch={(account) => openDialog(ACCOUNTS_DIALOG.transferBranch, account)}
+                  onResendInvite={onResendInvite}
+                  onRevokeInvite={onRevokeInvite}
                 />
                 <Pagination
                   page={accounts.data.page}
@@ -65,6 +81,8 @@ export function AccountsPage() {
             )
           ) : null}
         </GlassPanel>
+
+        <CreateAccountDialog open={createAccountDialogOpen} onClose={closeCreateAccountDialog} />
 
         {/* Hộp thoại được dựng lại theo từng tài khoản (key), để form bên trong không giữ lựa chọn cũ. */}
         {selected === null ? null : (

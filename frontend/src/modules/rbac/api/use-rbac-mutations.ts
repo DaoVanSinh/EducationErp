@@ -1,4 +1,4 @@
-import { accountKeys } from "@/entities/account";
+import { accountApi, accountKeys, type CreateAccountPayload } from "@/entities/account";
 import { catalogKeys } from "@/entities/rbac-catalog";
 import {
   rbacApi,
@@ -50,6 +50,30 @@ export function useCreatePermissionGroup() {
   const invalidate = useRbacInvalidation();
   return useMutation({
     mutationFn: (payload: CreatePermissionGroupPayload) => rbacApi.createPermissionGroup(payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreateAccount() {
+  const invalidate = useRbacInvalidation();
+  return useMutation({
+    mutationFn: (payload: CreateAccountPayload) => accountApi.createAccount(payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResendAccountInvite() {
+  const invalidate = useRbacInvalidation();
+  return useMutation({
+    mutationFn: (accountId: string) => accountApi.resendInvite(accountId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRevokeAccountInvite() {
+  const invalidate = useRbacInvalidation();
+  return useMutation({
+    mutationFn: (accountId: string) => accountApi.revokeInvite(accountId),
     onSuccess: invalidate,
   });
 }
