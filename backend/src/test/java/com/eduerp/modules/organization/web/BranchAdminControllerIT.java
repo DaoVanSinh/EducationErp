@@ -74,7 +74,9 @@ class BranchAdminControllerIT {
     PasswordEncoder passwordEncoder;
 
     private Cookie signIn(String email, String roleCode) throws Exception {
-        var account = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), email, null));
+        var account = new Account(email, passwordEncoder.encode(PASSWORD), email, null);
+        account.recordFirstLogin();
+        accounts.save(account);
         access.assignRole(account.getId(), roleCode);
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

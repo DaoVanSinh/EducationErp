@@ -91,7 +91,9 @@ class SpaCsrfHandshakeIT {
     }
 
     private Cookie signIn(String email) throws Exception {
-        var account = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email, null));
+        var account = new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email, null);
+        account.recordFirstLogin();
+        accounts.save(account);
         access.assignRole(account.getId(), AccessConstants.RoleCodes.ADMIN);
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -77,8 +77,10 @@ class CurrentSessionIT {
     PasswordEncoder passwordEncoder;
 
     private Cookie signIn(String email, String roleCode, Branch branch) throws Exception {
-        var account = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email,
-                branch == null ? null : branch.getId()));
+        var account = new Account(email, passwordEncoder.encode(PASSWORD), "Người dùng " + email,
+                branch == null ? null : branch.getId());
+        account.recordFirstLogin();
+        accounts.save(account);
         access.assignRole(account.getId(), roleCode);
         var result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

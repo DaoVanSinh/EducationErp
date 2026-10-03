@@ -3,6 +3,7 @@ package com.eduerp.modules.identity.web;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.IdentityProperties;
 import com.eduerp.modules.identity.dto.LoginRequest;
+import com.eduerp.modules.identity.dto.LoginResponse;
 import com.eduerp.modules.identity.usecase.Login;
 import com.eduerp.modules.identity.usecase.Logout;
 import com.eduerp.modules.identity.usecase.RefreshSession;
@@ -31,8 +32,13 @@ class AuthController {
     }
 
     @PostMapping("/login")
-    void login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        AuthCookies.write(response, login.execute(request), properties);
+    LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+        var result = login.execute(request);
+        if (result.requiresPasswordChange()) {
+            return new LoginResponse(true);
+        }
+        AuthCookies.write(response, result.tokens(), properties);
+        return new LoginResponse(false);
     }
 
     @PostMapping("/refresh")
