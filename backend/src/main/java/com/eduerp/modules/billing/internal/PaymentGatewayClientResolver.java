@@ -35,6 +35,15 @@ public class PaymentGatewayClientResolver {
         return client;
     }
 
+    /** Dùng khi đã biết cổng từ chính đường dẫn callback, không qua từ vựng nghiệp vụ. */
+    public PaymentGatewayClient resolve(PaymentGatewayType type) {
+        var client = clientsByType.get(type);
+        if (client == null) {
+            throw new UnknownPaymentGatewayException(BillingConstants.PaymentMethod.valueOf(type.name()));
+        }
+        return client;
+    }
+
     private static PaymentGatewayType toGatewayType(BillingConstants.PaymentMethod method) {
         try {
             return PaymentGatewayType.valueOf(method.name());
