@@ -29,7 +29,7 @@ class StorageClientIT {
     // denied", xác nhận bằng docker pull trực tiếp. Dùng đúng tag đã có sẵn trong cache Docker local
     // (image agent-minio dùng chung của máy này đang chạy bằng tag này) để không cần pull mạng.
     @Container
-    static MinIOContainer minio = new MinIOContainer("minio/minio:RELEASE.2024-11-07T00-52-20Z");
+    static MinIOContainer minio = new MinIOContainer(MinioTestImage.NAME);
 
     @DynamicPropertySource
     static void storageProperties(DynamicPropertyRegistry registry) {
