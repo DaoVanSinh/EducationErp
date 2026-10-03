@@ -1,4 +1,4 @@
-import { CONTRACT_TYPE_LABEL, type Payslip } from "@/entities/payroll";
+import { CONTRACT_TYPE, CONTRACT_TYPE_LABEL, type Payslip } from "@/entities/payroll";
 import type { UpdatePayslipPayload } from "@/entities/payroll";
 import { GlassInput } from "@/shared/ui/glass-input";
 
@@ -9,7 +9,13 @@ export interface PayslipsTableProps {
 }
 
 /** Sửa được tại chỗ khi editable (PayrollRun.status === DRAFT) - echo thay đổi ra ngoài qua onUpdate,
- * không tự gọi API (Mandate #2: logic mutation nằm ở controller hook, không ở đây). */
+ * không tự gọi API (Mandate #2: logic mutation nằm ở controller hook, không ở đây).
+ *
+ * Input để `defaultValue` (uncontrolled) và chỉ gọi onUpdate lúc onBlur, không phải onChange: mutate
+ * trên mỗi keystroke kích hoạt invalidateQueries -> refetch -> props.rows đổi -> nếu input là
+ * controlled bằng value={payslip.x} thì React ghi đè lại giá trị đang gõ dở ngay giữa chừng (review
+ * finding Important #5). note luôn gửi null - backend coi null là "không đổi", không phải "xoá ghi
+ * chú" (UpdatePayslip chỉ set note khi request.note() khác null). */
 export function PayslipsTable({ rows, editable, onUpdate }: PayslipsTableProps) {
   return (
     <table className="w-full text-sm">
@@ -30,14 +36,14 @@ export function PayslipsTable({ rows, editable, onUpdate }: PayslipsTableProps) 
             <td>{payslip.accountFullName}</td>
             <td>{CONTRACT_TYPE_LABEL[payslip.contractType]}</td>
             <td>
-              {editable && payslip.contractType === "COLLABORATOR" ? (
+              {editable && payslip.contractType === CONTRACT_TYPE.collaborator ? (
                 <GlassInput
                   type="number"
-                  value={payslip.hoursWorked ?? ""}
-                  onChange={(event) =>
+                  defaultValue={payslip.hoursWorked ?? ""}
+                  onBlur={(event) =>
                     onUpdate(payslip.id, {
                       hoursWorked: Number(event.target.value),
-                      incomeTaxWithheld: payslip.incomeTaxWithheld,
+                      incomeTaxWithheld: null,
                       note: null,
                     })
                   }
@@ -52,10 +58,10 @@ export function PayslipsTable({ rows, editable, onUpdate }: PayslipsTableProps) 
               {editable ? (
                 <GlassInput
                   type="number"
-                  value={payslip.incomeTaxWithheld}
-                  onChange={(event) =>
+                  defaultValue={payslip.incomeTaxWithheld}
+                  onBlur={(event) =>
                     onUpdate(payslip.id, {
-                      hoursWorked: payslip.hoursWorked,
+                      hoursWorked: null,
                       incomeTaxWithheld: Number(event.target.value),
                       note: null,
                     })

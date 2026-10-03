@@ -56,8 +56,27 @@ class UpdatePayslipTest {
         var response = useCase.execute(payslipId, UUID.randomUUID(), UUID.randomUUID(),
                 new UpdatePayslipRequest(new BigDecimal("20"), new BigDecimal("100000"), "Đã dạy đủ giờ"));
 
-        assertThat(response.grossPay()).isEqualTo(new BigDecimal("150000").multiply(new BigDecimal("20")));
+        assertThat(response.grossPay()).isEqualByComparingTo(new BigDecimal("150000").multiply(new BigDecimal("20")));
         assertThat(response.hoursWorked()).isEqualTo(new BigDecimal("20"));
         assertThat(response.incomeTaxWithheld()).isEqualTo(new BigDecimal("100000"));
+    }
+
+    /** Review finding Important #5: note=null trong request nghĩa là "không đổi", không phải "xoá ghi
+     * chú" - giống hệt cách hoursWorked/incomeTaxWithheld null đã được xử lý trong method này. Frontend
+     * luôn gửi note: null khi chỉ sửa giờ dạy hoặc thuế, nên trước khi sửa, mỗi lần sửa một ô sẽ xoá
+     * mất ghi chú đã nhập trước đó. */
+    @Test
+    void doesNotClearAnExistingNoteWhenRequestNoteIsNull() {
+        var run = new PayrollRun(2026, 1);
+        var payslip = new Payslip(run, UUID.randomUUID(), PayrollConstants.ContractType.OFFICIAL,
+                new BigDecimal("10000000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, false);
+        payslip.setNote("Đã xác nhận với nhân viên");
+        var payslipId = UUID.randomUUID();
+        when(payslipRepository.findById(payslipId)).thenReturn(Optional.of(payslip));
+
+        useCase.execute(payslipId, UUID.randomUUID(), UUID.randomUUID(),
+                new UpdatePayslipRequest(null, new BigDecimal("50000"), null));
+
+        assertThat(payslip.getNote()).isEqualTo("Đã xác nhận với nhân viên");
     }
 }

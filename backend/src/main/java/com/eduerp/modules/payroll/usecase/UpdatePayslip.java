@@ -55,7 +55,9 @@ public class UpdatePayslip {
         if (request.incomeTaxWithheld() != null) {
             payslip.setIncomeTaxWithheld(request.incomeTaxWithheld());
         }
-        payslip.setNote(request.note());
+        if (request.note() != null) {
+            payslip.setNote(request.note());
+        }
 
         var netPay = PayrollRules.netPay(payslip.getGrossPay(), payslip.getAllowancesTotal(),
                 payslip.getSocialInsuranceEmployee(), payslip.getIncomeTaxWithheld());
