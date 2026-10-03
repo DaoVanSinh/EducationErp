@@ -14,9 +14,12 @@ import com.eduerp.shared.AccountPrincipal;
 import com.eduerp.shared.PageResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -96,7 +99,13 @@ class ContractAdminController {
     @GetMapping("/{contractId}/file")
     @PreAuthorize(AccessConstants.AccessRules.READ_PAYROLL)
     ResponseEntity<byte[]> downloadFile(@PathVariable UUID contractId) {
-        var content = downloadContractFile.execute(contractId);
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(content);
+        var result = downloadContractFile.execute(contractId);
+        // Không có Content-Disposition kèm tên file gốc thì trình duyệt lưu file không có phần mở
+        // rộng (review finding Important #4).
+        var disposition = ContentDisposition.attachment().filename(result.fileName(), StandardCharsets.UTF_8).build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(result.content());
     }
 }

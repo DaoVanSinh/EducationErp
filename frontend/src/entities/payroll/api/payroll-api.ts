@@ -48,7 +48,7 @@ export const contractApi = {
     await apiClient.post<void>(API_ROUTE.payroll.contractTerminate(contractId));
   },
 
-  async downloadContractFile(contractId: string): Promise<Blob> {
+  async downloadContractFile(contractId: string): Promise<{ blob: Blob; fileName: string | null }> {
     return apiClient.getBlob(API_ROUTE.payroll.contractFile(contractId));
   },
 } as const;

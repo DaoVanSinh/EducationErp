@@ -1,6 +1,7 @@
-import { useContracts, type ContractSummary } from "@/entities/payroll";
+import { contractApi, useContracts, type ContractSummary } from "@/entities/payroll";
 import { useTerminateContract } from "@/modules/payroll/api/use-contracts-mutations";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
+import { downloadBlob } from "@/shared/lib/download-blob";
 import { useCallback, useState } from "react";
 
 /** Toàn bộ state/mutation của trang Hợp đồng - ui/contracts-page.tsx chỉ render (Mandate #2). */
@@ -22,6 +23,12 @@ export function useContractsPageController() {
     [terminateContract],
   );
 
+  const onDownload = useCallback((contractId: string) => {
+    void contractApi.downloadContractFile(contractId).then(({ blob, fileName }) => {
+      downloadBlob(blob, fileName ?? "hop-dong.pdf");
+    });
+  }, []);
+
   return {
     page,
     setPage,
@@ -34,5 +41,6 @@ export function useContractsPageController() {
     stopEditing,
     onTerminate,
     isTerminating: terminateContract.isPending,
+    onDownload,
   };
 }

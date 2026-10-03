@@ -51,6 +51,7 @@ export function ContractsPage() {
                   rows={controller.contracts.data.items}
                   onEdit={controller.startEditing}
                   onTerminate={controller.onTerminate}
+                  onDownload={controller.onDownload}
                   isTerminating={controller.isTerminating}
                 />
                 <Pagination

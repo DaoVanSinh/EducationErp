@@ -83,15 +83,28 @@ class ApiClient {
     return this.request<T>(path, { method: HTTP_METHOD.patch, body: formData });
   }
 
-  async getBlob(path: string): Promise<Blob> {
-    const response = await this.send(path, { method: HTTP_METHOD.get });
+  /** Trước đây gọi thẳng send(), bỏ qua lượt tự refresh-rồi-thử-lại khi access token hết hạn mà mọi
+   * request khác đều có - tải file sau 15 phút không hoạt động là sẽ ném lỗi thẳng thay vì refresh rồi
+   * thử lại như get/post/patch (review finding Important #4). Đọc luôn tên file gốc từ header
+   * Content-Disposition mà backend đã đính kèm, để nơi gọi lưu file đúng tên thay vì không đuôi. */
+  async getBlob(path: string): Promise<{ blob: Blob; fileName: string | null }> {
+    const response = await this.sendWithSessionRetry(path, { method: HTTP_METHOD.get });
     if (!response.ok) {
       throw await ApiError.fromResponse(response);
     }
-    return response.blob();
+    const disposition = response.headers.get(HTTP_HEADER.contentDisposition);
+    const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/);
+    const capturedFileName = match?.[1];
+    const fileName = capturedFileName ? decodeURIComponent(capturedFileName) : null;
+    return { blob: await response.blob(), fileName };
   }
 
   async request<T>(path: string, request: ApiRequest = {}): Promise<T> {
+    const response = await this.sendWithSessionRetry(path, request);
+    return this.readBody<T>(response);
+  }
+
+  private async sendWithSessionRetry(path: string, request: ApiRequest): Promise<Response> {
     let response = await this.send(path, request);
 
     if (response.status === HTTP_STATUS.unauthorized && !ENDPOINTS_WITHOUT_SESSION_RETRY.includes(path)) {
@@ -103,7 +116,7 @@ class ApiClient {
       }
     }
 
-    return this.readBody<T>(response);
+    return response;
   }
 
   private async send(path: string, request: ApiRequest): Promise<Response> {

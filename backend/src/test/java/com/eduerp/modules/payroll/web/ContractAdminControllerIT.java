@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.eduerp.integrations.storage.MinioTestImage;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.audit.AuditConstants;
@@ -68,7 +69,7 @@ class ContractAdminControllerIT {
     // Tag cố định như Task 8 đã xác nhận (Docker Hub từ chối pull tag khác, dùng tag đã có sẵn trong
     // cache local).
     @Container
-    static MinIOContainer minio = new MinIOContainer("minio/minio:RELEASE.2024-11-07T00-52-20Z");
+    static MinIOContainer minio = new MinIOContainer(MinioTestImage.NAME);
 
     @DynamicPropertySource
     static void storageProperties(DynamicPropertyRegistry registry) {
@@ -180,6 +181,8 @@ class ContractAdminControllerIT {
                 .andReturn();
         assertThat(downloadResult.getResponse().getStatus()).isEqualTo(200);
         assertThat(downloadResult.getResponse().getContentAsByteArray()).isEqualTo("nội dung pdf".getBytes());
+        // Review finding Important #4: thiếu header này thì trình duyệt lưu file không có tên/đuôi gốc.
+        assertThat(downloadResult.getResponse().getHeader("Content-Disposition")).contains("contract.pdf");
     }
 
     /** Review Focus #3 ở tầng HTTP. */
