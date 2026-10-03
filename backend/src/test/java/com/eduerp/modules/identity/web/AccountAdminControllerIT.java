@@ -121,4 +121,59 @@ class AccountAdminControllerIT {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(409);
     }
+
+    @Test
+    void resendsAnInviteWithAFreshPassword() throws Exception {
+        var admin = signIn("resend-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var created = mockMvc.perform(post("/api/rbac/accounts").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateAccountRequest("resend-target@eduerp.local", "Thầy X", null,
+                                        access.roleIdOf(AccessConstants.RoleCodes.TEACHER)))))
+                .andReturn();
+        var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
+
+        var result = mockMvc.perform(post("/api/rbac/accounts/" + accountId + "/resend-invite")
+                        .cookie(admin).with(csrf()))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(stringRedisTemplate.hasKey("invite:account:" + accountId)).isTrue();
+    }
+
+    @Test
+    void revokesThenDisablesTheAccount() throws Exception {
+        var admin = signIn("revoke-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var created = mockMvc.perform(post("/api/rbac/accounts").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateAccountRequest("revoke-target@eduerp.local", "Thầy Y", null,
+                                        access.roleIdOf(AccessConstants.RoleCodes.TEACHER)))))
+                .andReturn();
+        var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
+
+        var result = mockMvc.perform(post("/api/rbac/accounts/" + accountId + "/revoke-invite")
+                        .cookie(admin).with(csrf()))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(stringRedisTemplate.hasKey("invite:account:" + accountId)).isFalse();
+        var disabled = accounts.findById(accountId).orElseThrow();
+        assertThat(disabled.getStatus()).isEqualTo(com.eduerp.modules.identity.IdentityConstants.AccountStatus.DISABLED);
+    }
+
+    @Test
+    void rejectsResendingAnInviteForAnAlreadyActivatedAccount() throws Exception {
+        var admin = signIn("resend-active-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var active = new Account("already-active@eduerp.local", passwordEncoder.encode(PASSWORD), "Đã kích hoạt", null);
+        active.recordFirstLogin();
+        var saved = accounts.save(active);
+        access.assignRole(saved.getId(), AccessConstants.RoleCodes.TEACHER);
+
+        var result = mockMvc.perform(post("/api/rbac/accounts/" + saved.getId() + "/resend-invite")
+                        .cookie(admin).with(csrf()))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(409);
+    }
 }

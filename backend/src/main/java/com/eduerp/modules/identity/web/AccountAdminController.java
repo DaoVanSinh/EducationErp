@@ -6,6 +6,8 @@ import com.eduerp.modules.identity.dto.CreateAccountRequest;
 import com.eduerp.modules.identity.dto.TransferBranchRequest;
 import com.eduerp.modules.identity.usecase.CreateAccount;
 import com.eduerp.modules.identity.usecase.ListAccounts;
+import com.eduerp.modules.identity.usecase.ResendAccountInvite;
+import com.eduerp.modules.identity.usecase.RevokeAccountInvite;
 import com.eduerp.modules.identity.usecase.TransferAccountBranch;
 import com.eduerp.shared.AccountPrincipal;
 import com.eduerp.shared.PageResponse;
@@ -35,12 +37,17 @@ class AccountAdminController {
     private final ListAccounts listAccounts;
     private final TransferAccountBranch transferAccountBranch;
     private final CreateAccount createAccount;
+    private final ResendAccountInvite resendAccountInvite;
+    private final RevokeAccountInvite revokeAccountInvite;
 
     AccountAdminController(ListAccounts listAccounts, TransferAccountBranch transferAccountBranch,
-            CreateAccount createAccount) {
+            CreateAccount createAccount, ResendAccountInvite resendAccountInvite,
+            RevokeAccountInvite revokeAccountInvite) {
         this.listAccounts = listAccounts;
         this.transferAccountBranch = transferAccountBranch;
         this.createAccount = createAccount;
+        this.resendAccountInvite = resendAccountInvite;
+        this.revokeAccountInvite = revokeAccountInvite;
     }
 
     /** {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. */
@@ -56,6 +63,18 @@ class AccountAdminController {
     UUID createAccount(@AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody CreateAccountRequest request) {
         return createAccount.execute(principal.accountId(), principal.homeBranchId(), request);
+    }
+
+    @PostMapping("/accounts/{accountId}/resend-invite")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void resendInvite(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        resendAccountInvite.execute(accountId, principal.accountId(), principal.homeBranchId());
+    }
+
+    @PostMapping("/accounts/{accountId}/revoke-invite")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void revokeInvite(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        revokeAccountInvite.execute(accountId, principal.accountId(), principal.homeBranchId());
     }
 
     @PostMapping("/accounts/{accountId}/transfer-branch")

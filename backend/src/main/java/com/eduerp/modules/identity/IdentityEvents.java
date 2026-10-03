@@ -25,4 +25,10 @@ public final class IdentityEvents {
 
     public record AccountCreated(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
     }
+
+    public record AccountInviteResent(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
+    public record AccountInviteRevoked(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
+    }
 }
