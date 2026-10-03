@@ -1,12 +1,14 @@
 import { DashboardLayout } from "@/app/layouts/dashboard-layout";
 import { FullScreenLoader } from "@/app/ui/full-screen-loader";
-import { useSession } from "@/entities/account";
+import { accountKeys, useSession } from "@/entities/account";
 import { SelectedBranchProvider } from "@/entities/branch";
+import { useNotificationStream } from "@/entities/notification";
 import { PermissionProvider } from "@/entities/permission";
 import { APP_ROUTE } from "@/shared/constants/app-routes";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassPanel } from "@/shared/ui/glass-panel";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
 
 /**
@@ -45,10 +47,18 @@ export function RequireAuth() {
     return <Navigate to={APP_ROUTE.login} state={{ from: location.pathname }} replace />;
   }
 
+  return <AuthenticatedShell session={session.data} />;
+}
+
+function AuthenticatedShell({ session }: { readonly session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
+  const queryClient = useQueryClient();
+  // Hook phải gọi vô điều kiện (rule of hooks) - tách component riêng để chỉ mở EventSource khi đã
+  // chắc chắn có phiên, không vi phạm thứ tự hook trong RequireAuth (ba nhánh return sớm ở trên).
+  useNotificationStream(() => void queryClient.invalidateQueries({ queryKey: accountKeys.session() }));
   return (
-    <PermissionProvider permissions={session.data.permissions}>
+    <PermissionProvider permissions={session.permissions}>
       <SelectedBranchProvider>
-        <DashboardLayout session={session.data} />
+        <DashboardLayout session={session} />
       </SelectedBranchProvider>
     </PermissionProvider>
   );
