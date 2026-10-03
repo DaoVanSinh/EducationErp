@@ -6,6 +6,8 @@ export const RESOURCE = {
   permission: "PERMISSION",
   permissionGroup: "PERMISSION_GROUP",
   branch: "BRANCH",
+  course: "COURSE",
+  class: "CLASS",
   auditLog: "AUDIT_LOG",
   dashboard: "DASHBOARD",
 } as const;
@@ -50,6 +52,8 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.permission]: "Quyền",
   [RESOURCE.permissionGroup]: "Nhóm quyền",
   [RESOURCE.branch]: "Chi nhánh",
+  [RESOURCE.course]: "Khóa học",
+  [RESOURCE.class]: "Lớp học",
   [RESOURCE.auditLog]: "Nhật ký",
   [RESOURCE.dashboard]: "Tổng quan",
 };
@@ -98,6 +102,28 @@ export const ACCESS_RULE = {
   },
   updateBranch: {
     resource: RESOURCE.branch,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  readCourse: { resource: RESOURCE.course, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  createCourse: {
+    resource: RESOURCE.course,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateCourse: {
+    resource: RESOURCE.course,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  readClass: { resource: RESOURCE.class, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  createClass: {
+    resource: RESOURCE.class,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateClass: {
+    resource: RESOURCE.class,
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
   },

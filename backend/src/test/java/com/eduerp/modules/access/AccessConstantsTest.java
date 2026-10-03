@@ -20,4 +20,20 @@ class AccessConstantsTest {
         assertThat(AccessConstants.PermissionScope.BRANCH.rank())
                 .isGreaterThan(AccessConstants.PermissionScope.PERSONAL.rank());
     }
+
+    @Test
+    void courseAndClassRulesRequireOrganizationScope() {
+        assertThat(AccessConstants.AccessRules.CREATE_COURSE)
+                .contains("COURSE", "CREATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.READ_COURSE)
+                .contains("COURSE", "READ", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.UPDATE_COURSE)
+                .contains("COURSE", "UPDATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.CREATE_CLASS)
+                .contains("CLASS", "CREATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.READ_CLASS)
+                .contains("CLASS", "READ", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.UPDATE_CLASS)
+                .contains("CLASS", "UPDATE", "@ORGANIZATION");
+    }
 }

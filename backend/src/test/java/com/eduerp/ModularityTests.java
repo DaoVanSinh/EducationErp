@@ -32,7 +32,7 @@ class ModularityTests {
         var detected = modules.stream().map(ApplicationModule::getName).collect(Collectors.toSet());
 
         assertThat(detected).containsExactlyInAnyOrder("core", "shared", "modules.identity", "modules.access",
-                "modules.organization", "modules.audit", "modules.dashboard", "integrations.cache",
-                "integrations.mail");
+                "modules.organization", "modules.audit", "modules.dashboard", "modules.courses",
+                "integrations.cache", "integrations.mail");
     }
 }
