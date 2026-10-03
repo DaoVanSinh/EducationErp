@@ -2,8 +2,10 @@ package com.eduerp.modules.identity.web;
 
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.IdentityProperties;
+import com.eduerp.modules.identity.dto.CompletePasswordInviteRequest;
 import com.eduerp.modules.identity.dto.LoginRequest;
 import com.eduerp.modules.identity.dto.LoginResponse;
+import com.eduerp.modules.identity.usecase.CompletePasswordInvite;
 import com.eduerp.modules.identity.usecase.Login;
 import com.eduerp.modules.identity.usecase.Logout;
 import com.eduerp.modules.identity.usecase.RefreshSession;
@@ -22,12 +24,15 @@ class AuthController {
     private final Login login;
     private final RefreshSession refreshSession;
     private final Logout logout;
+    private final CompletePasswordInvite completePasswordInvite;
     private final IdentityProperties properties;
 
-    AuthController(Login login, RefreshSession refreshSession, Logout logout, IdentityProperties properties) {
+    AuthController(Login login, RefreshSession refreshSession, Logout logout,
+            CompletePasswordInvite completePasswordInvite, IdentityProperties properties) {
         this.login = login;
         this.refreshSession = refreshSession;
         this.logout = logout;
+        this.completePasswordInvite = completePasswordInvite;
         this.properties = properties;
     }
 
@@ -39,6 +44,11 @@ class AuthController {
         }
         AuthCookies.write(response, result.tokens(), properties);
         return new LoginResponse(false);
+    }
+
+    @PostMapping("/complete-invite")
+    void completeInvite(@Valid @RequestBody CompletePasswordInviteRequest request, HttpServletResponse response) {
+        AuthCookies.write(response, completePasswordInvite.execute(request), properties);
     }
 
     @PostMapping("/refresh")

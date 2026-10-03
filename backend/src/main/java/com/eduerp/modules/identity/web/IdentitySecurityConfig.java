@@ -38,11 +38,11 @@ class IdentitySecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
-                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/refresh",
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/complete-invite", "/api/auth/refresh",
                                 "/api/account/forgot-password", "/api/account/reset-password"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/account/forgot-password",
-                                "/api/account/reset-password")
+                        .requestMatchers("/api/auth/login", "/api/auth/complete-invite", "/api/auth/refresh",
+                                "/api/account/forgot-password", "/api/account/reset-password")
                         .permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()

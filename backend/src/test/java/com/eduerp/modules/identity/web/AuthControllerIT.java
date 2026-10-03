@@ -185,4 +185,32 @@ class AuthControllerIT {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(401);
     }
+
+    @Test
+    void completesInviteThenGrantsASession() throws Exception {
+        var account = accounts.save(new Account("complete-invite@eduerp.local",
+                passwordEncoder.encode("TempPass1!"), "Người mới", null));
+        access.assignRole(account.getId(), AccessConstants.RoleCodes.TEACHER);
+        stringRedisTemplate.opsForValue().set("invite:account:" + account.getId(), "x",
+                java.time.Duration.ofDays(7));
+
+        var result = mockMvc.perform(post("/api/auth/complete-invite").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"complete-invite@eduerp.local","currentPassword":"TempPass1!","newPassword":"NewPass123!"}
+                                """))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(result.getResponse().getCookie("access_token")).isNotNull();
+        var updated = accounts.findById(account.getId()).orElseThrow();
+        assertThat(updated.getLastLogin()).isNotNull();
+        assertThat(stringRedisTemplate.hasKey("invite:account:" + account.getId())).isFalse();
+
+        var secondLogin = mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"complete-invite@eduerp.local\",\"password\":\"NewPass123!\"}"))
+                .andReturn();
+        assertThat(secondLogin.getResponse().getCookie("access_token")).isNotNull();
+    }
 }
