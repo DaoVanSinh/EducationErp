@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -50,6 +51,8 @@ public class Account {
     @Column(name = "home_branch_id")
     private UUID homeBranchId;
 
+    private Instant lastLogin;
+
     public Account(String email, String passwordHash, String fullName, UUID homeBranchId) {
         // Chuẩn hoá tại đây để cột email chỉ tồn tại một dạng duy nhất, bất kể ai tạo Account.
         this.email = EmailNormalizer.normalize(email);
@@ -70,5 +73,18 @@ public class Account {
 
     public void transferToBranch(UUID branchId) {
         this.homeBranchId = branchId;
+    }
+
+    /** Gọi đúng một lần, khi CompletePasswordInvite hoàn tất — không phải mỗi lần Login thành công. */
+    public void recordFirstLogin() {
+        this.lastLogin = Instant.now();
+    }
+
+    public void activate() {
+        this.status = IdentityConstants.AccountStatus.ACTIVE;
+    }
+
+    public void disable() {
+        this.status = IdentityConstants.AccountStatus.DISABLED;
     }
 }
