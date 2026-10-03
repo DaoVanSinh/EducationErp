@@ -54,7 +54,7 @@ class CreatePayrollRunTest {
         assertThat(response.payslipCount()).isEqualTo(2);
         assertThat(response.status()).isEqualTo(PayrollConstants.PayrollRunStatus.DRAFT);
         // Tổng gross = 10,000,000 (OFFICIAL, không thử việc) + 0 (COLLABORATOR, hoursWorked=0 khởi tạo).
-        assertThat(response.totalGrossPay()).isEqualTo(new BigDecimal("10000000"));
+        assertThat(response.totalGrossPay()).isEqualByComparingTo(new BigDecimal("10000000"));
     }
 
     /** Review Focus #5: usecase này không có dependency nào tới IdentityManagement - cấu trúc

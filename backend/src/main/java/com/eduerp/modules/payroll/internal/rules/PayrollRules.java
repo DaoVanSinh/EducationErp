@@ -4,13 +4,23 @@ import com.eduerp.modules.payroll.PayrollConstants;
 import com.eduerp.modules.payroll.internal.model.ContractAllowance;
 import com.eduerp.modules.payroll.internal.model.EmploymentContract;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
 /** Pure, 100% unit-test được bằng new, không I/O - mirror tinh thần internal/rules của các module khác. */
 public final class PayrollRules {
 
+    /** Mọi cột tiền trong DB là NUMERIC(14,2) - số trả về client phải khớp số sẽ được lưu xuống, nếu
+     * không để Postgres tự làm tròn lúc ghi thì con số người dùng thấy lúc nhập lệch với con số đối
+     * soát sau khi tải lại (review finding Important #7). */
+    private static final int MONEY_SCALE = 2;
+
     private PayrollRules() {
+    }
+
+    private static BigDecimal round(BigDecimal amount) {
+        return amount.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
     }
 
     /**
@@ -22,10 +32,10 @@ public final class PayrollRules {
             BigDecimal hoursWorked) {
         if (contract.getContractType() == PayrollConstants.ContractType.OFFICIAL) {
             var base = contract.getBaseSalary();
-            return isInProbation(contract, payPeriodStart) ? base.multiply(PayrollConstants.StatutoryRates.PROBATION_RATE)
-                    : base;
+            return isInProbation(contract, payPeriodStart)
+                    ? round(base.multiply(PayrollConstants.StatutoryRates.PROBATION_RATE)) : round(base);
         }
-        return contract.getHourlyRate().multiply(hoursWorked);
+        return round(contract.getHourlyRate().multiply(hoursWorked));
     }
 
     public static boolean isInProbation(EmploymentContract contract, LocalDate asOf) {
@@ -38,21 +48,21 @@ public final class PayrollRules {
     }
 
     public static BigDecimal totalAllowances(List<ContractAllowance> allowances) {
-        return allowances.stream().map(ContractAllowance::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return round(allowances.stream().map(ContractAllowance::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
     public static BigDecimal socialInsuranceEmployeeShare(BigDecimal grossPay, PayrollConstants.ContractType type) {
         return type == PayrollConstants.ContractType.OFFICIAL
-                ? grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYEE_SHARE) : BigDecimal.ZERO;
+                ? round(grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYEE_SHARE)) : BigDecimal.ZERO.setScale(MONEY_SCALE);
     }
 
     public static BigDecimal socialInsuranceEmployerShare(BigDecimal grossPay, PayrollConstants.ContractType type) {
         return type == PayrollConstants.ContractType.OFFICIAL
-                ? grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYER_SHARE) : BigDecimal.ZERO;
+                ? round(grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYER_SHARE)) : BigDecimal.ZERO.setScale(MONEY_SCALE);
     }
 
     public static BigDecimal netPay(BigDecimal grossPay, BigDecimal allowances, BigDecimal socialInsuranceEmployeeShare,
             BigDecimal incomeTaxWithheld) {
-        return grossPay.add(allowances).subtract(socialInsuranceEmployeeShare).subtract(incomeTaxWithheld);
+        return round(grossPay.add(allowances).subtract(socialInsuranceEmployeeShare).subtract(incomeTaxWithheld));
     }
 }

@@ -23,7 +23,7 @@ class PayrollRulesTest {
 
         var grossPay = PayrollRules.baseGrossPay(contract, LocalDate.of(2026, 1, 1), BigDecimal.ZERO);
 
-        assertThat(grossPay).isEqualTo(new BigDecimal("10000000").multiply(new BigDecimal("0.85")));
+        assertThat(grossPay).isEqualByComparingTo(new BigDecimal("10000000").multiply(new BigDecimal("0.85")));
     }
 
     @Test
@@ -34,7 +34,7 @@ class PayrollRulesTest {
 
         var grossPay = PayrollRules.baseGrossPay(contract, LocalDate.of(2026, 1, 1), BigDecimal.ZERO);
 
-        assertThat(grossPay).isEqualTo(new BigDecimal("10000000"));
+        assertThat(grossPay).isEqualByComparingTo(new BigDecimal("10000000"));
     }
 
     @Test
@@ -44,7 +44,7 @@ class PayrollRulesTest {
 
         var grossPay = PayrollRules.baseGrossPay(contract, LocalDate.of(2026, 1, 1), new BigDecimal("20"));
 
-        assertThat(grossPay).isEqualTo(new BigDecimal("150000").multiply(new BigDecimal("20")));
+        assertThat(grossPay).isEqualByComparingTo(new BigDecimal("150000").multiply(new BigDecimal("20")));
     }
 
     @Test
@@ -60,7 +60,7 @@ class PayrollRulesTest {
         var allowances = List.of(new ContractAllowance("Xăng xe", new BigDecimal("500000")),
                 new ContractAllowance("Ăn trưa", new BigDecimal("300000")));
 
-        assertThat(PayrollRules.totalAllowances(allowances)).isEqualTo(new BigDecimal("800000"));
+        assertThat(PayrollRules.totalAllowances(allowances)).isEqualByComparingTo(new BigDecimal("800000"));
     }
 
     @Test
@@ -68,13 +68,32 @@ class PayrollRulesTest {
         var grossPay = new BigDecimal("10000000");
 
         assertThat(PayrollRules.socialInsuranceEmployeeShare(grossPay, PayrollConstants.ContractType.OFFICIAL))
-                .isEqualTo(grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYEE_SHARE));
+                .isEqualByComparingTo(grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYEE_SHARE));
         assertThat(PayrollRules.socialInsuranceEmployerShare(grossPay, PayrollConstants.ContractType.OFFICIAL))
-                .isEqualTo(grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYER_SHARE));
+                .isEqualByComparingTo(grossPay.multiply(PayrollConstants.StatutoryRates.EMPLOYER_SHARE));
         assertThat(PayrollRules.socialInsuranceEmployeeShare(grossPay, PayrollConstants.ContractType.COLLABORATOR))
-                .isEqualTo(BigDecimal.ZERO);
+                .isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(PayrollRules.socialInsuranceEmployerShare(grossPay, PayrollConstants.ContractType.COLLABORATOR))
-                .isEqualTo(BigDecimal.ZERO);
+                .isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    /** Review finding Important #7: tiền phải luôn làm tròn về 2 chữ số thập phân (NUMERIC(14,2)
+     * trong DB) ngay tại nơi tính, không để con số trả về client lệch với con số lưu xuống DB.
+     * 7.123.456 * 0.85 = 6.054.937,60 (thử việc); 6.054.937,60 * 0,105 = 635.768,448 - phải làm tròn
+     * HALF_UP thành 635.768,45, không phải để nguyên 3 chữ số thập phân. */
+    @Test
+    void baseGrossPayAndSocialInsuranceAreRoundedToTwoDecimalPlaces() {
+        var contract = new EmploymentContract(UUID.randomUUID(), PayrollConstants.ContractType.OFFICIAL,
+                new BigDecimal("7123456"), null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1),
+                LocalDate.of(2026, 1, 1), List.of());
+
+        var grossPay = PayrollRules.baseGrossPay(contract, LocalDate.of(2026, 1, 1), BigDecimal.ZERO);
+        var employeeShare = PayrollRules.socialInsuranceEmployeeShare(grossPay, PayrollConstants.ContractType.OFFICIAL);
+
+        assertThat(grossPay).isEqualByComparingTo(new BigDecimal("6054937.60"));
+        assertThat(grossPay.scale()).isEqualTo(2);
+        assertThat(employeeShare).isEqualByComparingTo(new BigDecimal("635768.45"));
+        assertThat(employeeShare.scale()).isEqualTo(2);
     }
 
     @Test
@@ -82,7 +101,7 @@ class PayrollRulesTest {
         var netPay = PayrollRules.netPay(new BigDecimal("10000000"), new BigDecimal("500000"),
                 new BigDecimal("1050000"), new BigDecimal("200000"));
 
-        assertThat(netPay).isEqualTo(new BigDecimal("10000000").add(new BigDecimal("500000"))
+        assertThat(netPay).isEqualByComparingTo(new BigDecimal("10000000").add(new BigDecimal("500000"))
                 .subtract(new BigDecimal("1050000")).subtract(new BigDecimal("200000")));
     }
 }
