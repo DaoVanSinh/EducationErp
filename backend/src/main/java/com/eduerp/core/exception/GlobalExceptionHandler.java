@@ -6,6 +6,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -16,6 +17,17 @@ public class GlobalExceptionHandler {
         detail.setTitle(ex.getErrorCode());
         detail.setDetail(ex.getMessage());
         detail.setProperty("errorCode", ex.getErrorCode());
+        return detail;
+    }
+
+    /** File hợp đồng scan thường vượt mặc định 1MB của Spring Boot - không có handler này thì
+     * MaxUploadSizeExceededException lọt ra ngoài thành 500 thô thay vì ProblemDetail rõ ràng. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.PAYLOAD_TOO_LARGE);
+        detail.setTitle("FILE_TOO_LARGE");
+        detail.setDetail("File vượt quá dung lượng cho phép");
+        detail.setProperty("errorCode", "FILE_TOO_LARGE");
         return detail;
     }
 
