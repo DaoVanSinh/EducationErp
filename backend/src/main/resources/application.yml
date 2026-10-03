@@ -58,5 +58,12 @@ identity:
   default-admin-email: ${IDENTITY_DEFAULT_ADMIN_EMAIL:admin@eduerp.local}
   default-admin-password: ${IDENTITY_DEFAULT_ADMIN_PASSWORD:ChangeMe123!}
 
+storage:
+  endpoint: ${STORAGE_ENDPOINT:}
+  region: ${STORAGE_REGION:us-east-1}
+  bucket: ${STORAGE_BUCKET:eduerp-contracts}
+  access-key: ${STORAGE_ACCESS_KEY:}
+  secret-key: ${STORAGE_SECRET_KEY:}
+
 server:
   port: 8080

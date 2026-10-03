@@ -2,9 +2,7 @@
 # có agent-postgres/redis-stack như máy dev. Postgres, Redis, MinIO (S3-compatible) đều là container
 # riêng của chính stack này, dữ liệu bền qua volume.
 #
-# MinIO mới chỉ là hạ tầng dựng sẵn — chưa có code nào trong app gọi tới nó (chưa có tính năng cần
-# lưu file). Bật container để sẵn sàng, không tự chế thêm cấu hình Spring S3 khi chưa có tính năng
-# nào dùng.
+# MinIO phục vụ integrations.storage (lưu file hợp đồng lao động của modules.payroll) qua S3 API.
 #
 # Chạy: docker compose -f docker-compose.prod.yml --env-file backend/.env.docker.prod up -d --build
 name: eduerp-prod
@@ -81,6 +79,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       IDENTITY_SECURE_COOKIES: "true"
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: eduerp-contracts
+      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
