@@ -10,6 +10,8 @@ export const RESOURCE = {
   class: "CLASS",
   auditLog: "AUDIT_LOG",
   dashboard: "DASHBOARD",
+  teacher: "TEACHER",
+  student: "STUDENT",
 } as const;
 
 /** Bản sao của IdentityConstants.Actions. */
@@ -56,6 +58,8 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.class]: "Lớp học",
   [RESOURCE.auditLog]: "Nhật ký",
   [RESOURCE.dashboard]: "Tổng quan",
+  [RESOURCE.teacher]: "Giáo viên",
+  [RESOURCE.student]: "Học viên",
 };
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -125,6 +129,33 @@ export const ACCESS_RULE = {
   updateClass: {
     resource: RESOURCE.class,
     action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  readTeacher: { resource: RESOURCE.teacher, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  createTeacher: {
+    resource: RESOURCE.teacher,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateTeacher: {
+    resource: RESOURCE.teacher,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  readStudent: { resource: RESOURCE.student, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  createStudent: {
+    resource: RESOURCE.student,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  updateStudent: {
+    resource: RESOURCE.student,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
+  createAccount: {
+    resource: RESOURCE.account,
+    action: ACTION.create,
     scope: PERMISSION_SCOPE.organization,
   },
 } as const;

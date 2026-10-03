@@ -38,6 +38,9 @@ const CoursesPage = lazy(() =>
 const ClassesPage = lazy(() =>
   import("@/modules/courses").then((module) => ({ default: module.ClassesPage })),
 );
+const TeachersPage = lazy(() =>
+  import("@/modules/teachers").then((module) => ({ default: module.TeachersPage })),
+);
 
 function NotFoundPage() {
   return (
@@ -76,6 +79,7 @@ export function AppRouter() {
           <Route path={APP_ROUTE.branches} element={<BranchesPage />} />
           <Route path={APP_ROUTE.courses} element={<CoursesPage />} />
           <Route path={APP_ROUTE.classes} element={<ClassesPage />} />
+          <Route path={APP_ROUTE.teachers} element={<TeachersPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>

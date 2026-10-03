@@ -23,6 +23,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { path: APP_ROUTE.branches, label: "Chi nhánh", requirement: ACCESS_RULE.readBranch },
       { path: APP_ROUTE.courses, label: "Khóa học", requirement: ACCESS_RULE.readCourse },
       { path: APP_ROUTE.classes, label: "Lớp học", requirement: ACCESS_RULE.readClass },
+      { path: APP_ROUTE.teachers, label: "Giáo viên", requirement: ACCESS_RULE.readTeacher },
     ],
   },
   {

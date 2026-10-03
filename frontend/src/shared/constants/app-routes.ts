@@ -10,6 +10,8 @@ export const APP_ROUTE = {
   branches: "/admin/branches",
   courses: "/admin/courses",
   classes: "/admin/classes",
+  teachers: "/admin/teachers",
+  students: "/admin/students",
   login: "/login",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
