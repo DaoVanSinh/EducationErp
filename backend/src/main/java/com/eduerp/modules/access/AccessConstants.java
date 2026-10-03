@@ -116,6 +116,8 @@ public final class AccessConstants {
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String READ_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;
+        public static final String CREATE_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
+                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         /** Danh mục RBAC đi kèm nhau, nên một quyền đọc role là đủ cho cả màn hình tham chiếu. */
         public static final String READ_ROLE = CHECK_PREFIX + Resources.ROLE + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE + CHECK_SUFFIX;

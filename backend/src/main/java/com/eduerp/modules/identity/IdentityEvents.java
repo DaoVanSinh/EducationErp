@@ -22,4 +22,7 @@ public final class IdentityEvents {
     public record AccountBranchTransferred(UUID accountId, UUID newBranchId, UUID actorAccountId,
             UUID actorBranchId) {
     }
+
+    public record AccountCreated(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
+    }
 }

@@ -2,7 +2,9 @@ package com.eduerp.modules.identity.web;
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.identity.dto.AccountSummaryResponse;
+import com.eduerp.modules.identity.dto.CreateAccountRequest;
 import com.eduerp.modules.identity.dto.TransferBranchRequest;
+import com.eduerp.modules.identity.usecase.CreateAccount;
 import com.eduerp.modules.identity.usecase.ListAccounts;
 import com.eduerp.modules.identity.usecase.TransferAccountBranch;
 import com.eduerp.shared.AccountPrincipal;
@@ -32,10 +34,13 @@ class AccountAdminController {
 
     private final ListAccounts listAccounts;
     private final TransferAccountBranch transferAccountBranch;
+    private final CreateAccount createAccount;
 
-    AccountAdminController(ListAccounts listAccounts, TransferAccountBranch transferAccountBranch) {
+    AccountAdminController(ListAccounts listAccounts, TransferAccountBranch transferAccountBranch,
+            CreateAccount createAccount) {
         this.listAccounts = listAccounts;
         this.transferAccountBranch = transferAccountBranch;
+        this.createAccount = createAccount;
     }
 
     /** {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. */
@@ -44,6 +49,13 @@ class AccountAdminController {
     PageResponse<AccountSummaryResponse> listAccounts(@PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID branchId) {
         return listAccounts.execute(pageable, branchId);
+    }
+
+    @PostMapping("/accounts")
+    @PreAuthorize(AccessConstants.AccessRules.CREATE_ACCOUNT)
+    UUID createAccount(@AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody CreateAccountRequest request) {
+        return createAccount.execute(principal.accountId(), principal.homeBranchId(), request);
     }
 
     @PostMapping("/accounts/{accountId}/transfer-branch")

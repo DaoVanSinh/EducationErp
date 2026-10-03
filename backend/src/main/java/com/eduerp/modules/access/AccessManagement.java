@@ -54,9 +54,29 @@ public class AccessManagement {
     public void assignRole(UUID accountId, String roleCode) {
         var role = roles.findByCode(roleCode)
                 .orElseThrow(() -> new IllegalStateException("Role " + roleCode + " chưa được seed"));
+        assignRole(accountId, role);
+    }
+
+    /** Dùng khi nơi gọi chỉ có id (vd admin chọn vai trò từ dropdown catalog, không gõ code tay). */
+    @Transactional
+    public void assignRole(UUID accountId, UUID roleId) {
+        var role = roles.findById(roleId)
+                .orElseThrow(() -> new IllegalStateException("Role " + roleId + " không tồn tại"));
+        assignRole(accountId, role);
+    }
+
+    private void assignRole(UUID accountId, com.eduerp.modules.access.internal.model.Role role) {
         accountRoles.findById(accountId)
                 .ifPresentOrElse(existing -> existing.changeRole(role),
                         () -> accountRoles.save(new AccountRoleAssignment(accountId, role)));
+    }
+
+    /** Chỉ dùng trong test - sản phẩm thật luôn có id sẵn từ catalog, không bao giờ tra ngược từ code. */
+    @Transactional(readOnly = true)
+    public UUID roleIdOf(String code) {
+        return roles.findByCode(code)
+                .orElseThrow(() -> new IllegalStateException("Role " + code + " chưa được seed"))
+                .getId();
     }
 
     /** Có ít nhất một account đang giữ role này không — dùng để quyết định có cần seed Admin mặc định không. */
