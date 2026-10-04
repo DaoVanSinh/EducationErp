@@ -27,6 +27,15 @@ export const createComboFormSchema = z.object({
   dueDate: z.string().min(1, "Chọn hạn đóng của combo"),
 });
 
+export const comboInvoiceFormSchema = z.object({
+  amount: z
+    .string()
+    .min(1, "Nhập số tiền")
+    .transform((value) => Number(value))
+    .refine((value) => Number.isFinite(value) && value > 0, "Số tiền phải lớn hơn 0"),
+  dueDate: z.string().min(1, "Chọn hạn thanh toán của đợt này"),
+});
+
 export const comboDiscountTierFormSchema = z.object({
   minCourseCount: z
     .string()
