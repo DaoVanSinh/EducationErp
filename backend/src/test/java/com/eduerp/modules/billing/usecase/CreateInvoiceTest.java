@@ -129,6 +129,8 @@ class CreateInvoiceTest {
 
         assertThat(response.installmentNumber()).isEqualTo(1);
         assertThat(response.enrollmentId()).isEqualTo(enrollmentId);
+        // Hoá đơn đơn-khoá không thuộc combo nào - hai field neo loại trừ nhau (spec mục 5).
+        assertThat(response.comboId()).isNull();
         assertThat(response.studentProfileId()).isEqualTo(studentProfileId);
         assertThat(response.courseId()).isEqualTo(courseId);
         assertThat(response.branchId()).isEqualTo(enrollmentBranchId);

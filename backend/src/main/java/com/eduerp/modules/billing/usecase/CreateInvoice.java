@@ -98,8 +98,9 @@ public class CreateInvoice {
 
     /** Dùng lại ở mọi usecase billing khác - một chỗ map duy nhất (mirror CreateEnrollment.toResponse). */
     static InvoiceResponse toResponse(Invoice invoice) {
-        return new InvoiceResponse(invoice.getId(), invoice.getEnrollmentId(), invoice.getStudentProfileId(),
-                invoice.getCourseId(), invoice.getBranchId(), invoice.getInstallmentNumber(), invoice.getAmount(),
-                invoice.getAmountPaid(), invoice.getStatus(), invoice.getDueDate(), invoice.getIssuedAt());
+        return new InvoiceResponse(invoice.getId(), invoice.getEnrollmentId(), invoice.getComboId(),
+                invoice.getStudentProfileId(), invoice.getCourseId(), invoice.getBranchId(),
+                invoice.getInstallmentNumber(), invoice.getAmount(), invoice.getAmountPaid(),
+                invoice.getStatus(), invoice.getDueDate(), invoice.getIssuedAt());
     }
 }
