@@ -34,6 +34,14 @@ public final class BillingConstants {
         }
 
         public static final int MAX_INSTALLMENTS_PER_ENROLLMENT = 3;
+
+        /** Spec mục 1: 3 đợt cho CẢ combo, KHÔNG phải 3 đợt mỗi khoá trong combo. Để riêng khỏi
+         * {@link #MAX_INSTALLMENTS_PER_ENROLLMENT} vì đó là hai quyết định nghiệp vụ độc lập: đổi
+         * một cái không được kéo theo cái kia. */
+        public static final int MAX_INSTALLMENTS_PER_COMBO = 3;
+
+        /** Spec mục 6 bước 1: dưới mốc này thì đó không phải combo, chỉ là một ghi danh. */
+        public static final int MIN_ENROLLMENTS_PER_COMBO = 2;
     }
 
     /** Cron phải là hằng biên dịch để nhét được vào {@code @Scheduled} - không hardcode trong annotation. */
