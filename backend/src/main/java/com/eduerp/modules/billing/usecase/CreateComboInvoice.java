@@ -11,7 +11,9 @@ import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -50,28 +52,45 @@ public class CreateComboInvoice {
         var combo = combos.findById(request.comboId())
                 .orElseThrow(() -> new ComboNotFoundException(request.comboId()));
 
-        var liveInvoiceCount = invoices.countByComboIdAndStatusNot(request.comboId(),
+        var liveInvoices = invoices.findAllByComboIdAndStatusNot(request.comboId(),
                 BillingConstants.InvoiceStatus.CANCELLED);
-        if (liveInvoiceCount >= BillingConstants.Limits.MAX_INSTALLMENTS_PER_COMBO) {
+        if (liveInvoices.size() >= BillingConstants.Limits.MAX_INSTALLMENTS_PER_COMBO) {
             throw InstallmentLimitExceededException.forCombo(request.comboId(),
                     BillingConstants.Limits.MAX_INSTALLMENTS_PER_COMBO);
         }
 
-        var alreadyInvoiced = invoices
-                .findAllByComboIdAndStatusNot(request.comboId(), BillingConstants.InvoiceStatus.CANCELLED)
-                .stream().map(Invoice::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        var alreadyInvoiced = liveInvoices.stream().map(Invoice::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         var totalAfterThisInvoice = alreadyInvoiced.add(request.amount());
         if (totalAfterThisInvoice.compareTo(combo.getTotalDiscountedAmount()) > 0) {
             throw InvoiceAmountExceedsTuitionException.forCombo(totalAfterThisInvoice,
                     combo.getTotalDiscountedAmount());
         }
 
-        var installmentNumber = Math.toIntExact(liveInvoiceCount) + 1;
+        var installmentNumber = nextFreeInstallmentNumber(liveInvoices, combo.getId());
         var saved = saveInvoice(Invoice.forCombo(combo.getId(), combo.getStudentProfileId(),
                 combo.getBranchId(), installmentNumber, request.amount(), request.dueDate(), actorAccountId),
                 combo.getId());
         events.publishEvent(new BillingEvents.InvoiceCreated(saved.getId(), actorAccountId, actorBranchId));
         return CreateInvoice.toResponse(saved);
+    }
+
+    /**
+     * Final review Important: một đợt đã huỷ GIẢI PHÓNG đúng số thứ tự của nó, nên số đợt mới phải
+     * là số NHỎ NHẤT còn trống trong [1, MAX] - không phải "đếm số đợt sống rồi +1". Huỷ một đợt
+     * KHÔNG PHẢI đợt cuối (ví dụ huỷ #1 khi #2 vẫn sống) thì đếm+1 sẽ tính ra đúng số #2 đang giữ,
+     * INSERT va UNIQUE (combo_id, installment_number), và bị dịch nhầm thành "đã đủ 3 đợt" dù mới có
+     * 1 đợt sống và còn thừa ngân sách.
+     */
+    private static int nextFreeInstallmentNumber(List<Invoice> liveInvoices, UUID comboId) {
+        var usedNumbers = liveInvoices.stream().map(Invoice::getInstallmentNumber).collect(Collectors.toSet());
+        for (int candidate = 1; candidate <= BillingConstants.Limits.MAX_INSTALLMENTS_PER_COMBO; candidate++) {
+            if (!usedNumbers.contains(candidate)) {
+                return candidate;
+            }
+        }
+        // Không thể tới đây: liveInvoices.size() < MAX đã được kiểm ở trên, nên luôn có một số trống.
+        throw InstallmentLimitExceededException.forCombo(comboId, BillingConstants.Limits.MAX_INSTALLMENTS_PER_COMBO);
     }
 
     /** Mirror {@code CreateInvoice.saveInvoice}: {@code uq_invoices_combo_installment} (V22) là lớp

@@ -103,6 +103,26 @@ class CreateComboInvoiceTest {
         verify(events).publishEvent(any(BillingEvents.InvoiceCreated.class));
     }
 
+    /**
+     * Final review Important: đánh số theo ĐẾM SỐ ĐỢT CÒN SỐNG, không theo số thứ tự còn trống, nên
+     * khi huỷ một đợt KHÔNG PHẢI đợt cuối, đợt mới tính ra đúng con số mà một đợt sống khác đang giữ -
+     * INSERT va UNIQUE (combo_id, installment_number), và usecase dịch nhầm thành "đã đủ 3 đợt" dù
+     * mới có 1 đợt sống và còn thừa ngân sách. Phải tìm số NHỎ NHẤT còn trống trong [1, MAX], không
+     * phải count+1.
+     */
+    @Test
+    void reusesTheFreedInstallmentNumberAfterCancellingANonLastInstallment() {
+        stubbedCombo();
+        // Đợt 1 đã huỷ (không còn trong danh sách "sống"), đợt 2 vẫn sống - đúng mô phỏng
+        // countByComboIdAndStatusNot/findAllByComboIdAndStatusNot đã loại CANCELLED.
+        stubExistingInvoices(List.of(existingComboInvoice(2, "5000000")));
+        stubSaveEchoesBack();
+
+        var response = useCase.execute(actorAccountId, actorBranchId, request("8900000"));
+
+        assertThat(response.installmentNumber()).isEqualTo(1);
+    }
+
     @Test
     void numbersTheSecondInstallmentTwo() {
         stubbedCombo();
