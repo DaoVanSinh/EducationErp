@@ -1,5 +1,6 @@
 package com.eduerp.modules.enrollment.usecase;
 
+import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.dto.EnrollmentResponse;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
 import com.eduerp.shared.PageResponse;
@@ -8,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Hai filter optional dồn vào một query ở repository - usecase không rẽ nhánh nào (complexity 1). */
+/** Ba filter optional dồn vào một query ở repository - usecase không rẽ nhánh nào (complexity 1). */
 @Service
 public class ListEnrollments {
 
@@ -19,8 +20,9 @@ public class ListEnrollments {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<EnrollmentResponse> execute(Pageable pageable, UUID studentProfileId, UUID classId) {
-        return PageResponse.of(enrollments.search(studentProfileId, classId, pageable)
+    public PageResponse<EnrollmentResponse> execute(Pageable pageable, UUID studentProfileId, UUID classId,
+            EnrollmentConstants.EnrollmentStatus status) {
+        return PageResponse.of(enrollments.search(studentProfileId, classId, status, pageable)
                 .map(CreateEnrollment::toResponse));
     }
 }

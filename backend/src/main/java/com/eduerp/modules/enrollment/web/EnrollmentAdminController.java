@@ -1,6 +1,7 @@
 package com.eduerp.modules.enrollment.web;
 
 import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.dto.CreateEnrollmentRequest;
 import com.eduerp.modules.enrollment.dto.EnrollmentResponse;
 import com.eduerp.modules.enrollment.usecase.CompleteEnrollment;
@@ -50,8 +51,9 @@ class EnrollmentAdminController {
     @PreAuthorize(AccessConstants.AccessRules.READ_ENROLLMENT)
     PageResponse<EnrollmentResponse> list(@PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID studentProfileId,
-            @RequestParam(required = false) UUID classId) {
-        return listEnrollments.execute(pageable, studentProfileId, classId);
+            @RequestParam(required = false) UUID classId,
+            @RequestParam(required = false) EnrollmentConstants.EnrollmentStatus status) {
+        return listEnrollments.execute(pageable, studentProfileId, classId, status);
     }
 
     @PostMapping

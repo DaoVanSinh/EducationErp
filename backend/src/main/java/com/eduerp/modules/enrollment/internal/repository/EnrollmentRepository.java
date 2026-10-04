@@ -17,16 +17,18 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
             EnrollmentConstants.EnrollmentStatus status);
 
     /**
-     * Hai filter đều optional (spec mục 4 {@code ListEnrollments}). Một query với {@code :p IS NULL}
-     * thay vì bốn method {@code findAllBy...} - giữ usecase ở complexity 1 thay vì rẽ 4 nhánh.
-     * {@code EnrollmentRepositoryIT.searchFiltersByEveryCombination...} phủ cả 4 tổ hợp nên nếu
-     * Hibernate/Postgres không suy được kiểu tham số null thì test đỏ ngay, không lọt ra production.
+     * Ba filter đều optional (spec mục 4 {@code ListEnrollments} + spec 3.1 mục 7). Một query với
+     * {@code :p IS NULL} thay vì tám method {@code findAllBy...} - giữ usecase ở complexity 1.
+     * {@code EnrollmentRepositoryIT.searchFiltersByEveryCombination...} và
+     * {@code ...searchFiltersByOptionalStatus} phủ mọi tổ hợp nên nếu Hibernate/Postgres không suy
+     * được kiểu tham số null thì test đỏ ngay, không lọt ra production.
      */
     @Query("""
             SELECT e FROM Enrollment e
             WHERE (:studentProfileId IS NULL OR e.studentProfileId = :studentProfileId)
               AND (:classId IS NULL OR e.classId = :classId)
+              AND (:status IS NULL OR e.status = :status)
             """)
     Page<Enrollment> search(@Param("studentProfileId") UUID studentProfileId, @Param("classId") UUID classId,
-            Pageable pageable);
+            @Param("status") EnrollmentConstants.EnrollmentStatus status, Pageable pageable);
 }

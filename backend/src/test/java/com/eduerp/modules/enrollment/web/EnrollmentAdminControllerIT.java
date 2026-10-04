@@ -11,6 +11,7 @@ import com.eduerp.modules.courses.internal.model.Class;
 import com.eduerp.modules.courses.internal.model.Course;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
+import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.dto.CreateEnrollmentRequest;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.LoginRequest;
@@ -224,5 +225,25 @@ class EnrollmentAdminControllerIT {
     @Test
     void requiresAuthentication() throws Exception {
         assertThat(mockMvc.perform(get(ENROLLMENTS)).andReturn().getResponse().getStatus()).isEqualTo(401);
+    }
+
+    /** Spec mục 7: màn hình "Tạo combo" gọi endpoint này với status=ACTIVE để chỉ hiện ghi danh đang
+     * học; để trống thì trả về mọi trạng thái, đúng như trước. */
+    @Test
+    void filtersTheEnrollmentListByStatus() throws Exception {
+        var admin = signIn("enr-admin-status@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var enrollmentId = createEnrollment(admin, newStudentProfileId(), newClassId(10));
+        mockMvc.perform(post(ENROLLMENTS + "/" + enrollmentId + "/withdraw").cookie(admin).with(csrf()));
+
+        var active = mockMvc.perform(get(ENROLLMENTS).cookie(admin)
+                .param("status", EnrollmentConstants.EnrollmentStatus.ACTIVE.name())).andReturn();
+        var withdrawn = mockMvc.perform(get(ENROLLMENTS).cookie(admin)
+                .param("status", EnrollmentConstants.EnrollmentStatus.WITHDRAWN.name())).andReturn();
+
+        assertThat(active.getResponse().getStatus()).isEqualTo(200);
+        assertThat(objectMapper.readTree(active.getResponse().getContentAsString()).get("items"))
+                .noneSatisfy(item -> assertThat(item.get("id").asText()).isEqualTo(enrollmentId));
+        assertThat(objectMapper.readTree(withdrawn.getResponse().getContentAsString()).get("items"))
+                .anySatisfy(item -> assertThat(item.get("id").asText()).isEqualTo(enrollmentId));
     }
 }

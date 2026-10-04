@@ -165,10 +165,33 @@ class EnrollmentRepositoryIT {
         enrollments.saveAndFlush(newEnrollment(newStudentProfileId()));
         var pageable = PageRequest.of(0, 20);
 
-        assertThat(enrollments.search(null, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(enrollments.search(studentProfileId, null, pageable).getTotalElements()).isEqualTo(1);
-        assertThat(enrollments.search(null, classId, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(enrollments.search(studentProfileId, classId, pageable).getTotalElements()).isEqualTo(1);
-        assertThat(enrollments.search(studentProfileId, UUID.randomUUID(), pageable).getTotalElements()).isZero();
+        assertThat(enrollments.search(null, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(enrollments.search(studentProfileId, null, null, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(enrollments.search(null, classId, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(enrollments.search(studentProfileId, classId, null, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(enrollments.search(studentProfileId, UUID.randomUUID(), null, pageable).getTotalElements())
+                .isZero();
+    }
+
+    /** Màn hình "Tạo combo" chỉ được chọn ghi danh ĐANG HỌC, nên filter này phải lọc đúng theo
+     * status mà không đổi hành vi khi để trống (spec mục 7). */
+    @Test
+    void searchFiltersByOptionalStatus() {
+        var studentProfileId = newStudentProfileId();
+        var active = enrollments.saveAndFlush(newEnrollment(studentProfileId));
+        var withdrawn = enrollments.saveAndFlush(newEnrollment(newStudentProfileId()));
+        withdrawn.withdraw();
+        enrollments.saveAndFlush(withdrawn);
+        var pageable = PageRequest.of(0, 20);
+
+        assertThat(enrollments.search(null, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE, pageable)
+                .getContent()).extracting(Enrollment::getId).containsExactly(active.getId());
+        assertThat(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.WITHDRAWN, pageable)
+                .getTotalElements()).isEqualTo(1);
+        assertThat(enrollments.search(studentProfileId, classId,
+                EnrollmentConstants.EnrollmentStatus.ACTIVE, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(enrollments.search(studentProfileId, classId,
+                EnrollmentConstants.EnrollmentStatus.COMPLETED, pageable).getTotalElements()).isZero();
     }
 }

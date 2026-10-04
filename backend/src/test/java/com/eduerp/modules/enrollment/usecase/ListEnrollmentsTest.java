@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
 import java.util.List;
@@ -18,16 +19,17 @@ class ListEnrollmentsTest {
     private final ListEnrollments useCase = new ListEnrollments(enrollments);
 
     @Test
-    void passesBothOptionalFiltersStraightToTheRepositoryAndMapsThePage() {
+    void passesAllThreeOptionalFiltersStraightToTheRepositoryAndMapsThePage() {
         var studentProfileId = UUID.randomUUID();
         var classId = UUID.randomUUID();
         var pageable = PageRequest.of(0, 20);
         var enrollment = new Enrollment(studentProfileId, classId, UUID.randomUUID(), UUID.randomUUID(),
                 UUID.randomUUID());
-        when(enrollments.search(studentProfileId, classId, pageable))
+        when(enrollments.search(studentProfileId, classId, EnrollmentConstants.EnrollmentStatus.ACTIVE, pageable))
                 .thenReturn(new PageImpl<>(List.of(enrollment), pageable, 1));
 
-        var page = useCase.execute(pageable, studentProfileId, classId);
+        var page = useCase.execute(pageable, studentProfileId, classId,
+                EnrollmentConstants.EnrollmentStatus.ACTIVE);
 
         assertThat(page.totalItems()).isEqualTo(1);
         assertThat(page.items()).singleElement()
@@ -37,8 +39,20 @@ class ListEnrollmentsTest {
     @Test
     void acceptsNullFiltersForAnUnfilteredList() {
         var pageable = PageRequest.of(0, 20);
-        when(enrollments.search(null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(enrollments.search(null, null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(useCase.execute(pageable, null, null).items()).isEmpty();
+        assertThat(useCase.execute(pageable, null, null, null).items()).isEmpty();
+    }
+
+    /** Spec mục 7: thêm filter status KHÔNG đổi hành vi khi để trống - status null vẫn là "mọi
+     * trạng thái", đúng như trước khi có tham số này. */
+    @Test
+    void passesOnlyTheStatusFilterWhenTheOtherTwoAreNull() {
+        var pageable = PageRequest.of(0, 20);
+        when(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        assertThat(useCase.execute(pageable, null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE).items())
+                .isEmpty();
     }
 }
