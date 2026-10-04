@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.eduerp.modules.billing.BillingConstants;
+import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
 import com.eduerp.modules.courses.internal.model.Class;
@@ -29,6 +30,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -65,6 +67,9 @@ class BillingRepositoryIT {
     @Autowired
     StudentProfileRepository profiles;
 
+    @Autowired
+    ComboRepository combos;
+
     private UUID enrollmentId;
     private UUID studentProfileId;
     private UUID courseId;
@@ -96,6 +101,18 @@ class BillingRepositoryIT {
     private Invoice newInvoice(int installmentNumber, String amount) {
         return new Invoice(enrollmentId, studentProfileId, courseId, branchId, installmentNumber,
                 new BigDecimal(amount), LocalDate.of(2026, 11, 30), actorId);
+    }
+
+    private UUID newComboId() {
+        var combo = new Combo(studentProfileId, branchId, new BigDecimal("21000000"),
+                new BigDecimal("15"), LocalDate.of(2027, 1, 31), actorId);
+        combo.addEnrollment(enrollmentId, courseId, new BigDecimal("12000000"));
+        return combos.saveAndFlush(combo).getId();
+    }
+
+    private Invoice newComboInvoice(UUID comboId, int installmentNumber, String amount) {
+        return Invoice.forCombo(comboId, studentProfileId, branchId, installmentNumber,
+                new BigDecimal(amount), LocalDate.of(2027, 1, 31), actorId);
     }
 
     @Test
@@ -222,5 +239,86 @@ class BillingRepositoryIT {
         var reissued = invoices.saveAndFlush(newInvoice(2, "3000000"));
 
         assertThat(reissued.getInstallmentNumber()).isEqualTo(2);
+    }
+
+    /**
+     * Review Focus #8: dữ liệu Invoice của Phase 3 (enrollment_id + course_id set, combo_id null)
+     * phải đọc/ghi được y nguyên sau V22 - CHECK constraint không được chặn nhánh cũ, và comboId
+     * đọc ra null chứ không phải một giá trị rác nào.
+     */
+    @Test
+    void keepsSingleCourseInvoicesValidAfterTheComboMigration() {
+        var saved = invoices.saveAndFlush(newInvoice(1, "6000000"));
+
+        var found = invoices.findById(saved.getId()).orElseThrow();
+        assertThat(found.getComboId()).isNull();
+        assertThat(found.getEnrollmentId()).isEqualTo(enrollmentId);
+        assertThat(found.getCourseId()).isEqualTo(courseId);
+        assertThat(found.getStatus()).isEqualTo(BillingConstants.InvoiceStatus.UNPAID);
+    }
+
+    @Test
+    void savesAComboInvoiceWithoutAnyEnrollmentOrCourse() {
+        var comboId = newComboId();
+
+        var saved = invoices.saveAndFlush(newComboInvoice(comboId, 1, "17850000"));
+
+        var found = invoices.findById(saved.getId()).orElseThrow();
+        assertThat(found.getComboId()).isEqualTo(comboId);
+        assertThat(found.getEnrollmentId()).isNull();
+        assertThat(found.getCourseId()).isNull();
+        assertThat(found.getStudentProfileId()).isEqualTo(studentProfileId);
+        assertThat(found.getBranchId()).isEqualTo(branchId);
+        assertThat(found.getInstallmentNumber()).isEqualTo(1);
+    }
+
+    /** Review Focus #8, biên hỏng thứ nhất: một hoá đơn không neo vào đâu cả là dữ liệu mồ côi. */
+    @Test
+    void rejectsAnInvoiceThatBelongsToNeitherAnEnrollmentNorACombo() {
+        var orphan = Invoice.forCombo(null, studentProfileId, branchId, 1, new BigDecimal("6000000"),
+                LocalDate.of(2027, 1, 31), actorId);
+
+        assertThatThrownBy(() -> invoices.saveAndFlush(orphan))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    /** Review Focus #8, biên hỏng thứ hai: neo vào cả hai thì không trả lời được "ai nợ khoản này". */
+    @Test
+    void rejectsAnInvoiceThatBelongsToBothAnEnrollmentAndACombo() {
+        var comboId = newComboId();
+        var invoice = newInvoice(1, "6000000");
+        ReflectionTestUtils.setField(invoice, "comboId", comboId);
+
+        assertThatThrownBy(() -> invoices.saveAndFlush(invoice))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void countsAndSumsComboInvoicesIgnoringCancelledOnesAndListsThemAll() {
+        var comboId = newComboId();
+        invoices.saveAndFlush(newComboInvoice(comboId, 1, "10000000"));
+        var cancelled = invoices.saveAndFlush(newComboInvoice(comboId, 2, "7850000"));
+        cancelled.cancel();
+        invoices.saveAndFlush(cancelled);
+
+        assertThat(invoices.countByComboIdAndStatusNot(comboId, BillingConstants.InvoiceStatus.CANCELLED))
+                .isEqualTo(1);
+        assertThat(invoices.findAllByComboIdAndStatusNot(comboId, BillingConstants.InvoiceStatus.CANCELLED))
+                .singleElement().satisfies(invoice -> assertThat(invoice.getAmount())
+                        .isEqualByComparingTo(new BigDecimal("10000000")));
+        // countByComboId/findAllByComboId đếm MỌI trạng thái - CancelCombo (Review Focus #6) và màn
+        // chi tiết combo đều cần thấy cả hoá đơn đã huỷ.
+        assertThat(invoices.countByComboId(comboId)).isEqualTo(2);
+        assertThat(invoices.findAllByComboId(comboId)).hasSize(2);
+    }
+
+    /** Mirror V20 cho đơn vị neo combo: một đợt đang sống không thể trùng số thứ tự với đợt khác. */
+    @Test
+    void rejectsASecondLiveComboInvoiceWithTheSameInstallmentNumberAtDatabaseLevel() {
+        var comboId = newComboId();
+        invoices.saveAndFlush(newComboInvoice(comboId, 2, "5000000"));
+
+        assertThatThrownBy(() -> invoices.saveAndFlush(newComboInvoice(comboId, 2, "5000000")))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

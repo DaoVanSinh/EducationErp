@@ -31,14 +31,21 @@ public class Invoice {
     @UuidGenerator
     private UUID id;
 
-    @Column(name = "enrollment_id", nullable = false, updatable = false)
+    /** Nullable từ V22: hoá đơn combo không neo vào một ghi danh nào. CHECK constraint
+     * {@code chk_invoices_enrollment_xor_combo} buộc đúng một trong hai nhánh có giá trị. */
+    @Column(name = "enrollment_id", updatable = false)
     private UUID enrollmentId;
 
     @Column(name = "student_profile_id", nullable = false, updatable = false)
     private UUID studentProfileId;
 
-    @Column(name = "course_id", nullable = false, updatable = false)
+    /** Nullable từ V22: hoá đơn combo gộp nhiều khoá nên không có một courseId duy nhất. */
+    @Column(name = "course_id", updatable = false)
     private UUID courseId;
+
+    /** Nullable: hoá đơn đơn-khoá (luồng Phase 3) không thuộc combo nào. */
+    @Column(name = "combo_id", updatable = false)
+    private UUID comboId;
 
     @Column(name = "branch_id", nullable = false, updatable = false)
     private UUID branchId;
@@ -67,9 +74,28 @@ public class Invoice {
 
     public Invoice(UUID enrollmentId, UUID studentProfileId, UUID courseId, UUID branchId, int installmentNumber,
             BigDecimal amount, LocalDate dueDate, UUID createdByAccountId) {
+        this(studentProfileId, branchId, installmentNumber, amount, dueDate, createdByAccountId);
         this.enrollmentId = enrollmentId;
-        this.studentProfileId = studentProfileId;
         this.courseId = courseId;
+    }
+
+    /**
+     * Hoá đơn của một combo: {@code enrollmentId}/{@code courseId} để null, {@code studentProfileId}
+     * và {@code branchId} lấy từ chính {@code Combo} (spec mục 6). Là static factory chứ không phải
+     * constructor thứ hai vì cả hai nhánh đều chỉ nhận toàn UUID - một constructor trùng kiểu là
+     * cách gọi nhầm nhánh mà trình biên dịch không bắt được.
+     */
+    public static Invoice forCombo(UUID comboId, UUID studentProfileId, UUID branchId, int installmentNumber,
+            BigDecimal amount, LocalDate dueDate, UUID createdByAccountId) {
+        var invoice = new Invoice(studentProfileId, branchId, installmentNumber, amount, dueDate,
+                createdByAccountId);
+        invoice.comboId = comboId;
+        return invoice;
+    }
+
+    private Invoice(UUID studentProfileId, UUID branchId, int installmentNumber, BigDecimal amount,
+            LocalDate dueDate, UUID createdByAccountId) {
+        this.studentProfileId = studentProfileId;
         this.branchId = branchId;
         this.installmentNumber = installmentNumber;
         this.amount = BillingRules.money(amount);

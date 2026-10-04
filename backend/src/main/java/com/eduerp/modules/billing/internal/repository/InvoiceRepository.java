@@ -20,6 +20,20 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     /** Cũng loại CANCELLED khi cộng tổng để so với học phí (spec mục 5 bước 4). */
     List<Invoice> findAllByEnrollmentIdAndStatusNot(UUID enrollmentId, BillingConstants.InvoiceStatus status);
 
+    /** Mirror {@code countByEnrollmentIdAndStatusNot} cho đơn vị neo combo: tối đa 3 đợt cho CẢ
+     * combo, invoice CANCELLED không chiếm chỗ (spec mục 6). */
+    long countByComboIdAndStatusNot(UUID comboId, BillingConstants.InvoiceStatus status);
+
+    /** Cũng loại CANCELLED khi cộng tổng để so với {@code Combo.totalDiscountedAmount}. */
+    List<Invoice> findAllByComboIdAndStatusNot(UUID comboId, BillingConstants.InvoiceStatus status);
+
+    /** Chi tiết combo hiển thị MỌI hoá đơn của combo, kể cả đã huỷ (spec mục 6 {@code GetComboDetail}). */
+    List<Invoice> findAllByComboId(UUID comboId);
+
+    /** Review Focus #6: {@code CancelCombo} chỉ cho phép khi chưa có hoá đơn nào - đếm MỌI trạng
+     * thái, kể cả CANCELLED. Một combo đã từng phát hành chứng từ tài chính thì không xoá cứng nữa. */
+    long countByComboId(UUID comboId);
+
     List<Invoice> findAllByStatusInAndDueDateBefore(Collection<BillingConstants.InvoiceStatus> statuses,
             LocalDate dueDateBefore);
 
