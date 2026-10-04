@@ -171,4 +171,19 @@ class AuditEventListeners {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.INVOICE_CANCEL,
                 AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
     }
+
+    /** Gộp nhiều khoá thành một gói giảm giá là một quyết định về tiền - mirror 1:1 InvoiceCreated. */
+    @ApplicationModuleListener
+    void on(BillingEvents.ComboCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.COMBO_CREATE,
+                AuditConstants.EntityTypes.COMBO, event.comboId().toString(), event.actorBranchId()));
+    }
+
+    /** Huỷ combo là xoá cứng bản ghi, nên dòng log này là dấu vết DUY NHẤT còn lại cho thấy combo
+     * từng tồn tại - khác InvoiceCancelled, nơi hoá đơn vẫn còn đó ở trạng thái CANCELLED. */
+    @ApplicationModuleListener
+    void on(BillingEvents.ComboCancelled event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.COMBO_CANCEL,
+                AuditConstants.EntityTypes.COMBO, event.comboId().toString(), event.actorBranchId()));
+    }
 }

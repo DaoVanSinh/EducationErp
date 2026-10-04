@@ -35,6 +35,8 @@ public final class AuditConstants {
         public static final String PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
         public static final String INVOICE_OVERDUE = "INVOICE_OVERDUE";
         public static final String INVOICE_CANCEL = "INVOICE_CANCEL";
+        public static final String COMBO_CREATE = "COMBO_CREATE";
+        public static final String COMBO_CANCEL = "COMBO_CANCEL";
     }
 
     public static final class EntityTypes {
@@ -51,5 +53,6 @@ public final class AuditConstants {
         public static final String PAYROLL_RUN = "PAYROLL_RUN";
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
+        public static final String COMBO = "COMBO";
     }
 }
