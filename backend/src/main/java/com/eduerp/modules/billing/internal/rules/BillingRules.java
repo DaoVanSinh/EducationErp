@@ -13,6 +13,15 @@ public final class BillingRules {
      * không thì con số người dùng thấy lúc nhập lệch con số đối soát sau khi tải lại. */
     private static final int MONEY_SCALE = 0;
 
+    /** Cột combo_discount_tiers.discount_percent / combos.discount_percent là NUMERIC(5,2). */
+    private static final int PERCENT_SCALE = 2;
+
+    /** Chia 100 trước khi nhân nên cần dư chữ số thập phân, nếu không 15% thành 0 (BigDecimal chia
+     * theo scale của số bị chia). Kết quả cuối vẫn được money() kéo về scale 0. */
+    private static final int DISCOUNT_MATH_SCALE = 6;
+
+    private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+
     /** OVERDUE vẫn thu được: đó là nhãn nhắc nợ, không phải khoá sổ (chỉ PAID/CANCELLED mới chặn). */
     private static final Set<BillingConstants.InvoiceStatus> PAYABLE_STATUSES = Set.of(
             BillingConstants.InvoiceStatus.UNPAID, BillingConstants.InvoiceStatus.PARTIALLY_PAID,
@@ -23,6 +32,17 @@ public final class BillingRules {
 
     public static BigDecimal money(BigDecimal value) {
         return value.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+    }
+
+    public static BigDecimal percent(BigDecimal value) {
+        return value.setScale(PERCENT_SCALE, RoundingMode.HALF_UP);
+    }
+
+    /** Tổng tiền combo sau giảm giá (spec mục 4): {@code total * (1 - percent/100)}, scale 0. */
+    public static BigDecimal discountedTotal(BigDecimal totalOriginalAmount, BigDecimal discountPercent) {
+        var multiplier = BigDecimal.ONE.subtract(
+                percent(discountPercent).divide(ONE_HUNDRED, DISCOUNT_MATH_SCALE, RoundingMode.HALF_UP));
+        return money(totalOriginalAmount.multiply(multiplier));
     }
 
     public static BigDecimal remaining(BigDecimal amount, BigDecimal amountPaid) {

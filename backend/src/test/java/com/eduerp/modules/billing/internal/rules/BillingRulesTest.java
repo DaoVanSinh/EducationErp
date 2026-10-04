@@ -73,4 +73,23 @@ class BillingRulesTest {
         assertThat(BillingRules.gatewayOrderId(invoiceId, 1, 1L))
                 .isNotEqualTo(BillingRules.gatewayOrderId(invoiceId, 1, 2L));
     }
+
+    /** Cột discount_percent là NUMERIC(5,2) - số trả về client phải khớp số sẽ lưu xuống. */
+    @Test
+    void percentRoundsToTwoDecimalsHalfUp() {
+        assertThat(BillingRules.percent(new BigDecimal("15"))).isEqualByComparingTo(new BigDecimal("15.00"));
+        assertThat(BillingRules.percent(new BigDecimal("12.345"))).isEqualByComparingTo(new BigDecimal("12.35"));
+        assertThat(BillingRules.percent(new BigDecimal("15.00")).scale()).isEqualTo(2);
+    }
+
+    /** Tổng combo sau giảm là một cột tiền NUMERIC(14,0) - không để lại phần lẻ nào. */
+    @Test
+    void discountedTotalAppliesThePercentThenRoundsToWholeDong() {
+        assertThat(BillingRules.discountedTotal(new BigDecimal("21000000"), new BigDecimal("15.00")))
+                .isEqualByComparingTo(new BigDecimal("17850000"));
+        assertThat(BillingRules.discountedTotal(new BigDecimal("21000000"), BigDecimal.ZERO))
+                .isEqualByComparingTo(new BigDecimal("21000000"));
+        assertThat(BillingRules.discountedTotal(new BigDecimal("1000001"), new BigDecimal("12.50")).scale())
+                .isZero();
+    }
 }
