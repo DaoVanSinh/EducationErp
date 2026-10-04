@@ -1,6 +1,8 @@
 import {
   billingApi,
   billingKeys,
+  type CreateComboInvoicePayload,
+  type CreateComboPayload,
   type CreateInvoicePayload,
   type InitiateOnlinePaymentPayload,
   type RecordManualPaymentPayload,
@@ -43,6 +45,32 @@ export function useCancelInvoice(invoiceId: string) {
   const invalidate = useInvoicesInvalidation();
   return useMutation({
     mutationFn: () => billingApi.cancelInvoice(invoiceId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreateCombo() {
+  const invalidate = useInvoicesInvalidation();
+  return useMutation({
+    mutationFn: (payload: CreateComboPayload) => billingApi.createCombo(payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Huỷ combo xoá cứng bản ghi, nên phải dọn CẢ cache danh sách lẫn cache chi tiết - invalidate
+ * billingKeys.all làm cả hai trong một lần. */
+export function useCancelCombo(comboId: string) {
+  const invalidate = useInvoicesInvalidation();
+  return useMutation({
+    mutationFn: () => billingApi.cancelCombo(comboId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreateComboInvoice() {
+  const invalidate = useInvoicesInvalidation();
+  return useMutation({
+    mutationFn: (payload: CreateComboInvoicePayload) => billingApi.createComboInvoice(payload),
     onSuccess: invalidate,
   });
 }

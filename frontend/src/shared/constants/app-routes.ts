@@ -18,6 +18,9 @@ export const APP_ROUTE = {
   enrollments: "/admin/enrollments",
   invoices: "/admin/billing/invoices",
   invoiceDetail: "/admin/billing/invoices/:invoiceId",
+  combos: "/admin/billing/combos",
+  comboDetail: "/admin/billing/combos/:comboId",
+  comboDiscountTiers: "/admin/billing/combo-discount-tiers",
   /** Public: phụ huynh quay về từ cổng thanh toán, có thể chưa đăng nhập (spec mục 10). */
   paymentReturn: "/payment/return/:gateway",
   login: "/login",
@@ -41,6 +44,11 @@ export function buildInvoiceDetailPath(invoiceId: string): string {
 /** Link thật tới trang Return URL của một cổng - phải khớp payment.*.redirect-url/return-url ở backend. */
 export function buildPaymentReturnPath(gateway: string): string {
   return `/payment/return/${gateway}`;
+}
+
+/** Link thật tới trang chi tiết một combo - APP_ROUTE.comboDetail chỉ là route template. */
+export function buildComboDetailPath(comboId: string): string {
+  return `/admin/billing/combos/${comboId}`;
 }
 
 /** Tên param cổng thanh toán trong APP_ROUTE.paymentReturn, dùng với useParams(). */
