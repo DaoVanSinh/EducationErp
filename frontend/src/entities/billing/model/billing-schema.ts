@@ -115,6 +115,75 @@ export const payUrlSchema = z.object({
   payUrl: z.string(),
 });
 
+/** Khớp từng field với ComboResponse ở backend - đổi tên là breaking. */
+export const comboSchema = z.object({
+  id: z.string().uuid(),
+  studentProfileId: z.string().uuid(),
+  branchId: z.string().uuid(),
+  totalOriginalAmount: z.number(),
+  /** % giảm, scale 2 ở backend (NUMERIC(5,2)) - snapshot lúc tạo, không đổi khi bậc giảm giá đổi. */
+  discountPercent: z.number(),
+  totalDiscountedAmount: z.number(),
+  dueDate: z.string(),
+  createdAt: z.string(),
+  courseCount: z.number().int(),
+});
+
+export type Combo = z.infer<typeof comboSchema>;
+
+/** Khớp ComboEnrollmentResponse ở backend. */
+export const comboEnrollmentSchema = z.object({
+  id: z.string().uuid(),
+  enrollmentId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  originalTuitionFee: z.number(),
+});
+
+export type ComboEnrollment = z.infer<typeof comboEnrollmentSchema>;
+
+/** Khớp ComboDetailResponse(combo, enrollments, invoices) ở backend. Mảng invoices gồm CẢ hoá đơn đã
+ * huỷ - kế toán cần thấy để hiểu vì sao số đợt nhảy số. */
+export const comboDetailSchema = z.object({
+  combo: comboSchema,
+  enrollments: z.array(comboEnrollmentSchema),
+  invoices: z.array(invoiceSummarySchema),
+});
+
+export type ComboDetail = z.infer<typeof comboDetailSchema>;
+
+/** Khớp ComboDiscountTierResponse ở backend. */
+export const comboDiscountTierSchema = z.object({
+  id: z.string().uuid(),
+  minCourseCount: z.number().int(),
+  discountPercent: z.number(),
+  active: z.boolean(),
+});
+
+export type ComboDiscountTier = z.infer<typeof comboDiscountTierSchema>;
+
+export interface CreateComboPayload {
+  readonly studentProfileId: string;
+  readonly enrollmentIds: readonly string[];
+  /** ISO date (yyyy-MM-dd) - backend nhận LocalDate. */
+  readonly dueDate: string;
+}
+
+export interface CreateComboInvoicePayload {
+  readonly comboId: string;
+  readonly amount: number;
+  readonly dueDate: string;
+}
+
+export interface CreateComboDiscountTierPayload {
+  readonly minCourseCount: number;
+  readonly discountPercent: number;
+}
+
+export interface UpdateComboDiscountTierPayload {
+  readonly discountPercent: number;
+  readonly active: boolean;
+}
+
 export interface CreateInvoicePayload {
   readonly enrollmentId: string;
   readonly amount: number;

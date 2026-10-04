@@ -9,13 +9,20 @@ import { API_ROUTE } from "@/shared/constants/api-routes";
 const enrollmentPageSchema = pageResponseSchema(enrollmentSummarySchema);
 
 export const enrollmentApi = {
-  async listEnrollments(page: number, size: number, studentProfileId?: string, classId?: string) {
+  async listEnrollments(
+    page: number,
+    size: number,
+    studentProfileId?: string,
+    classId?: string,
+    status?: string,
+  ) {
     return enrollmentPageSchema.parse(
       await apiClient.get<unknown>(API_ROUTE.enrollment.enrollments, {
         page,
         size,
         studentProfileId,
         classId,
+        status,
       }),
     );
   },

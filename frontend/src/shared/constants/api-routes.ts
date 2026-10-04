@@ -68,6 +68,13 @@ export const API_ROUTE = {
     invoiceOnlinePayment: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/online-payment`,
     invoiceManualPayment: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/manual-payment`,
     invoiceCancel: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/cancel`,
+    combos: "/api/billing/combos",
+    combo: (comboId: string) => `/api/billing/combos/${comboId}`,
+    comboCancel: (comboId: string) => `/api/billing/combos/${comboId}/cancel`,
+    /** comboId nằm trong body, mirror POST /api/billing/invoices vốn nhận enrollmentId trong body. */
+    comboInvoices: "/api/billing/combos/invoices",
+    comboDiscountTiers: "/api/billing/combo-discount-tiers",
+    comboDiscountTier: (tierId: string) => `/api/billing/combo-discount-tiers/${tierId}`,
     /** Public ở backend - trang Return URL gọi được khi phụ huynh chưa đăng nhập. */
     paymentStatus: (gatewayTransactionId: string) =>
       `/api/billing/payments/${gatewayTransactionId}/status`,
