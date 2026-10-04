@@ -29,6 +29,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { path: APP_ROUTE.payrollRuns, label: "Kỳ lương", requirement: ACCESS_RULE.readPayroll },
       { path: APP_ROUTE.enrollments, label: "Ghi danh", requirement: ACCESS_RULE.readEnrollment },
       { path: APP_ROUTE.invoices, label: "Hoá đơn học phí", requirement: ACCESS_RULE.readInvoice },
+      { path: APP_ROUTE.combos, label: "Combo khoá học", requirement: ACCESS_RULE.readInvoice },
+      {
+        path: APP_ROUTE.comboDiscountTiers,
+        label: "Bậc giảm giá combo",
+        requirement: ACCESS_RULE.readInvoice,
+      },
     ],
   },
   {

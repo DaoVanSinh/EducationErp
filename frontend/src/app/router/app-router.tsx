@@ -62,6 +62,13 @@ const InvoicesPage = lazy(() =>
 const InvoiceDetailPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.InvoiceDetailPage })),
 );
+const CombosPage = lazy(() => import("@/modules/billing").then((module) => ({ default: module.CombosPage })));
+const ComboDetailPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.ComboDetailPage })),
+);
+const ComboDiscountTiersPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.ComboDiscountTiersPage })),
+);
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
 );
@@ -112,6 +119,9 @@ export function AppRouter() {
           <Route path={APP_ROUTE.enrollments} element={<EnrollmentsPage />} />
           <Route path={APP_ROUTE.invoices} element={<InvoicesPage />} />
           <Route path={APP_ROUTE.invoiceDetail} element={<InvoiceDetailPage />} />
+          <Route path={APP_ROUTE.combos} element={<CombosPage />} />
+          <Route path={APP_ROUTE.comboDetail} element={<ComboDetailPage />} />
+          <Route path={APP_ROUTE.comboDiscountTiers} element={<ComboDiscountTiersPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>
