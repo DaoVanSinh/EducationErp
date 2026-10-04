@@ -16,6 +16,21 @@ function toneOf(status: InvoiceSummary["status"]): "positive" | "neutral" {
   return status === INVOICE_STATUS.paid ? "positive" : "neutral";
 }
 
+/**
+ * Một hoá đơn neo vào combo hoặc vào ghi danh, không bao giờ cả hai (CHECK constraint ở backend).
+ * Nhánh cuối không bao giờ chạy trong dữ liệu hợp lệ, nhưng vẫn phải trả về một chuỗi: hiển thị
+ * "Không rõ nguồn" tốt hơn là để trang trắng vì một ô dữ liệu lạ.
+ */
+function sourceLabelOf(invoice: InvoiceSummary): string {
+  if (invoice.comboId !== null) {
+    return `Combo ${invoice.comboId.slice(0, 8)}`;
+  }
+  if (invoice.enrollmentId !== null) {
+    return `Ghi danh ${invoice.enrollmentId.slice(0, 8)}`;
+  }
+  return "Không rõ nguồn";
+}
+
 export function InvoicesTable({ rows }: InvoicesTableProps) {
   return (
     <ul className="flex flex-col gap-2">
@@ -29,7 +44,7 @@ export function InvoicesTable({ rows }: InvoicesTableProps) {
         >
           <div className="min-w-0">
             <p className="truncate text-sm text-mist-100">Đợt {invoice.installmentNumber}</p>
-            <p className="truncate text-xs text-mist-500">Ghi danh {invoice.enrollmentId.slice(0, 8)}</p>
+            <p className="truncate text-xs text-mist-500">{sourceLabelOf(invoice)}</p>
           </div>
           <p className="text-sm text-mist-100">{formatter.count(invoice.amount)} đ</p>
           <p className="text-xs text-mist-500">Đã thu {formatter.count(invoice.amountPaid)} đ</p>

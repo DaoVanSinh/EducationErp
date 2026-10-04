@@ -55,12 +55,23 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   [PAYMENT_STATUS.failed]: "Thất bại",
 };
 
-/** Khớp từng field với InvoiceResponse ở backend. */
+/** Khớp BillingConstants.Limits.MIN_ENROLLMENTS_PER_COMBO - dưới mốc này backend trả
+ * BILLING_COMBO_MINIMUM_SIZE, nên form phải chặn trước để người dùng không bấm rồi mới biết. */
+export const MIN_COMBO_ENROLLMENTS = 2;
+
+/**
+ * Khớp từng field với InvoiceResponse ở backend.
+ *
+ * Một hoá đơn thuộc về ĐÚNG MỘT trong hai: một ghi danh (enrollmentId + courseId) hoặc một combo
+ * (comboId) - backend có CHECK constraint chk_invoices_enrollment_xor_combo bảo đảm điều đó. Ba field
+ * này nullable nên mọi nơi hiển thị phải xử lý null, không được .slice() thẳng.
+ */
 export const invoiceSummarySchema = z.object({
   id: z.string().uuid(),
-  enrollmentId: z.string().uuid(),
+  enrollmentId: z.string().uuid().nullable(),
+  comboId: z.string().uuid().nullable(),
   studentProfileId: z.string().uuid(),
-  courseId: z.string().uuid(),
+  courseId: z.string().uuid().nullable(),
   branchId: z.string().uuid(),
   installmentNumber: z.number().int(),
   amount: z.number(),
