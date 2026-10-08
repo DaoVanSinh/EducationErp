@@ -1,0 +1,84 @@
+import { gradeColumnSchema } from "@/shared/api/schemas";
+import { z } from "zod";
+
+/** Bản sao của EnrollmentConstants.EnrollmentStatus ở backend. */
+export const ENROLLMENT_STATUS = {
+  active: "ACTIVE",
+  withdrawn: "WITHDRAWN",
+  completed: "COMPLETED",
+} as const;
+
+export type EnrollmentStatus = (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS];
+
+export const ENROLLMENT_STATUS_LABEL: Record<EnrollmentStatus, string> = {
+  [ENROLLMENT_STATUS.active]: "Đang học",
+  [ENROLLMENT_STATUS.withdrawn]: "Đã rút",
+  [ENROLLMENT_STATUS.completed]: "Đã hoàn thành",
+};
+
+const enrollmentStatusSchema = z.enum([
+  ENROLLMENT_STATUS.active,
+  ENROLLMENT_STATUS.withdrawn,
+  ENROLLMENT_STATUS.completed,
+]);
+
+/**
+ * Một dòng bảng điểm. `scoresByColumnId` là map có khoá là id cột điểm (JSON luôn trả khoá dạng
+ * chuỗi). Cột khuyết khoá nghĩa là CHƯA có điểm, và khi đó `finalScore` là null = "chưa đủ điểm"
+ * (backend GradeRules) — KHÔNG phải 0, giao diện không được hiển thị 0 ở đây.
+ */
+export const studentGradesRowSchema = z.object({
+  enrollmentId: z.string().uuid(),
+  studentProfileId: z.string().uuid(),
+  studentName: z.string().nullable(),
+  status: enrollmentStatusSchema,
+  scoresByColumnId: z.record(z.string(), z.number()),
+  finalScore: z.number().nullable(),
+});
+
+export type StudentGradesRow = z.infer<typeof studentGradesRowSchema>;
+
+export const gradebookSchema = z.object({
+  classId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  /** Thứ tự cột do backend quyết định theo displayOrder - không sắp lại ở frontend. */
+  columns: z.array(gradeColumnSchema),
+  rows: z.array(studentGradesRowSchema),
+});
+
+export type Gradebook = z.infer<typeof gradebookSchema>;
+
+/**
+ * Một dòng bảng tiến trình. `progressPercent` null = khóa chưa cấu hình tổng số buổi chuẩn, không
+ * phải 0% — `elapsedSessions` vẫn là số thật để người xem phân biệt hai tình huống.
+ */
+export const studentProgressRowSchema = z.object({
+  enrollmentId: z.string().uuid(),
+  studentProfileId: z.string().uuid(),
+  studentName: z.string().nullable(),
+  status: enrollmentStatusSchema,
+  enrolledAt: z.string(),
+  withdrawnAt: z.string().nullable(),
+  elapsedSessions: z.number().int(),
+  standardSessionCount: z.number().int().nullable(),
+  progressPercent: z.number().int().nullable(),
+});
+
+export type StudentProgressRow = z.infer<typeof studentProgressRowSchema>;
+
+export const classProgressSchema = z.object({
+  classId: z.string().uuid(),
+  courseId: z.string().uuid(),
+  standardSessionCount: z.number().int().nullable(),
+  rows: z.array(studentProgressRowSchema),
+});
+
+export type ClassProgress = z.infer<typeof classProgressSchema>;
+
+/** Khớp `academic.dto.RecordGradeRequest`. Upsert: gửi lại cùng cặp (enrollmentId, columnId) là SỬA. */
+export interface RecordGradePayload {
+  readonly classId: string;
+  readonly enrollmentId: string;
+  readonly courseGradeColumnId: string;
+  readonly score: number;
+}
