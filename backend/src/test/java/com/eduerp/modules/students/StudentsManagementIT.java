@@ -7,6 +7,7 @@ import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.students.internal.model.StudentProfile;
 import com.eduerp.modules.students.internal.repository.StudentProfileRepository;
 import com.redis.testcontainers.RedisContainer;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,5 +64,42 @@ class StudentsManagementIT {
     @Test
     void getProfileIsEmptyForAnUnknownProfile() {
         assertThat(studentsManagement.getProfile(UUID.randomUUID())).isEmpty();
+    }
+
+    private UUID newActiveStudentProfileId() {
+        var suffix = UUID.randomUUID().toString().substring(0, 8);
+        var account = accounts.save(new Account("stu-sum-" + suffix + "@eduerp.local", "hash",
+                "Học viên " + suffix, null));
+        return profiles.save(new StudentProfile(account.getId(), null, null, null)).getId();
+    }
+
+    /** Mirror {@code IdentityManagement.summariesOf}: nạp theo lô để bảng điểm không bắn N+1 câu
+     * truy vấn xuyên facade khi in tên 30 học viên của một lớp (rule #3). */
+    @Test
+    void summariesOfLoadsManyProfilesInOneCall() {
+        var first = newActiveStudentProfileId();
+        var second = newActiveStudentProfileId();
+
+        var summaries = studentsManagement.summariesOf(List.of(first, second));
+
+        assertThat(summaries).containsOnlyKeys(first, second);
+        assertThat(summaries.get(first).studentProfileId()).isEqualTo(first);
+        assertThat(summaries.get(first).accountId()).isNotNull();
+        assertThat(summaries.get(first).active()).isTrue();
+    }
+
+    /** Id không tồn tại không làm cả lô đổ - chỉ vắng mặt trong map, nơi gọi tự xử lý tên trống. */
+    @Test
+    void summariesOfSkipsUnknownProfileIdsInsteadOfFailing() {
+        var known = newActiveStudentProfileId();
+
+        var summaries = studentsManagement.summariesOf(List.of(known, UUID.randomUUID()));
+
+        assertThat(summaries).containsOnlyKeys(known);
+    }
+
+    @Test
+    void summariesOfAnEmptyCollectionIsAnEmptyMap() {
+        assertThat(studentsManagement.summariesOf(List.of())).isEmpty();
     }
 }
