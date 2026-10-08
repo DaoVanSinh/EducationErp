@@ -2,6 +2,7 @@ package com.eduerp.modules.enrollment.internal.repository;
 
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
     boolean existsByStudentProfileIdAndClassIdAndStatus(UUID studentProfileId, UUID classId,
             EnrollmentConstants.EnrollmentStatus status);
+
+    /**
+     * Toàn bộ ghi danh của một lớp, kể cả WITHDRAWN/COMPLETED - {@code modules.academic} cần cả
+     * những dòng đó để đóng băng tiến trình tại {@code withdrawnAt} (spec mục 5). Sắp theo
+     * {@code enrolledAt} để bảng điểm/bảng tiến trình có thứ tự ổn định giữa hai lần tải.
+     */
+    List<Enrollment> findAllByClassIdOrderByEnrolledAtAsc(UUID classId);
 
     /**
      * Ba filter đều optional (spec mục 4 {@code ListEnrollments} + spec 3.1 mục 7). Một query với
