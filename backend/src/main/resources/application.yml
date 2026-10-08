@@ -18,6 +18,32 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+  ai:
+    anthropic:
+      # Secret thật CHỈ đến từ biến môi trường, mặc định rỗng - mirror MOMO_SECRET_KEY/
+      # VNPAY_HASH_SECRET (spec Ruling R2). Khoá rỗng vẫn khởi động được context (AnthropicApi chỉ
+      # Assert.notNull), lệnh gọi thật sẽ 401 -> NonTransientAiException -> 503
+      # CHAT_PROVIDER_UNAVAILABLE, đúng bảng lỗi của spec mục 5.
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          # Final review Critical #1: "claude-sonnet-5" không tương thích với Spring AI 1.0.9 - thư
+          # viện này LUÔN gán một giá trị temperature khác null (AnthropicChatProperties, đã
+          # decompile), và Claude Sonnet 5 từ chối mọi sampling parameter không-mặc-định bằng 400 -
+          # nghĩa là MỌI lệnh gọi thật sẽ lỗi, lộ ra thành 503 CHAT_PROVIDER_UNAVAILABLE không thể
+          # phân biệt với "chưa cấu hình khoá". Haiku 4.5 không nằm trong dòng model bỏ sampling
+          # params (4.7+/5.x) và đúng tầm một chatbot tư vấn-truy xuất đơn giản.
+          model: ${ANTHROPIC_CHAT_MODEL:claude-haiku-4-5-20251001}
+          # Mặc định của Spring AI là 500 token - đủ để cắt ngang một câu trả lời tư vấn.
+          max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
+          # Tư vấn khóa học cần đúng dữ liệu, không cần sáng tạo - nhiệt độ thấp giảm thêm nguy cơ
+          # bịa đặt mà system prompt đang chặn.
+          temperature: 0.2
+    retry:
+      # Mặc định của Spring AI là 10 lần - một request HTTP đồng bộ của người dùng không được phép
+      # giữ thread Tomcat qua 10 lượt backoff. 4xx (gồm 401 thiếu khoá) không bị retry vì
+      # spring.ai.retry.on-client-errors mặc định false.
+      max-attempts: ${ANTHROPIC_MAX_ATTEMPTS:2}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}

@@ -97,4 +97,32 @@ class AccessConstantsTest {
     void gradeIsAKnownResourceName() {
         assertThat(AccessConstants.Resources.GRADE).isEqualTo("GRADE");
     }
+
+    /**
+     * Quyết định kỹ thuật #1 của plan: spec mục 3.4 tự mâu thuẫn, và câu đúng là câu thứ hai ("mọi
+     * học viên có quyền CHAT:CREATE ở scope nào cũng được phép hỏi chatbot"). Nếu ai đó "sửa cho
+     * nhất quán" bằng cách thêm marker @ORGANIZATION vào đây thì học viên - người dùng chính của cả
+     * phân hệ, được V27 seed ở scope PERSONAL - sẽ bị 403 ngay ở cửa. Test này biến việc đó thành
+     * build đỏ thay vì một màn hình trắng không ai hiểu vì sao.
+     */
+    @Test
+    void chatRuleDeliberatelyOmitsTheOrganizationScopeMarker() {
+        assertThat(AccessConstants.AccessRules.CREATE_CHAT)
+                .contains(AccessConstants.Resources.CHAT, AccessConstants.Actions.CREATE)
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+    }
+
+    /** Ba rule *_GRADE của Phân hệ 4 cũng không có marker - CHAT là rule thứ tư, không phải một
+     * ngoại lệ đơn độc đáng nghi. */
+    @Test
+    void theOnlyRulesWithoutAMinimumScopeAreTheGradeRulesAndChat() {
+        assertThat(AccessConstants.AccessRules.READ_GRADE)
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+        assertThat(AccessConstants.AccessRules.UPDATE_GRADE)
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+        assertThat(AccessConstants.AccessRules.CREATE_GRADE)
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+        assertThat(AccessConstants.AccessRules.CREATE_CHAT)
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+    }
 }

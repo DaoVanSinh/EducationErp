@@ -175,7 +175,7 @@ class MomoPaymentGatewayClientTest {
     void createPaymentUrlReturnsThePayUrlWhenMomoReportsSuccess() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
-        var momoClient = new MomoPaymentGatewayClient(properties, builder);
+        var momoClient = new MomoPaymentGatewayClient(properties, builder.build());
         server.expect(requestTo(ENDPOINT))
                 .andRespond(withSuccess("{\"resultCode\":0,\"payUrl\":\"https://test-payment.momo.vn/pay/abc\"}",
                         MediaType.APPLICATION_JSON));
@@ -198,7 +198,7 @@ class MomoPaymentGatewayClientTest {
     void createPaymentUrlThrowsWhenMomoReportsANonZeroResultCode() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
-        var momoClient = new MomoPaymentGatewayClient(properties, builder);
+        var momoClient = new MomoPaymentGatewayClient(properties, builder.build());
         server.expect(requestTo(ENDPOINT))
                 .andRespond(withSuccess("{\"resultCode\":41,\"message\":\"Invalid signature\"}",
                         MediaType.APPLICATION_JSON));
@@ -213,7 +213,7 @@ class MomoPaymentGatewayClientTest {
     void createPaymentUrlThrowsWhenMomoOmitsThePayUrlDespiteReportingSuccess() {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
-        var momoClient = new MomoPaymentGatewayClient(properties, builder);
+        var momoClient = new MomoPaymentGatewayClient(properties, builder.build());
         server.expect(requestTo(ENDPOINT))
                 .andRespond(withSuccess("{\"resultCode\":0}", MediaType.APPLICATION_JSON));
 

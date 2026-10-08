@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -70,9 +71,23 @@ class MomoPaymentGatewayClient implements PaymentGatewayClient {
     private final MomoProperties properties;
     private final RestClient restClient;
 
+    @Autowired
     MomoPaymentGatewayClient(MomoProperties properties, RestClient.Builder restClientBuilder) {
         this.properties = properties;
-        this.restClient = restClientBuilder.build();
+        // Timeout áp tại đây chứ không qua một RestClientCustomizer toàn cục - xem javadoc của
+        // PaymentHttpClientConfig: customizer toàn cục sẽ cắt luôn lệnh gọi của Spring AI.
+        this.restClient = restClientBuilder
+                .requestFactory(PaymentHttpClientConfig.timeoutRequestFactory())
+                .build();
+    }
+
+    /** Tồn tại riêng cho test: nhận một {@link RestClient} đã dựng xong (vd. đã gắn
+     * {@code MockRestServiceServer}) mà không ghi đè request factory của nó - constructor chính luôn
+     * áp {@link PaymentHttpClientConfig#timeoutRequestFactory()} lên MỌI builder nó nhận, kể cả một
+     * builder test đã tự gắn mock, nên test mock mạng phải đi qua đường này. */
+    MomoPaymentGatewayClient(MomoProperties properties, RestClient restClient) {
+        this.properties = properties;
+        this.restClient = restClient;
     }
 
     @Override

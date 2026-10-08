@@ -16,6 +16,7 @@ export const RESOURCE = {
   enrollment: "ENROLLMENT",
   invoice: "INVOICE",
   grade: "GRADE",
+  chat: "CHAT",
 } as const;
 
 /** Bản sao của IdentityConstants.Actions. */
@@ -68,6 +69,7 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.enrollment]: "Ghi danh",
   [RESOURCE.invoice]: "Hoá đơn học phí",
   [RESOURCE.grade]: "Điểm & Tiến trình học tập",
+  [RESOURCE.chat]: "Hỏi đáp khóa học",
 };
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -209,7 +211,7 @@ export const ACCESS_RULE = {
     scope: PERMISSION_SCOPE.organization,
   },
   /**
-   * Hai entry DUY NHẤT trong file không ghi scope, và đó là chủ đích: ba rule `*_GRADE` ở backend
+   * Hai trong ba entry không ghi scope ở file này, và đó là chủ đích: ba rule `*_GRADE` ở backend
    * không có marker `@ORGANIZATION` (AccessConstants.AccessRules.READ_GRADE), nên câu hỏi đúng là
    * "có quyền GRADE ở bất kỳ scope nào không". Ghi `organization` ở đây sẽ ẩn màn hình sổ điểm khỏi
    * giáo viên — những người duy nhất thực sự nhập điểm.
@@ -220,4 +222,15 @@ export const ACCESS_RULE = {
    */
   readGrade: { resource: RESOURCE.grade, action: ACTION.read },
   updateGrade: { resource: RESOURCE.grade, action: ACTION.update },
+  /**
+   * Entry thứ BA trong file không ghi scope, và đó là chủ đích - cùng lý do với hai rule `*Grade`
+   * bên trên: `AccessConstants.AccessRules.CREATE_CHAT` ở backend không mang marker
+   * `@ORGANIZATION`, nên câu hỏi đúng là "có quyền CHAT:CREATE ở bất kỳ scope nào không". Học viên
+   * được seed `CHAT:CREATE:PERSONAL` (V27); ghi `organization` ở đây sẽ ẩn cả trang chat và mục nav
+   * khỏi học viên - người dùng duy nhất mà tính năng này được xây cho.
+   *
+   * Khác hai rule `*Grade`: ở đây KHÔNG có câu hỏi "tài nguyên này có phải của tôi không" nào mà
+   * backend phải trả lời tiếp, nên rule này là toàn bộ sự thật về quyền của màn hình chat.
+   */
+  createChat: { resource: RESOURCE.chat, action: ACTION.create },
 } as const;
