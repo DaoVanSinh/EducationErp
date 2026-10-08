@@ -1,15 +1,24 @@
 package com.eduerp.modules.academic.web;
 
+import com.eduerp.modules.academic.AcademicConstants;
 import com.eduerp.modules.academic.dto.ClassProgressResponse;
+import com.eduerp.modules.academic.dto.ExportedFileResponse;
 import com.eduerp.modules.academic.dto.GradebookResponse;
 import com.eduerp.modules.academic.dto.RecordGradeRequest;
+import com.eduerp.modules.academic.usecase.ExportClassGradebook;
+import com.eduerp.modules.academic.usecase.ExportClassProgress;
 import com.eduerp.modules.academic.usecase.GetClassGradebook;
 import com.eduerp.modules.academic.usecase.GetClassProgress;
 import com.eduerp.modules.academic.usecase.RecordGrade;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.shared.AccountPrincipal;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,12 +42,17 @@ class GradeAdminController {
     private final RecordGrade recordGrade;
     private final GetClassGradebook getClassGradebook;
     private final GetClassProgress getClassProgress;
+    private final ExportClassGradebook exportClassGradebook;
+    private final ExportClassProgress exportClassProgress;
 
     GradeAdminController(RecordGrade recordGrade, GetClassGradebook getClassGradebook,
-            GetClassProgress getClassProgress) {
+            GetClassProgress getClassProgress, ExportClassGradebook exportClassGradebook,
+            ExportClassProgress exportClassProgress) {
         this.recordGrade = recordGrade;
         this.getClassGradebook = getClassGradebook;
         this.getClassProgress = getClassProgress;
+        this.exportClassGradebook = exportClassGradebook;
+        this.exportClassProgress = exportClassProgress;
     }
 
     /** POST (không PUT): upsert idempotent theo {@code (enrollmentId, courseGradeColumnId)}, và
@@ -62,5 +76,30 @@ class GradeAdminController {
     ClassProgressResponse progress(@AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID classId) {
         return getClassProgress.execute(principal.accountId(), classId);
+    }
+
+    @GetMapping("/classes/{classId}/gradebook/export")
+    @PreAuthorize(AccessConstants.AccessRules.READ_GRADE)
+    ResponseEntity<byte[]> exportGradebook(@AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable UUID classId) {
+        return toDownload(exportClassGradebook.execute(principal.accountId(), classId));
+    }
+
+    @GetMapping("/classes/{classId}/progress/export")
+    @PreAuthorize(AccessConstants.AccessRules.READ_GRADE)
+    ResponseEntity<byte[]> exportProgress(@AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable UUID classId) {
+        return toDownload(exportClassProgress.execute(principal.accountId(), classId));
+    }
+
+    /** Không có {@code Content-Disposition} kèm tên file thì trình duyệt lưu file không có phần mở
+     * rộng - mirror {@code ContractAdminController.downloadFile}. */
+    private static ResponseEntity<byte[]> toDownload(ExportedFileResponse exported) {
+        var disposition = ContentDisposition.attachment()
+                .filename(exported.fileName(), StandardCharsets.UTF_8).build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(AcademicConstants.Excel.CONTENT_TYPE))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(exported.content());
     }
 }
