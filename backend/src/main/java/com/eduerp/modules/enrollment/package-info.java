@@ -2,7 +2,8 @@
  * Module Enrollment — sở hữu việc ghi danh học viên vào một lớp và vòng đời của bản ghi ghi danh
  * (ACTIVE → WITHDRAWN/COMPLETED). Phụ thuộc một chiều {@code access} ({@code AccessConstants} cho
  * {@code @PreAuthorize}), {@code courses} ({@code CoursesManagement.getClassInfo} để chốt snapshot
- * course/branch/maxSeats) và {@code students} ({@code StudentsManagement.getProfile} để xác nhận
+ * course/branch/maxSeats, bản ghi này mang thêm teacherId/schedule/standardSessionCount từ Phân hệ 4 -
+ * enrollment không dùng, chỉ modules.academic dùng) và {@code students} ({@code StudentsManagement.getProfile} để xác nhận
  * học viên còn hoạt động). KHÔNG biết tới {@code modules.billing} — billing đọc ngược qua
  * {@code EnrollmentManagement}, không có cạnh phụ thuộc ngược (spec mục 3).
  *

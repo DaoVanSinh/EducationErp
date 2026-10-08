@@ -35,6 +35,11 @@ export function CoursesTable({ rows, onEdit }: CoursesTableProps) {
                 ? "Chưa gắn học phí"
                 : `${formatter.count(course.tuitionFee)} đ`}
             </p>
+            <p className="truncate text-xs text-mist-400">
+              {course.gradeColumns.length === 0
+                ? "Chưa có cột điểm"
+                : `${course.gradeColumns.length} cột điểm`}
+            </p>
           </div>
           <Badge tone={course.active ? "positive" : "neutral"}>
             {course.active ? "Đang hoạt động" : "Đã vô hiệu hoá"}

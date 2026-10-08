@@ -1,6 +1,6 @@
 /**
  * Module Audit — ghi lại các hành động đã xảy ra trong hệ thống. KHÔNG bị gọi trực tiếp: các module
- * khác publish sự kiện nghiệp vụ ({@code IdentityEvents}, {@code AccessEvents}, ...) qua
+ * khác publish sự kiện nghiệp vụ ({@code IdentityEvents}, {@code AccessEvents}, {@code AcademicEvents}, ...) qua
  * {@code ApplicationEventPublisher}, audit tự lắng nghe bằng {@code @ApplicationModuleListener} và
  * ghi log SAU KHI transaction phát sự kiện đã commit (rule #17) — identity/access không hề biết
  * audit tồn tại, chỉ audit biết chúng.

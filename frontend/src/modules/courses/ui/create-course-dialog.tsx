@@ -1,5 +1,6 @@
 import { useCreateCourse } from "@/modules/courses/api/use-courses-mutations";
-import { createCourseFormSchema } from "@/modules/courses/model/courses-forms";
+import { createCourseFormSchema, toGradeColumnPayload } from "@/modules/courses/model/courses-forms";
+import { GradeColumnEditor } from "@/modules/courses/ui/grade-column-editor";
 import { useZodForm } from "@/shared/lib/use-zod-form";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
@@ -17,9 +18,19 @@ export function CreateCourseDialog({ open, onClose }: CreateCourseDialogProps) {
 
   const form = useZodForm({
     schema: createCourseFormSchema,
-    initialValues: { code: "", name: "", description: "", standardSessionCount: "", tuitionFee: "" },
+    initialValues: {
+      code: "",
+      name: "",
+      description: "",
+      standardSessionCount: "",
+      tuitionFee: "",
+      gradeColumns: [],
+    },
     onSubmit: async (values) => {
-      await createCourse.mutateAsync(values);
+      await createCourse.mutateAsync({
+        ...values,
+        gradeColumns: toGradeColumnPayload(values.gradeColumns),
+      });
       form.reset();
       onClose();
     },
@@ -77,6 +88,20 @@ export function CreateCourseDialog({ open, onClose }: CreateCourseDialogProps) {
             invalid={form.fieldErrors.tuitionFee !== undefined}
             onChange={(event) => form.setValue("tuitionFee", event.target.value)}
           />
+        </FormField>
+
+        <FormField
+          label="Cột điểm"
+          htmlFor="course-grade-columns"
+          hint="Không bắt buộc. Nếu có, tổng trọng số phải bằng 100%."
+          error={form.fieldErrors.gradeColumns}
+        >
+          <div id="course-grade-columns">
+            <GradeColumnEditor
+              columns={form.values.gradeColumns}
+              onChange={(columns) => form.setValue("gradeColumns", columns)}
+            />
+          </div>
         </FormField>
       </form>
 

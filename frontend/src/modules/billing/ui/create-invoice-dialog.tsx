@@ -1,4 +1,5 @@
-import { ENROLLMENT_STATUS, type EnrollmentSummary } from "@/entities/enrollment";
+import type { EnrollmentSummary } from "@/entities/enrollment";
+import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
 import { useCreateInvoice } from "@/modules/billing/api/use-billing-mutations";
 import { createInvoiceFormSchema } from "@/modules/billing/model/billing-forms";
 import { useZodForm } from "@/shared/lib/use-zod-form";

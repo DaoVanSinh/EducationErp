@@ -37,6 +37,7 @@ public final class AuditConstants {
         public static final String INVOICE_CANCEL = "INVOICE_CANCEL";
         public static final String COMBO_CREATE = "COMBO_CREATE";
         public static final String COMBO_CANCEL = "COMBO_CANCEL";
+        public static final String GRADE_RECORD = "GRADE_RECORD";
     }
 
     public static final class EntityTypes {
@@ -54,5 +55,6 @@ public final class AuditConstants {
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
         public static final String COMBO = "COMBO";
+        public static final String GRADE_ENTRY = "GRADE_ENTRY";
     }
 }

@@ -1,11 +1,13 @@
 import type { ClassSummary } from "@/entities/class";
 import { Can } from "@/entities/permission";
+import { buildClassGradebookPath, buildClassProgressPath } from "@/shared/constants/app-routes";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { staggerDelay } from "@/shared/lib/motion";
 import { Badge } from "@/shared/ui/badge";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { m } from "framer-motion";
-import { Pencil } from "lucide-react";
+import { BookOpen, LineChart, Pencil } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export interface ClassesTableProps {
   readonly rows: readonly ClassSummary[];
@@ -21,7 +23,7 @@ export function ClassesTable({ rows, onEdit }: ClassesTableProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={staggerDelay(index)}
-          className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]"
+          className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto_auto]"
         >
           <p className="truncate text-sm text-mist-100">{cls.code}</p>
           <p className="truncate text-sm text-mist-100">{cls.courseName}</p>
@@ -30,6 +32,20 @@ export function ClassesTable({ rows, onEdit }: ClassesTableProps) {
           <Badge tone={cls.active ? "positive" : "neutral"}>
             {cls.active ? "Đang hoạt động" : "Đã vô hiệu hoá"}
           </Badge>
+          <Can {...ACCESS_RULE.readGrade}>
+            <div className="flex gap-1 justify-self-start lg:justify-self-end">
+              <Link to={buildClassGradebookPath(cls.id)}>
+                <GlassButton variant="ghost" size="sm" icon={<BookOpen size={14} aria-hidden />}>
+                  Sổ điểm
+                </GlassButton>
+              </Link>
+              <Link to={buildClassProgressPath(cls.id)}>
+                <GlassButton variant="ghost" size="sm" icon={<LineChart size={14} aria-hidden />}>
+                  Tiến trình
+                </GlassButton>
+              </Link>
+            </div>
+          </Can>
           <Can {...ACCESS_RULE.updateClass}>
             <div className="justify-self-start lg:justify-self-end">
               <GlassButton variant="secondary" size="sm" onClick={() => onEdit(cls)} icon={<Pencil size={14} aria-hidden />}>

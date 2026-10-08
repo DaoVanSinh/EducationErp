@@ -45,3 +45,67 @@ export const grantedPermissionSchema = z.object({
 });
 
 export type GrantedPermission = z.infer<typeof grantedPermissionSchema>;
+
+/**
+ * Một cột điểm đã lưu của khóa học, khớp `courses.dto.GradeColumnResponse` ở backend.
+ *
+ * Đặt ở shared cùng lý do với {@link grantedPermissionSchema}: cả entity course (màn hình sửa khóa
+ * học cấu hình cột điểm) lẫn entity academic (sổ điểm hiển thị cột điểm) đều cần, mà hai entity thì
+ * không được import nhau. `weightPercent`/`maxScore` là số (backend trả NUMERIC(5,2) dưới dạng số
+ * JSON, không phải chuỗi).
+ */
+export const gradeColumnSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  weightPercent: z.number(),
+  maxScore: z.number(),
+  displayOrder: z.number().int(),
+});
+
+export type GradeColumn = z.infer<typeof gradeColumnSchema>;
+
+/**
+ * Một dòng cột điểm khi GỬI LÊN, khớp `courses.dto.GradeColumnSlot`. Không có `id`: PATCH thay toàn
+ * bộ danh sách, không vá từng dòng (mirror `weeklyScheduleSlotSchema` của entity class).
+ */
+export const gradeColumnSlotSchema = z.object({
+  /**
+   * null = cột MỚI; khớp một cột đang có = SỬA TẠI CHỖ, giữ nguyên khoá chính ở backend
+   * (`course_grade_columns`) để điểm đã nhập cho cột đó (`grade_entries`, khoá ngoại) không bị mồ
+   * côi - xem `UpdateCourse.reconcileGradeColumns` ở backend (Final review Critical #1).
+   */
+  id: z.string().uuid().nullable(),
+  name: z.string(),
+  weightPercent: z.number(),
+  maxScore: z.number(),
+  displayOrder: z.number().int(),
+});
+
+export type GradeColumnSlot = z.infer<typeof gradeColumnSlotSchema>;
+
+/** Tổng trọng số bắt buộc, khớp `CoursesConstants.GradeColumns.REQUIRED_TOTAL_WEIGHT_PERCENT`. */
+export const REQUIRED_TOTAL_WEIGHT_PERCENT = 100;
+
+/** Sai số làm tròn chấp nhận được, khớp `CoursesConstants.GradeColumns.WEIGHT_TOLERANCE`. */
+export const WEIGHT_TOLERANCE = 0.01;
+
+/**
+ * Bản sao của EnrollmentConstants.EnrollmentStatus ở backend. Đặt ở shared cùng lý do với
+ * {@link gradeColumnSchema}: cả entity enrollment (danh sách ghi danh) lẫn entity academic (bảng
+ * điểm/tiến trình) đều cần đúng enum và nhãn này, mà hai entity thì không được import nhau. Trước
+ * khi dọn vào đây, hai entity từng tự định nghĩa một bản riêng và nhãn COMPLETED đã lệch nhau
+ * ("Đã hoàn tất" so với "Đã hoàn thành") - một nguồn sự thật duy nhất ngăn lần lệch kế tiếp.
+ */
+export const ENROLLMENT_STATUS = {
+  active: "ACTIVE",
+  withdrawn: "WITHDRAWN",
+  completed: "COMPLETED",
+} as const;
+
+export type EnrollmentStatus = (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS];
+
+export const ENROLLMENT_STATUS_LABEL: Record<EnrollmentStatus, string> = {
+  [ENROLLMENT_STATUS.active]: "Đang học",
+  [ENROLLMENT_STATUS.withdrawn]: "Đã rút",
+  [ENROLLMENT_STATUS.completed]: "Đã hoàn tất",
+};

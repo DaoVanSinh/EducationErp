@@ -21,6 +21,7 @@ import com.eduerp.modules.enrollment.dto.CreateEnrollmentRequest;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
 import com.eduerp.modules.students.StudentsManagement;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ class CreateEnrollmentTest {
     private final UUID classId = UUID.randomUUID();
     private final UUID courseId = UUID.randomUUID();
     private final UUID classBranchId = UUID.randomUUID();
+    private final UUID classTeacherId = UUID.randomUUID();
 
     private CreateEnrollmentRequest request() {
         return new CreateEnrollmentRequest(studentProfileId, classId);
@@ -54,7 +56,8 @@ class CreateEnrollmentTest {
 
     private void stubActiveClass() {
         when(courses.getClassInfo(classId)).thenReturn(Optional.of(
-                new CoursesManagement.ClassInfoResponse(classId, courseId, classBranchId, MAX_SEATS, true)));
+                new CoursesManagement.ClassInfoResponse(classId, courseId, classBranchId, classTeacherId,
+                        MAX_SEATS, true, 24, List.of())));
     }
 
     private void stubSeatsTaken(long taken) {
@@ -96,7 +99,8 @@ class CreateEnrollmentTest {
     void rejectsADeactivatedClass() {
         stubActiveStudent();
         when(courses.getClassInfo(classId)).thenReturn(Optional.of(
-                new CoursesManagement.ClassInfoResponse(classId, courseId, classBranchId, MAX_SEATS, false)));
+                new CoursesManagement.ClassInfoResponse(classId, courseId, classBranchId, classTeacherId,
+                        MAX_SEATS, false, 24, List.of())));
 
         assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request()))
                 .isInstanceOf(ClassNotActiveException.class);

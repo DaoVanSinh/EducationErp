@@ -1,4 +1,5 @@
-import { ENROLLMENT_STATUS, ENROLLMENT_STATUS_LABEL, type EnrollmentSummary } from "@/entities/enrollment";
+import type { EnrollmentSummary } from "@/entities/enrollment";
+import { ENROLLMENT_STATUS, ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Can } from "@/entities/permission";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { formatter } from "@/shared/lib/format";
