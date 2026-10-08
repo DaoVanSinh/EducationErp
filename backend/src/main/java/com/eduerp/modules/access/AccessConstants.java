@@ -42,6 +42,7 @@ public final class AccessConstants {
         public static final String PAYROLL = "PAYROLL";
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
+        public static final String GRADE = "GRADE";
         public static final String AUDIT_LOG = "AUDIT_LOG";
         public static final String DASHBOARD = "DASHBOARD";
     }
