@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Nhập hoặc sửa điểm một cột cho một lượt ghi danh (spec mục 6). Upsert vì UNIQUE
  * {@code (enrollment_id, course_grade_column_id)} của V24: nhập lại là sửa dòng cũ.
  *
- * <p>Lượt ghi danh được xác nhận qua {@code listActiveEnrollmentsByClass(classId)} chứ không qua
+ * <p>Lượt ghi danh được xác nhận qua {@code listEnrollmentsByClass(classId)} chứ không qua
  * {@code getEnrollment(enrollmentId)}: record của method thứ hai không mang {@code classId} nên
  * không kiểm được "lượt ghi danh này có thuộc lớp đang nhập điểm không", và spec mục 3 chỉ cho thêm
  * MỘT method đọc vào facade enrollment. Một câu truy vấn trả về đúng danh sách lớp (tối đa
@@ -49,7 +49,7 @@ public class RecordGrade {
     @Transactional
     public void execute(UUID actorAccountId, UUID actorBranchId, RecordGradeRequest request) {
         guard.requireAccessToClass(actorAccountId, request.classId(), AccessConstants.Actions.UPDATE);
-        var rosterEntry = enrollments.listActiveEnrollmentsByClass(request.classId()).stream()
+        var rosterEntry = enrollments.listEnrollmentsByClass(request.classId()).stream()
                 .filter(entry -> entry.enrollmentId().equals(request.enrollmentId()))
                 .findFirst()
                 .orElseThrow(() -> new EnrollmentNotFoundException(request.enrollmentId()));

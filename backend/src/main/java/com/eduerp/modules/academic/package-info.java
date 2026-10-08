@@ -8,7 +8,7 @@
  * {@code AccessManagement.effectivePermissions} để biết scope THẬT của caller), {@code courses}
  * ({@code CoursesManagement.getClassInfo} lấy {@code teacherId}/lịch học/số buổi chuẩn,
  * {@code .getGradeColumns} lấy cấu trúc điểm), {@code enrollment}
- * ({@code EnrollmentManagement.listActiveEnrollmentsByClass}), {@code students} +
+ * ({@code EnrollmentManagement.listEnrollmentsByClass}), {@code students} +
  * {@code identity} (tên học viên in trên bảng điểm). KHÔNG module nào đọc ngược từ
  * {@code academic} ở phase này; {@code audit} chỉ lắng nghe {@code AcademicEvents} bằng
  * {@code @ApplicationModuleListener}, không có cạnh phụ thuộc ngược.

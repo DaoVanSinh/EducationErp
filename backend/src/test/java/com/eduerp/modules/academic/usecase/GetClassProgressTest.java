@@ -63,7 +63,7 @@ class GetClassProgressTest {
     }
 
     private void stubRoster(List<EnrollmentManagement.ClassRosterEntry> roster) {
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(roster);
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(roster);
         when(names.namesOf(roster.stream()
                 .map(EnrollmentManagement.ClassRosterEntry::studentProfileId).toList()))
                 .thenReturn(Map.of(studentA, "Nguyễn Văn A", studentB, "Trần Thị B"));
@@ -177,7 +177,7 @@ class GetClassProgressTest {
     @Test
     void returnsAnEmptyRowListForAClassWithoutAnyEnrolment() {
         stubClass(24, MON_WED_EVENING);
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of());
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of());
         when(names.namesOf(List.of())).thenReturn(Map.of());
 
         var progress = useCaseAt(at(2026, 1, 21, 23, 0)).execute(actorAccountId, classId);

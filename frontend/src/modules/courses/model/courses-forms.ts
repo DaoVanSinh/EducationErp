@@ -24,6 +24,9 @@ const scheduleSlotFormSchema = z.object({
 });
 
 const gradeColumnFormSchema = z.object({
+  /** null = cột MỚI; khớp một cột đang có = SỬA TẠI CHỖ, giữ nguyên id để điểm đã nhập cho cột đó
+   * không bị mồ côi ở backend (Final review Critical #1). */
+  id: z.string().uuid().nullable(),
   name: z.string().min(1, "Nhập tên cột điểm"),
   weightPercent: z
     .string()
@@ -61,9 +64,15 @@ const gradeColumnsFormSchema = z
 /** `displayOrder` là vị trí trong danh sách - người dùng sắp cột bằng cách thêm/xoá theo thứ tự,
  * không phải gõ một con số thứ tự riêng. */
 export function toGradeColumnPayload(
-  columns: readonly { readonly name: string; readonly weightPercent: number; readonly maxScore: number }[],
+  columns: readonly {
+    readonly id: string | null;
+    readonly name: string;
+    readonly weightPercent: number;
+    readonly maxScore: number;
+  }[],
 ): GradeColumnSlot[] {
   return columns.map((column, index) => ({
+    id: column.id,
     name: column.name,
     weightPercent: column.weightPercent,
     maxScore: column.maxScore,

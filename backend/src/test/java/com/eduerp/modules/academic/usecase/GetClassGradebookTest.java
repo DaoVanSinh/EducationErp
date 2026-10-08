@@ -58,7 +58,7 @@ class GetClassGradebookTest {
     }
 
     private void stubTwoStudents() {
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of(
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of(
                 new EnrollmentManagement.ClassRosterEntry(enrollmentA, studentA, courseId,
                         EnrollmentConstants.EnrollmentStatus.ACTIVE, Instant.now(), null),
                 new EnrollmentManagement.ClassRosterEntry(enrollmentB, studentB, courseId,
@@ -164,7 +164,7 @@ class GetClassGradebookTest {
     void returnsAnEmptyRowListForAClassWithoutAnyEnrolment() {
         stubAccessGranted();
         stubTwoColumns();
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of());
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of());
         when(names.namesOf(List.of())).thenReturn(Map.of());
         when(gradeEntries.findAllByEnrollmentIdIn(List.of())).thenReturn(List.of());
 
@@ -179,7 +179,7 @@ class GetClassGradebookTest {
     void keepsTheRowWhenAStudentNameCannotBeResolved() {
         stubAccessGranted();
         stubTwoColumns();
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of(
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of(
                 new EnrollmentManagement.ClassRosterEntry(enrollmentA, studentA, courseId,
                         EnrollmentConstants.EnrollmentStatus.ACTIVE, Instant.now(), null)));
         when(names.namesOf(List.of(studentA))).thenReturn(Map.of());

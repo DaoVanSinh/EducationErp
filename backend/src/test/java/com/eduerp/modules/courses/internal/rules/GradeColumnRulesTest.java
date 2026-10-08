@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class GradeColumnRulesTest {
 
     private static GradeColumnSlot slot(String name, String weightPercent, int displayOrder) {
-        return new GradeColumnSlot(name, new BigDecimal(weightPercent), new BigDecimal("10.00"), displayOrder);
+        return new GradeColumnSlot(null, name, new BigDecimal(weightPercent), new BigDecimal("10.00"), displayOrder);
     }
 
     /** Review Focus #6, chiều hợp lệ: 40 + 60 = 100 đúng ví dụ của spec mục 2. */

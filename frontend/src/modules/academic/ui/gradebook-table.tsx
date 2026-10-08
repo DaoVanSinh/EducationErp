@@ -1,5 +1,5 @@
-import { ENROLLMENT_STATUS_LABEL, type StudentGradesRow } from "@/entities/academic";
-import type { GradeColumn } from "@/shared/api/schemas";
+import type { StudentGradesRow } from "@/entities/academic";
+import { ENROLLMENT_STATUS_LABEL, type GradeColumn } from "@/shared/api/schemas";
 import { Badge } from "@/shared/ui/badge";
 import { GlassButton } from "@/shared/ui/glass-button";
 

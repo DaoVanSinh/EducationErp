@@ -53,4 +53,15 @@ public class CourseGradeColumn {
         this.maxScore = maxScore;
         this.displayOrder = displayOrder;
     }
+
+    /**
+     * Sửa tại chỗ thay vì xoá-và-tạo-lại: giữ nguyên {@code id} để {@code grade_entries} đã tham
+     * chiếu cột này (FK, V24) không bị mồ côi (Final review Critical #1).
+     */
+    void update(String name, BigDecimal weightPercent, BigDecimal maxScore, int displayOrder) {
+        this.name = name;
+        this.weightPercent = weightPercent;
+        this.maxScore = maxScore;
+        this.displayOrder = displayOrder;
+    }
 }

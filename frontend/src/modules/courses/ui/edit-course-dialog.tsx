@@ -28,6 +28,7 @@ export function EditCourseDialog({ course, open, onClose }: EditCourseDialogProp
       tuitionFee: course.tuitionFee?.toString() ?? "",
       active: course.active,
       gradeColumns: course.gradeColumns.map((column) => ({
+        id: column.id,
         name: column.name,
         weightPercent: column.weightPercent.toString(),
         maxScore: column.maxScore.toString(),

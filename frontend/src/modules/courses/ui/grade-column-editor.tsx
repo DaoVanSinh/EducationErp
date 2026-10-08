@@ -3,8 +3,11 @@ import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassInput } from "@/shared/ui/glass-input";
 import { Plus, X } from "lucide-react";
 
-/** Giá trị ô vẫn là chuỗi: GlassInput là input thường, Zod mới đổi sang số khi submit. */
+/** Giá trị ô vẫn là chuỗi: GlassInput là input thường, Zod mới đổi sang số khi submit. `id` null =
+ * cột MỚI; giữ nguyên `id` của cột đang sửa để backend không mồ côi điểm đã nhập cho nó (Final
+ * review Critical #1). */
 export interface GradeColumnRow {
+  readonly id: string | null;
   readonly name: string;
   readonly weightPercent: string;
   readonly maxScore: string;
@@ -29,7 +32,7 @@ export function GradeColumnEditor({ columns, onChange }: GradeColumnEditorProps)
     columns.length === 0 || Math.abs(total - REQUIRED_TOTAL_WEIGHT_PERCENT) <= WEIGHT_TOLERANCE;
 
   const addColumn = () => {
-    onChange([...columns, { name: "", weightPercent: "", maxScore: DEFAULT_MAX_SCORE }]);
+    onChange([...columns, { id: null, name: "", weightPercent: "", maxScore: DEFAULT_MAX_SCORE }]);
   };
 
   const updateColumn = (index: number, patch: Partial<GradeColumnRow>) => {

@@ -97,7 +97,7 @@ class EnrollmentManagementIT {
         var studentProfileId = newStudentProfileId();
         var enrollment = saveEnrollment(studentProfileId);
 
-        var roster = enrollmentManagement.listActiveEnrollmentsByClass(classId);
+        var roster = enrollmentManagement.listEnrollmentsByClass(classId);
 
         assertThat(roster).hasSize(1);
         var entry = roster.get(0);
@@ -119,7 +119,7 @@ class EnrollmentManagementIT {
         withdrawn.withdraw();
         enrollments.saveAndFlush(withdrawn);
 
-        var roster = enrollmentManagement.listActiveEnrollmentsByClass(classId);
+        var roster = enrollmentManagement.listEnrollmentsByClass(classId);
 
         assertThat(roster).hasSize(1);
         assertThat(roster.get(0).status()).isEqualTo(EnrollmentConstants.EnrollmentStatus.WITHDRAWN);
@@ -130,6 +130,6 @@ class EnrollmentManagementIT {
     void doesNotLeakEnrolmentsOfAnotherClass() {
         saveEnrollment(newStudentProfileId());
 
-        assertThat(enrollmentManagement.listActiveEnrollmentsByClass(UUID.randomUUID())).isEmpty();
+        assertThat(enrollmentManagement.listEnrollmentsByClass(UUID.randomUUID())).isEmpty();
     }
 }

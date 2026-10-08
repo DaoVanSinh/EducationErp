@@ -155,8 +155,8 @@ class CourseAdminControllerIT {
     void createsACourseWithGradeColumnsAndReturnsThemOnRead() throws Exception {
         var admin = signIn("course-grades-create@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var gradeColumns = List.of(
-                new GradeColumnSlot("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
-                new GradeColumnSlot("Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1));
+                new GradeColumnSlot(null, "Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
+                new GradeColumnSlot(null, "Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1));
 
         var createResult = mockMvc.perform(post("/api/courses/courses")
                         .cookie(admin).with(csrf())
@@ -185,8 +185,8 @@ class CourseAdminControllerIT {
     void rejectsCreatingACourseWhoseGradeColumnWeightsDoNotSumToOneHundred() throws Exception {
         var admin = signIn("course-grades-invalid@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var brokenColumns = List.of(
-                new GradeColumnSlot("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
-                new GradeColumnSlot("Cuối kỳ", new BigDecimal("50.00"), new BigDecimal("10.00"), 1));
+                new GradeColumnSlot(null, "Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
+                new GradeColumnSlot(null, "Cuối kỳ", new BigDecimal("50.00"), new BigDecimal("10.00"), 1));
 
         var result = mockMvc.perform(post("/api/courses/courses")
                         .cookie(admin).with(csrf())
@@ -198,5 +198,46 @@ class CourseAdminControllerIT {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
         assertThat(courses.findByCode("TA-BADGRADES")).isEmpty();
+    }
+
+    /** Review Focus #6 end-to-end: tổng trọng số sai phải chặn cả khi SỬA, không chỉ lúc tạo mới. */
+    @Test
+    void rejectsAPatchWhoseGradeColumnWeightsDoNotSumToOneHundred() throws Exception {
+        var admin = signIn("course-grades-patch-invalid@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var course = new com.eduerp.modules.courses.internal.model.Course("TA-PATCHBAD",
+                "Tiếng Anh sửa điểm sai", null, 24, null);
+        course.addGradeColumn("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0);
+        course.addGradeColumn("Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1);
+        var saved = courses.saveAndFlush(course);
+        var midtermId = saved.getGradeColumns().get(0).getId();
+        var finalId = saved.getGradeColumns().get(1).getId();
+
+        var result = mockMvc.perform(patch("/api/courses/courses/" + saved.getId())
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new UpdateCourseRequest(
+                                "Tiếng Anh sửa điểm sai", null, 24, null, true, List.of(
+                                        new GradeColumnSlot(midtermId, "Giữa kỳ", new BigDecimal("40.00"),
+                                                new BigDecimal("10.00"), 0),
+                                        new GradeColumnSlot(finalId, "Cuối kỳ", new BigDecimal("50.00"),
+                                                new BigDecimal("10.00"), 1))))))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+        assertThat(result.getResponse().getContentAsString()).contains("COURSES_GRADE_COLUMN_WEIGHTS_INVALID");
+
+        var listResult = mockMvc.perform(get("/api/courses/courses").cookie(admin)).andReturn();
+        var items = objectMapper.readTree(listResult.getResponse().getContentAsString()).get("items");
+        com.fasterxml.jackson.databind.JsonNode courseNode = null;
+        for (var item : items) {
+            if (saved.getId().toString().equals(item.get("id").asText())) {
+                courseNode = item;
+            }
+        }
+        assertThat(courseNode).isNotNull();
+        var names = new java.util.ArrayList<String>();
+        courseNode.get("gradeColumns").forEach(node -> names.add(node.get("name").asText()));
+        assertThat(names).as("PATCH bị chặn thì cấu hình cũ không được chạm tới")
+                .containsExactly("Giữa kỳ", "Cuối kỳ");
     }
 }

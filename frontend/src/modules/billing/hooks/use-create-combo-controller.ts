@@ -1,7 +1,8 @@
 import { useComboDiscountTiers, type CreateComboPayload } from "@/entities/billing";
 import { useCourses } from "@/entities/course";
-import { ENROLLMENT_STATUS, useEnrollments } from "@/entities/enrollment";
+import { useEnrollments } from "@/entities/enrollment";
 import { useStudents } from "@/entities/student";
+import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
 import { useCreateCombo } from "@/modules/billing/api/use-billing-mutations";
 import { createComboFormSchema } from "@/modules/billing/model/billing-forms";
 import {

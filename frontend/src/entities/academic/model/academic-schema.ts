@@ -1,20 +1,5 @@
-import { gradeColumnSchema } from "@/shared/api/schemas";
+import { ENROLLMENT_STATUS, gradeColumnSchema } from "@/shared/api/schemas";
 import { z } from "zod";
-
-/** Bản sao của EnrollmentConstants.EnrollmentStatus ở backend. */
-export const ENROLLMENT_STATUS = {
-  active: "ACTIVE",
-  withdrawn: "WITHDRAWN",
-  completed: "COMPLETED",
-} as const;
-
-export type EnrollmentStatus = (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS];
-
-export const ENROLLMENT_STATUS_LABEL: Record<EnrollmentStatus, string> = {
-  [ENROLLMENT_STATUS.active]: "Đang học",
-  [ENROLLMENT_STATUS.withdrawn]: "Đã rút",
-  [ENROLLMENT_STATUS.completed]: "Đã hoàn thành",
-};
 
 const enrollmentStatusSchema = z.enum([
   ENROLLMENT_STATUS.active,

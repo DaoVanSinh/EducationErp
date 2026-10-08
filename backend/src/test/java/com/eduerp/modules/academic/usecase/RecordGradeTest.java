@@ -59,7 +59,7 @@ class RecordGradeTest {
     }
 
     private void stubRosterContainsTheEnrolment() {
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of(
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of(
                 new EnrollmentManagement.ClassRosterEntry(enrollmentId, UUID.randomUUID(), courseId,
                         EnrollmentConstants.EnrollmentStatus.ACTIVE, Instant.now(), null)));
     }
@@ -132,7 +132,7 @@ class RecordGradeTest {
     @Test
     void rejectsAnEnrolmentThatDoesNotBelongToThisClass() {
         stubAccessGranted();
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of(
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of(
                 new EnrollmentManagement.ClassRosterEntry(UUID.randomUUID(), UUID.randomUUID(), courseId,
                         EnrollmentConstants.EnrollmentStatus.ACTIVE, Instant.now(), null)));
 
@@ -217,7 +217,7 @@ class RecordGradeTest {
         stubAccessGranted();
         stubColumnOutOf("10.00");
         stubNoExistingEntry();
-        when(enrollments.listActiveEnrollmentsByClass(classId)).thenReturn(List.of(
+        when(enrollments.listEnrollmentsByClass(classId)).thenReturn(List.of(
                 new EnrollmentManagement.ClassRosterEntry(enrollmentId, UUID.randomUUID(), courseId,
                         EnrollmentConstants.EnrollmentStatus.WITHDRAWN, Instant.now(), Instant.now())));
 

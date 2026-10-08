@@ -1,5 +1,6 @@
-import { ENROLLMENT_STATUS, ENROLLMENT_STATUS_LABEL, type StudentProgressRow } from "@/entities/academic";
+import type { StudentProgressRow } from "@/entities/academic";
 import { formatter } from "@/shared/lib/format";
+import { ENROLLMENT_STATUS, ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Badge } from "@/shared/ui/badge";
 
 export interface ClassProgressTableProps {

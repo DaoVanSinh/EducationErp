@@ -34,12 +34,12 @@ class CourseGradeColumnUseCasesTest {
     private final UUID courseId = UUID.randomUUID();
 
     private static final List<GradeColumnSlot> VALID_COLUMNS = List.of(
-            new GradeColumnSlot("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
-            new GradeColumnSlot("Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1));
+            new GradeColumnSlot(null, "Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
+            new GradeColumnSlot(null, "Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1));
 
     private static final List<GradeColumnSlot> BROKEN_COLUMNS = List.of(
-            new GradeColumnSlot("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
-            new GradeColumnSlot("Cuối kỳ", new BigDecimal("50.00"), new BigDecimal("10.00"), 1));
+            new GradeColumnSlot(null, "Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
+            new GradeColumnSlot(null, "Cuối kỳ", new BigDecimal("50.00"), new BigDecimal("10.00"), 1));
 
     private CreateCourseRequest createRequest(List<GradeColumnSlot> gradeColumns) {
         return new CreateCourseRequest("TA-GT", "Tiếng Anh giao tiếp", null, 24, null, gradeColumns);

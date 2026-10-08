@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Facade của module enrollment - type DUY NHẤT module khác được phép gọi (rule #1).
  * {@code modules.billing} gọi {@link #getEnrollment(UUID)} để chốt snapshot student/course/branch và
  * để chặn phát hành hoá đơn mới cho ghi danh không còn {@code ACTIVE} (spec mục 5).
- * {@code modules.academic} gọi {@link #listActiveEnrollmentsByClass(UUID)} để dựng bảng điểm/bảng
+ * {@code modules.academic} gọi {@link #listEnrollmentsByClass(UUID)} để dựng bảng điểm/bảng
  * tiến trình của một lớp (spec mục 3).
  */
 @Service
@@ -53,7 +53,7 @@ public class EnrollmentManagement {
      * bằng {@link ClassRosterEntry#status()}.
      */
     @Transactional(readOnly = true)
-    public List<ClassRosterEntry> listActiveEnrollmentsByClass(UUID classId) {
+    public List<ClassRosterEntry> listEnrollmentsByClass(UUID classId) {
         return enrollments.findAllByClassIdOrderByEnrolledAtAsc(classId).stream()
                 .map(enrollment -> new ClassRosterEntry(enrollment.getId(), enrollment.getStudentProfileId(),
                         enrollment.getCourseId(), enrollment.getStatus(), enrollment.getEnrolledAt(),

@@ -4,13 +4,10 @@ export { useClassProgress } from "@/entities/academic/api/use-class-progress";
 export { useGradebook } from "@/entities/academic/api/use-gradebook";
 export {
   classProgressSchema,
-  ENROLLMENT_STATUS,
-  ENROLLMENT_STATUS_LABEL,
   gradebookSchema,
   studentGradesRowSchema,
   studentProgressRowSchema,
   type ClassProgress,
-  type EnrollmentStatus,
   type Gradebook,
   type RecordGradePayload,
   type StudentGradesRow,

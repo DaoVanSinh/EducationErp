@@ -49,7 +49,7 @@ public class GetClassGradebook {
     @Transactional(readOnly = true)
     public GradebookResponse execute(UUID actorAccountId, UUID classId) {
         var classInfo = guard.requireAccessToClass(actorAccountId, classId, AccessConstants.Actions.READ);
-        var roster = enrollments.listActiveEnrollmentsByClass(classId);
+        var roster = enrollments.listEnrollmentsByClass(classId);
         var columns = courses.getGradeColumns(classInfo.courseId());
         var scores = scoresByEnrollment(roster.stream()
                 .map(EnrollmentManagement.ClassRosterEntry::enrollmentId).toList());

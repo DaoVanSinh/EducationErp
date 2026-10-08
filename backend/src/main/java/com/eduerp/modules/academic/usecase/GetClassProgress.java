@@ -56,7 +56,7 @@ public class GetClassProgress {
     @Transactional(readOnly = true)
     public ClassProgressResponse execute(UUID actorAccountId, UUID classId) {
         var classInfo = guard.requireAccessToClass(actorAccountId, classId, AccessConstants.Actions.READ);
-        var roster = enrollments.listActiveEnrollmentsByClass(classId);
+        var roster = enrollments.listEnrollmentsByClass(classId);
         var names = studentNames.namesOf(roster.stream()
                 .map(EnrollmentManagement.ClassRosterEntry::studentProfileId).toList());
         var now = clock.instant();
