@@ -75,6 +75,7 @@ const GradebookPage = lazy(() =>
 const ClassProgressPage = lazy(() =>
   import("@/modules/academic").then((module) => ({ default: module.ClassProgressPage })),
 );
+const ChatPage = lazy(() => import("@/modules/chat").then((module) => ({ default: module.ChatPage })));
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
 );
@@ -130,6 +131,7 @@ export function AppRouter() {
           <Route path={APP_ROUTE.comboDiscountTiers} element={<ComboDiscountTiersPage />} />
           <Route path={APP_ROUTE.classGradebook} element={<GradebookPage />} />
           <Route path={APP_ROUTE.classProgress} element={<ClassProgressPage />} />
+          <Route path={APP_ROUTE.chat} element={<ChatPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>
