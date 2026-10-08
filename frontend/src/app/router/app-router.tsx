@@ -69,6 +69,12 @@ const ComboDetailPage = lazy(() =>
 const ComboDiscountTiersPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.ComboDiscountTiersPage })),
 );
+const GradebookPage = lazy(() =>
+  import("@/modules/academic").then((module) => ({ default: module.GradebookPage })),
+);
+const ClassProgressPage = lazy(() =>
+  import("@/modules/academic").then((module) => ({ default: module.ClassProgressPage })),
+);
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
 );
@@ -122,6 +128,8 @@ export function AppRouter() {
           <Route path={APP_ROUTE.combos} element={<CombosPage />} />
           <Route path={APP_ROUTE.comboDetail} element={<ComboDetailPage />} />
           <Route path={APP_ROUTE.comboDiscountTiers} element={<ComboDiscountTiersPage />} />
+          <Route path={APP_ROUTE.classGradebook} element={<GradebookPage />} />
+          <Route path={APP_ROUTE.classProgress} element={<ClassProgressPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>
