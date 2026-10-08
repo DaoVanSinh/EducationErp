@@ -18,6 +18,26 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+  ai:
+    anthropic:
+      # Secret thật CHỈ đến từ biến môi trường, mặc định rỗng - mirror MOMO_SECRET_KEY/
+      # VNPAY_HASH_SECRET (spec Ruling R2). Khoá rỗng vẫn khởi động được context (AnthropicApi chỉ
+      # Assert.notNull), lệnh gọi thật sẽ 401 -> NonTransientAiException -> 503
+      # CHAT_PROVIDER_UNAVAILABLE, đúng bảng lỗi của spec mục 5.
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: ${ANTHROPIC_CHAT_MODEL:claude-sonnet-5}
+          # Mặc định của Spring AI là 500 token - đủ để cắt ngang một câu trả lời tư vấn.
+          max-tokens: ${ANTHROPIC_MAX_TOKENS:1024}
+          # Tư vấn khóa học cần đúng dữ liệu, không cần sáng tạo - nhiệt độ thấp giảm thêm nguy cơ
+          # bịa đặt mà system prompt đang chặn.
+          temperature: 0.2
+    retry:
+      # Mặc định của Spring AI là 10 lần - một request HTTP đồng bộ của người dùng không được phép
+      # giữ thread Tomcat qua 10 lượt backoff. 4xx (gồm 401 thiếu khoá) không bị retry vì
+      # spring.ai.retry.on-client-errors mặc định false.
+      max-attempts: ${ANTHROPIC_MAX_ATTEMPTS:2}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
