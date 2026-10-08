@@ -13,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ public class GetClassProgress {
     private final StudentNameResolver studentNames;
     private final Clock clock;
 
+    @Autowired
     GetClassProgress(EnrollmentManagement enrollments, ClassGradeAccessGuard guard,
             StudentNameResolver studentNames) {
         this(enrollments, guard, studentNames, Clock.systemUTC());
