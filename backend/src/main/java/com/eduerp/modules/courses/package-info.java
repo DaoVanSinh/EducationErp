@@ -7,6 +7,11 @@
  * nào đọc ngược từ {@code courses} ở phase này nên không có nguy cơ vòng phụ thuộc, không cần
  * port/adapter như {@code access.BranchCatalog}.
  *
+ * <p>Người đọc mới ở Phân hệ 5: {@code modules.chat} gọi
+ * {@code CoursesManagement.searchOpenCourses} để truy xuất khóa học ĐANG MỞ cho chatbot, và chỉ thấy
+ * {@code OpenCourseSummary} - không module nào bên ngoài biết bảng {@code courses} có cột
+ * {@code search_vector} (V26) hay rằng việc tìm kiếm là full-text search của Postgres.
+ *
  * <p>Vai trò từng package:
  * <ul>
  *   <li>base package — API của module: {@link com.eduerp.modules.courses.CoursesManagement}.</li>
