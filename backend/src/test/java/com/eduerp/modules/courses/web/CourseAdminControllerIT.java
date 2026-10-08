@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.courses.dto.CreateCourseRequest;
+import com.eduerp.modules.courses.dto.GradeColumnSlot;
 import com.eduerp.modules.courses.dto.UpdateCourseRequest;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import com.eduerp.modules.identity.IdentityConstants;
@@ -18,6 +19,8 @@ import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +89,8 @@ class CourseAdminControllerIT {
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreateCourseRequest("TA-GT", "Tiếng Anh giao tiếp", "Mô tả", 24, null))))
+                                new CreateCourseRequest("TA-GT", "Tiếng Anh giao tiếp", "Mô tả", 24, null,
+                                        List.of()))))
                 .andReturn();
         assertThat(createResult.getResponse().getStatus()).isEqualTo(200);
         var courseId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
@@ -107,7 +111,8 @@ class CourseAdminControllerIT {
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdateCourseRequest("Toán lớp 9 (mới)", "Cập nhật", 30, null, false))))
+                                new UpdateCourseRequest("Toán lớp 9 (mới)", "Cập nhật", 30, null, false,
+                                        List.of()))))
                 .andReturn();
 
         assertThat(updateResult.getResponse().getStatus()).isEqualTo(200);
@@ -123,7 +128,8 @@ class CourseAdminControllerIT {
         var result = mockMvc.perform(post("/api/courses/courses")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateCourseRequest("X01", "", null, null, null))))
+                        .content(objectMapper.writeValueAsString(
+                                new CreateCourseRequest("X01", "", null, null, null, List.of()))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
@@ -137,10 +143,60 @@ class CourseAdminControllerIT {
                         .cookie(teacher).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreateCourseRequest("XX01", "Không được phép", null, null, null))))
+                                new CreateCourseRequest("XX01", "Không được phép", null, null, null,
+                                        List.of()))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(403);
         assertThat(courses.findByCode("XX01")).isEmpty();
+    }
+
+    @Test
+    void createsACourseWithGradeColumnsAndReturnsThemOnRead() throws Exception {
+        var admin = signIn("course-grades-create@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var gradeColumns = List.of(
+                new GradeColumnSlot("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
+                new GradeColumnSlot("Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1));
+
+        var createResult = mockMvc.perform(post("/api/courses/courses")
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateCourseRequest("TA-GRADES", "Tiếng Anh có điểm", null, 24, null,
+                                        gradeColumns))))
+                .andReturn();
+        assertThat(createResult.getResponse().getStatus()).isEqualTo(200);
+        var courseId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
+
+        var listResult = mockMvc.perform(get("/api/courses/courses").cookie(admin)).andReturn();
+        var items = objectMapper.readTree(listResult.getResponse().getContentAsString()).get("items");
+        com.fasterxml.jackson.databind.JsonNode courseNode = null;
+        for (var item : items) {
+            if (courseId.toString().equals(item.get("id").asText())) {
+                courseNode = item;
+            }
+        }
+        assertThat(courseNode).as("vừa tạo khóa học thì phải thấy trong danh sách").isNotNull();
+        assertThat(courseNode.get("gradeColumns")).hasSize(2);
+        assertThat(courseNode.get("gradeColumns").get(0).get("name").asText()).isEqualTo("Giữa kỳ");
+    }
+
+    @Test
+    void rejectsCreatingACourseWhoseGradeColumnWeightsDoNotSumToOneHundred() throws Exception {
+        var admin = signIn("course-grades-invalid@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var brokenColumns = List.of(
+                new GradeColumnSlot("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0),
+                new GradeColumnSlot("Cuối kỳ", new BigDecimal("50.00"), new BigDecimal("10.00"), 1));
+
+        var result = mockMvc.perform(post("/api/courses/courses")
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateCourseRequest("TA-BADGRADES", "Tiếng Anh điểm sai", null, 24, null,
+                                        brokenColumns))))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+        assertThat(courses.findByCode("TA-BADGRADES")).isEmpty();
     }
 }

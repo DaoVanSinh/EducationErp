@@ -1,10 +1,12 @@
 package com.eduerp.modules.courses.usecase;
 
 import com.eduerp.modules.courses.CourseCodeAlreadyExistsException;
+import com.eduerp.modules.courses.CourseGradeColumnWeightsInvalidException;
 import com.eduerp.modules.courses.CoursesEvents;
 import com.eduerp.modules.courses.dto.CreateCourseRequest;
 import com.eduerp.modules.courses.internal.model.Course;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
+import com.eduerp.modules.courses.internal.rules.GradeColumnRules;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,8 +28,15 @@ public class CreateCourse {
         if (courses.findByCode(request.code()).isPresent()) {
             throw new CourseCodeAlreadyExistsException(request.code());
         }
-        var saved = courses.save(new Course(request.code(), request.name(), request.description(),
-                request.standardSessionCount(), request.tuitionFee()));
+        if (!GradeColumnRules.weightsSumToRequiredTotal(request.gradeColumns())) {
+            throw new CourseGradeColumnWeightsInvalidException(GradeColumnRules.totalWeight(request.gradeColumns()));
+        }
+        var course = new Course(request.code(), request.name(), request.description(),
+                request.standardSessionCount(), request.tuitionFee());
+        for (var column : request.gradeColumns()) {
+            course.addGradeColumn(column.name(), column.weightPercent(), column.maxScore(), column.displayOrder());
+        }
+        var saved = courses.save(course);
         events.publishEvent(new CoursesEvents.CourseCreated(saved.getId(), actorAccountId, actorBranchId));
         return saved.getId();
     }
