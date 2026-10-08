@@ -45,3 +45,40 @@ export const grantedPermissionSchema = z.object({
 });
 
 export type GrantedPermission = z.infer<typeof grantedPermissionSchema>;
+
+/**
+ * Một cột điểm đã lưu của khóa học, khớp `courses.dto.GradeColumnResponse` ở backend.
+ *
+ * Đặt ở shared cùng lý do với {@link grantedPermissionSchema}: cả entity course (màn hình sửa khóa
+ * học cấu hình cột điểm) lẫn entity academic (sổ điểm hiển thị cột điểm) đều cần, mà hai entity thì
+ * không được import nhau. `weightPercent`/`maxScore` là số (backend trả NUMERIC(5,2) dưới dạng số
+ * JSON, không phải chuỗi).
+ */
+export const gradeColumnSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  weightPercent: z.number(),
+  maxScore: z.number(),
+  displayOrder: z.number().int(),
+});
+
+export type GradeColumn = z.infer<typeof gradeColumnSchema>;
+
+/**
+ * Một dòng cột điểm khi GỬI LÊN, khớp `courses.dto.GradeColumnSlot`. Không có `id`: PATCH thay toàn
+ * bộ danh sách, không vá từng dòng (mirror `weeklyScheduleSlotSchema` của entity class).
+ */
+export const gradeColumnSlotSchema = z.object({
+  name: z.string(),
+  weightPercent: z.number(),
+  maxScore: z.number(),
+  displayOrder: z.number().int(),
+});
+
+export type GradeColumnSlot = z.infer<typeof gradeColumnSlotSchema>;
+
+/** Tổng trọng số bắt buộc, khớp `CoursesConstants.GradeColumns.REQUIRED_TOTAL_WEIGHT_PERCENT`. */
+export const REQUIRED_TOTAL_WEIGHT_PERCENT = 100;
+
+/** Sai số làm tròn chấp nhận được, khớp `CoursesConstants.GradeColumns.WEIGHT_TOLERANCE`. */
+export const WEIGHT_TOLERANCE = 0.01;
