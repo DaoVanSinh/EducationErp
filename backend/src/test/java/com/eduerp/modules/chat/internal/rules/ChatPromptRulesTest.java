@@ -114,11 +114,17 @@ class ChatPromptRulesTest {
      * MAX_HISTORY_TURNS lượt GẦN NHẤT được gửi - giữ lượt gần nhất (không phải lượt đầu) vì đó là
      * phần hội thoại câu hỏi hiện tại thực sự dựa vào.
      */
+    /** Lượt chẵn là USER, lượt lẻ là ASSISTANT - đúng hình dạng một hội thoại thật luôn alternating,
+     * bắt đầu bằng USER. Final review I1: fixture toàn USER trước đây không phản ánh hội thoại thật
+     * nào và che mất lỗi alternation mà {@code repairAlternation} sửa bên dưới. */
+    private static ChatTurnPayload alternatingTurn(int index) {
+        var role = index % 2 == 0 ? ChatConstants.TurnRole.USER : ChatConstants.TurnRole.ASSISTANT;
+        return new ChatTurnPayload(role, "câu " + index);
+    }
+
     @Test
     void keepsOnlyTheMostRecentTurnsWhenTheHistoryIsAbsurdlyLong() {
-        var huge = IntStream.range(0, 500)
-                .mapToObj(index -> new ChatTurnPayload(ChatConstants.TurnRole.USER, "câu " + index))
-                .toList();
+        var huge = IntStream.range(0, 500).mapToObj(ChatPromptRulesTest::alternatingTurn).toList();
 
         var turns = ChatPromptRules.toProviderTurns(huge, "câu cuối");
 
@@ -134,13 +140,47 @@ class ChatPromptRulesTest {
     @Test
     void keepsTheWholeHistoryWhenItIsExactlyAtTheLimit() {
         var exact = IntStream.range(0, ChatConstants.Limits.MAX_HISTORY_TURNS)
-                .mapToObj(index -> new ChatTurnPayload(ChatConstants.TurnRole.USER, "câu " + index))
+                .mapToObj(ChatPromptRulesTest::alternatingTurn)
                 .toList();
 
         var turns = ChatPromptRules.toProviderTurns(exact, "mới");
 
         assertThat(turns).hasSize(ChatConstants.Limits.MAX_HISTORY_TURNS + 1);
         assertThat(turns.get(0).content()).isEqualTo("câu 0");
+    }
+
+    /**
+     * Final review Important #1: một request thất bại để lại một lượt USER mồ côi (chưa có câu trả
+     * lời) trong lịch sử phía client. Câu hỏi TIẾP THEO cũng là USER, nên nếu không sửa, hai lượt
+     * USER liên tiếp sẽ bị Anthropic từ chối bằng 400 "roles must alternate" - lộ ra thành 503 cho
+     * MỌI câu hỏi sau đó, không bao giờ tự hồi phục trong phiên. Gộp thay vì bỏ: không được làm mất
+     * chữ người dùng đã gõ.
+     */
+    @Test
+    void mergesAnOrphanedTrailingUserTurnWithTheNewQuestionInsteadOfRepeatingTheUserRole() {
+        var turns = ChatPromptRules.toProviderTurns(
+                List.of(new ChatTurnPayload(ChatConstants.TurnRole.USER, "có khóa toán không")),
+                "câu hỏi tiếp theo");
+
+        assertThat(turns).containsExactly(
+                new AiChatTurn(AiChatTurn.Role.USER, "có khóa toán không\ncâu hỏi tiếp theo"));
+    }
+
+    /**
+     * Final review Important #1, nhánh thứ hai: cắt đúng {@code MAX_HISTORY_TURNS} lượt gần nhất có
+     * thể để lượt ĐẦU TIÊN còn lại là ASSISTANT - Anthropic đòi hội thoại phải mở đầu bằng USER, nên
+     * phải bỏ tiếp lượt ASSISTANT mồ côi đó thay vì gửi nguyên trạng.
+     */
+    @Test
+    void dropsALeadingAssistantTurnLeftByTruncationSoTheConversationStillOpensWithAUserTurn() {
+        var history = IntStream.range(0, ChatConstants.Limits.MAX_HISTORY_TURNS + 1)
+                .mapToObj(ChatPromptRulesTest::alternatingTurn)
+                .toList();
+
+        var turns = ChatPromptRules.toProviderTurns(history, "câu mới");
+
+        assertThat(turns.get(0).role()).isEqualTo(AiChatTurn.Role.USER);
+        assertThat(turns.get(0).content()).isEqualTo("câu 2");
     }
 
     /** Review Focus #6: trần độ dài phải được quyết định ở đây, nơi backend kiểm được, không phải ở

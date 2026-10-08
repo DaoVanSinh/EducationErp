@@ -67,7 +67,34 @@ public final class ChatPromptRules {
         var turns = new ArrayList<AiChatTurn>(recent.size() + 1);
         recent.forEach(turn -> turns.add(new AiChatTurn(toProviderRole(turn.role()), turn.content())));
         turns.add(new AiChatTurn(AiChatTurn.Role.USER, newMessage.strip()));
-        return List.copyOf(turns);
+        return repairAlternation(turns);
+    }
+
+    /**
+     * Final review Important #1: Anthropic đòi hội thoại phải MỞ ĐẦU bằng USER và không bao giờ có
+     * hai lượt cùng vai liên tiếp - điều mà lịch sử do client gửi lên không tự nhiên đảm bảo được:
+     * một request thất bại để lại một lượt USER mồ côi (chưa có câu trả lời), và câu hỏi tiếp theo
+     * cũng là USER; hoặc việc cắt bớt ở trên có thể để lại một lượt ASSISTANT đứng đầu. Vi phạm một
+     * trong hai điều này sẽ bị provider trả 400 và lộ ra thành 503 cho MỌI câu hỏi sau đó trong
+     * phiên - không bao giờ tự hồi phục được, vì backend không lưu gì để tự sửa (spec mục 2).
+     *
+     * <p>Gộp (không bỏ) hai lượt cùng vai liên tiếp: lượt mồ côi vẫn là chữ người dùng đã gõ, bỏ nó
+     * đi là mất một phần câu hỏi thật.
+     */
+    private static List<AiChatTurn> repairAlternation(List<AiChatTurn> turns) {
+        var repaired = new ArrayList<AiChatTurn>(turns.size());
+        for (var turn : turns) {
+            if (repaired.isEmpty() && turn.role() == AiChatTurn.Role.ASSISTANT) {
+                continue;
+            }
+            var last = repaired.isEmpty() ? null : repaired.get(repaired.size() - 1);
+            if (last != null && last.role() == turn.role()) {
+                repaired.set(repaired.size() - 1, new AiChatTurn(last.role(), last.content() + "\n" + turn.content()));
+            } else {
+                repaired.add(turn);
+            }
+        }
+        return List.copyOf(repaired);
     }
 
     /**

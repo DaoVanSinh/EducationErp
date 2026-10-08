@@ -284,12 +284,30 @@ class ChatAdminControllerIT {
     void rejectsAHistoryTurnLongerThanAMessageCouldEverBe() throws Exception {
         var student = signIn("chat-hv-hist", "Học viên", AccessConstants.RoleCodes.STUDENT);
         var oversizedTurn = new ChatTurnPayload(ChatConstants.TurnRole.USER,
-                "a".repeat(ChatConstants.Limits.MAX_MESSAGE_LENGTH + 1));
+                "a".repeat(ChatConstants.Limits.MAX_HISTORY_TURN_LENGTH + 1));
 
         var response = ask(student, new AskChatbotRequest("câu hỏi mới", List.of(oversizedTurn)));
 
         assertThat(response.getStatus()).isEqualTo(400);
         verifyNoInteractions(aiChatClient);
+    }
+
+    /**
+     * Final review Critical #2: một câu trả lời CỦA CHÍNH CHATBOT, dài hơn MAX_MESSAGE_LENGTH (trần
+     * của câu hỏi MỚI do người dùng gõ) nhưng vẫn trong tầm một câu trả lời thật ở max-tokens hiện
+     * tại, phải được CHẤP NHẬN khi client gửi nó lại như một lượt lịch sử - nếu không, một câu trả
+     * lời bình thường tự khoá mọi câu hỏi SAU đó trong phiên bằng 400 không bao giờ tự hồi phục được.
+     */
+    @Test
+    void acceptsAHistoryTurnLongerThanANewMessageCouldBeButStillWithinTheHistoryCeiling() throws Exception {
+        when(aiChatClient.reply(anyString(), any())).thenReturn("ok");
+        var student = signIn("chat-hv-longreply", "Học viên", AccessConstants.RoleCodes.STUDENT);
+        var longAssistantReply = new ChatTurnPayload(ChatConstants.TurnRole.ASSISTANT,
+                "a".repeat(ChatConstants.Limits.MAX_MESSAGE_LENGTH + 500));
+
+        var response = ask(student, new AskChatbotRequest("câu hỏi tiếp theo", List.of(longAssistantReply)));
+
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     /** Chưa đăng nhập thì không vào được - endpoint này tốn tiền thật mỗi lượt gọi. */

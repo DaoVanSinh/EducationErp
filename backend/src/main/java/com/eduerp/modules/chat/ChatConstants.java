@@ -48,6 +48,21 @@ public final class ChatConstants {
          * thoại dài tự nhiên đột ngột hỏng giữa phiên.
          */
         public static final int MAX_HISTORY_TURNS = 20;
+
+        /**
+         * Final review Critical #2: trần của MỘT LƯỢT lịch sử, KHÁC {@link #MAX_MESSAGE_LENGTH}. Một
+         * lượt lịch sử có thể là câu trả lời CỦA CHÍNH CHATBOT mà client gửi lại nguyên văn ở lượt
+         * sau - và câu trả lời đó bị giới hạn bởi {@code max-tokens} (hiện 1024), không phải bởi
+         * {@code MAX_MESSAGE_LENGTH} (trần của câu hỏi MỚI do người dùng gõ). Tiếng Việt không hiệu
+         * quả về token (nhiều token hơn cho cùng một lượng chữ), nên 1024 token hoàn toàn có thể vượt
+         * 2000 ký tự. Dùng {@code MAX_MESSAGE_LENGTH} cho cả hai nghĩa là một câu trả lời dài bình
+         * thường của chatbot tự khoá luôn mọi câu hỏi SAU đó trong phiên bằng 400 VALIDATION_FAILED -
+         * một lỗi không nằm trong bảng lỗi của spec mục 5 và không bao giờ tự hồi phục được (tải lại
+         * trang là cách DUY NHẤT thoát, và điều đó xoá luôn lịch sử - spec mục 2). Gấp bốn lần trần
+         * câu hỏi là đủ rộng rãi cho một câu trả lời thật ở {@code max-tokens} hiện tại mà vẫn còn một
+         * trần cứng cho một payload bị crafted thủ công.
+         */
+        public static final int MAX_HISTORY_TURN_LENGTH = MAX_MESSAGE_LENGTH * 4;
     }
 
     public static final class RateLimit {

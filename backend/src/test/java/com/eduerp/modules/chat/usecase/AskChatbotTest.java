@@ -188,8 +188,12 @@ class AskChatbotTest {
     void truncatesAnAbsurdlyLongHistoryBeforeCallingTheProvider() {
         when(courses.searchOpenCourses(anyString(), anyInt())).thenReturn(List.of());
         when(aiChatClient.reply(anyString(), any())).thenReturn("ok");
+        // Alternating USER/ASSISTANT: hình dạng một hội thoại thật. Final review I1: một fixture toàn
+        // USER (trước đây) đã che mất lỗi alternation mà ChatPromptRules.repairAlternation sửa.
         var huge = IntStream.range(0, 500)
-                .mapToObj(index -> new ChatTurnPayload(ChatConstants.TurnRole.USER, "câu " + index))
+                .mapToObj(index -> new ChatTurnPayload(
+                        index % 2 == 0 ? ChatConstants.TurnRole.USER : ChatConstants.TurnRole.ASSISTANT,
+                        "câu " + index))
                 .toList();
 
         askChatbot.execute(actorAccountId, new AskChatbotRequest("câu mới", huge));
