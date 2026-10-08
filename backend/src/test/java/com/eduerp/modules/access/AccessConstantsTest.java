@@ -71,4 +71,30 @@ class AccessConstantsTest {
         assertThat(AccessConstants.AccessRules.UPDATE_ENROLLMENT).doesNotContain(AccessConstants.Actions.APPROVE);
         assertThat(AccessConstants.AccessRules.UPDATE_INVOICE).doesNotContain(AccessConstants.Actions.APPROVE);
     }
+
+    /**
+     * Spec mục 6 bước 1: ba rule của GRADE KHÔNG mang marker {@code @ORGANIZATION}, khác MỌI rule
+     * khác trong hệ thống. Thêm marker vào đây là chặn giáo viên ngay ở cửa
+     * {@code @PreAuthorize} - họ chỉ có scope PERSONAL - và toàn bộ Phân hệ 4 trở thành chỉ admin
+     * dùng được. Việc kiểm "lớp này có phải lớp của anh không" nằm ở
+     * {@code ClassGradeAccessGuard}, không ở annotation.
+     */
+    @Test
+    void gradeRulesDeliberatelyOmitTheMinimumOrganizationScopeMarker() {
+        assertThat(AccessConstants.AccessRules.READ_GRADE)
+                .contains("GRADE", "READ")
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+        assertThat(AccessConstants.AccessRules.UPDATE_GRADE)
+                .contains("GRADE", "UPDATE")
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+        assertThat(AccessConstants.AccessRules.CREATE_GRADE)
+                .contains("GRADE", "CREATE")
+                .doesNotContain("@" + AccessConstants.ScopeNames.ORGANIZATION);
+    }
+
+    /** Resource GRADE phải là một tên tài nguyên thật, dùng chung giữa seed migration và guard. */
+    @Test
+    void gradeIsAKnownResourceName() {
+        assertThat(AccessConstants.Resources.GRADE).isEqualTo("GRADE");
+    }
 }

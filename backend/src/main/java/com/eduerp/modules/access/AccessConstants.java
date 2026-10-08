@@ -182,5 +182,25 @@ public final class AccessConstants {
         /** Thu tiền/huỷ hoá đơn cũng là chuyển state của Invoice, dùng UPDATE (spec mục 5). */
         public static final String UPDATE_INVOICE = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+
+        /**
+         * Ba rule DUY NHẤT trong hệ thống KHÔNG có {@link #MINIMUM_SCOPE}, và đó là chủ đích (spec
+         * mục 6 bước 1): giáo viên chỉ được cấp {@code GRADE:*:PERSONAL}, thêm marker
+         * {@code @ORGANIZATION} vào đây là chặn họ ngay ở cửa và Phân hệ 4 chỉ còn admin dùng được.
+         * Câu hỏi "lớp này có phải lớp của anh không" mà annotation không trả lời được nằm ở
+         * {@code modules.academic.internal.access.ClassGradeAccessGuard}.
+         */
+        public static final String READ_GRADE = CHECK_PREFIX + Resources.GRADE + CHECK_SEPARATOR
+                + Actions.READ + CHECK_SUFFIX;
+        public static final String UPDATE_GRADE = CHECK_PREFIX + Resources.GRADE + CHECK_SEPARATOR
+                + Actions.UPDATE + CHECK_SUFFIX;
+        /**
+         * Chưa có endpoint nào gác bằng rule này ở Phân hệ 4: nhập điểm là upsert nên đi theo
+         * {@link #UPDATE_GRADE}. Hằng vẫn tồn tại vì spec mục 8 yêu cầu seed {@code (GRADE, CREATE)}
+         * cho nhóm admin - có hằng thì quyền đã seed luôn có một tên biên dịch được đối chiếu
+         * ({@code AcademicRbacSeedIT}), thay vì chỉ là một chuỗi rời trong file SQL.
+         */
+        public static final String CREATE_GRADE = CHECK_PREFIX + Resources.GRADE + CHECK_SEPARATOR
+                + Actions.CREATE + CHECK_SUFFIX;
     }
 }
