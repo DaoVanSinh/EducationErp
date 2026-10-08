@@ -1,48 +1,89 @@
 spring:
   application:
-    name: qrcode-attendance
+    name: eduerp-backend
+  modulith:
+    detection-strategy: explicitly-annotated
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    repair-on-migrate: true
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:eduerp}
+    username: ${DB_USERNAME:agent}
+    password: ${DB_PASSWORD:localdev}
   jpa:
-    open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: false
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-
-app:
-  security:
-    jwt:
-      secret: ${JWT_SECRET}
-      expiration: ${JWT_EXPIRATION}
-  frontend-url: ${FRONTEND_URL:https://qrcode.ducminhit.id.vn}
+  thymeleaf:
+    prefix: "classpath:/"
+    check-template-location: false
+  servlet:
+    multipart:
+      # Mặc định Spring Boot là 1MB/10MB - một hợp đồng scan thường vượt 1MB.
+      max-file-size: 10MB
+      max-request-size: 12MB
 
 management:
   endpoints:
     web:
       exposure:
+        # Không mở metrics/env qua HTTP không xác thực — health là đủ cho Docker HEALTHCHECK và
+        # readiness probe, hai cái còn lại lộ chi tiết cấu hình/nội bộ nếu ai đó dò được endpoint.
         include: health
   endpoint:
     health:
+      probes:
+        enabled: true
       show-details: never
+
+identity:
+  jwt-secret: ${IDENTITY_JWT_SECRET:dev-only-secret-change-me-please-32bytes}
+  access-token-ttl: 15m
+  refresh-token-ttl: 30d
+  password-reset-ttl: 30m
+  account-invite-ttl: 7d
+  secure-cookies: ${IDENTITY_SECURE_COOKIES:true}
+  mail-from: ${IDENTITY_MAIL_FROM:no-reply@eduerp.local}
+  frontend-reset-url: ${IDENTITY_FRONTEND_RESET_URL:http://localhost:5173/reset-password}
+  default-admin-email: ${IDENTITY_DEFAULT_ADMIN_EMAIL:admin@eduerp.local}
+  default-admin-password: ${IDENTITY_DEFAULT_ADMIN_PASSWORD:ChangeMe123!}
+
+storage:
+  endpoint: ${STORAGE_ENDPOINT:}
+  region: ${STORAGE_REGION:us-east-1}
+  bucket: ${STORAGE_BUCKET:eduerp-contracts}
+  access-key: ${STORAGE_ACCESS_KEY:}
+  secret-key: ${STORAGE_SECRET_KEY:}
+
+payment:
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMOSANDBOX}
+    access-key: ${MOMO_ACCESS_KEY:}
+    secret-key: ${MOMO_SECRET_KEY:}
+    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
+    redirect-url: ${MOMO_REDIRECT_URL:http://localhost:5173/payment/return/momo}
+    ipn-url: ${MOMO_IPN_URL:http://localhost:8080/api/billing/payments/callback/momo}
+  vnpay:
+    tmn-code: ${VNPAY_TMN_CODE:}
+    hash-secret: ${VNPAY_HASH_SECRET:}
+    pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    return-url: ${VNPAY_RETURN_URL:http://localhost:5173/payment/return/vnpay}
+    ipn-url: ${VNPAY_IPN_URL:http://localhost:8080/api/billing/payments/callback/vnpay}
+
+server:
+  port: 8080

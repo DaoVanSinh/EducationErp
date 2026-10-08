@@ -1,60 +1,42 @@
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: qrcode_mysql
-    env_file:
-      - ./backend/.env
-    environment:
-      - MYSQL_DATABASE=qrcode_attendance
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    restart: unless-stopped
-    # Kiểm tra MySQL đã sẵn sàng chưa (không chỉ "started")
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+# Stack stg (make compose-up, ENV mặc định) — chạy tại chỗ trên máy này, không phải server riêng:
+# build app + nginx vào container, KHÔNG tự dựng Postgres/Redis — máy này đã có sẵn container dùng
+# chung cho nhiều dự án (agent-postgres, redis-stack), backend nối ra đó qua host.docker.internal
+# (đặt sẵn trong backend/.env.docker). Không join network ngoài nào (shared-infra/elearning-net
+# không tồn tại ở máy này) — network dưới đây do chính stack này tạo, chỉ để app <-> nginx nói
+# chuyện với nhau.
+#
+# Chạy: make compose-up   (hoặc: docker compose --env-file backend/.env.docker up -d --build)
+# Mở:  http://localhost:8090
+name: eduerp-stg
 
-  backend:
+networks:
+  eduerp-net:
+
+services:
+  app:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: qrcode_backend
+    image: eduerp-backend:stg
+    container_name: eduerp-app
+    restart: unless-stopped
     env_file:
-      - ./backend/.env
-    ports:
-      - "8080:8080"
-    depends_on:
-      # Chờ MySQL thực sự sẵn sàng, không chỉ "started"
-      mysql:
-        condition: service_healthy
-    restart: unless-stopped
-    # Kiểm tra Spring Boot đã boot xong qua actuator/health
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 90s
+      - backend/.env.docker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - eduerp-net
 
-  frontend:
-    image: nginx:alpine
-    container_name: qrcode_frontend
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      # Nginx chỉ start sau khi backend đã healthy (Spring Boot đã boot xong)
-      backend:
-        condition: service_healthy
+  nginx:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: eduerp-nginx:stg
+    container_name: eduerp-nginx
     restart: unless-stopped
-
-volumes:
-  mysql_data:
+    ports:
+      - "8090:80"
+    depends_on:
+      - app
+    networks:
+      - eduerp-net

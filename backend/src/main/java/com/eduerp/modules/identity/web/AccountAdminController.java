@@ -1,0 +1,86 @@
+package com.eduerp.modules.identity.web;
+
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.identity.dto.AccountSummaryResponse;
+import com.eduerp.modules.identity.dto.CreateAccountRequest;
+import com.eduerp.modules.identity.dto.TransferBranchRequest;
+import com.eduerp.modules.identity.usecase.CreateAccount;
+import com.eduerp.modules.identity.usecase.ListAccounts;
+import com.eduerp.modules.identity.usecase.ResendAccountInvite;
+import com.eduerp.modules.identity.usecase.RevokeAccountInvite;
+import com.eduerp.modules.identity.usecase.TransferAccountBranch;
+import com.eduerp.shared.AccountPrincipal;
+import com.eduerp.shared.PageResponse;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Phần của {@code /api/rbac/**} có Account là chủ thể — danh sách và chuyển chi nhánh. Phần thuần
+ * RBAC (role/permission group/gán group) nằm ở
+ * {@code com.eduerp.modules.access.web.RbacAdminController}, cùng tiền tố URL, khác module.
+ */
+@RestController
+@RequestMapping("/api/rbac")
+class AccountAdminController {
+
+    private final ListAccounts listAccounts;
+    private final TransferAccountBranch transferAccountBranch;
+    private final CreateAccount createAccount;
+    private final ResendAccountInvite resendAccountInvite;
+    private final RevokeAccountInvite revokeAccountInvite;
+
+    AccountAdminController(ListAccounts listAccounts, TransferAccountBranch transferAccountBranch,
+            CreateAccount createAccount, ResendAccountInvite resendAccountInvite,
+            RevokeAccountInvite revokeAccountInvite) {
+        this.listAccounts = listAccounts;
+        this.transferAccountBranch = transferAccountBranch;
+        this.createAccount = createAccount;
+        this.resendAccountInvite = resendAccountInvite;
+        this.revokeAccountInvite = revokeAccountInvite;
+    }
+
+    /** {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. */
+    @GetMapping("/accounts")
+    @PreAuthorize(AccessConstants.AccessRules.READ_ACCOUNT)
+    PageResponse<AccountSummaryResponse> listAccounts(@PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) UUID branchId) {
+        return listAccounts.execute(pageable, branchId);
+    }
+
+    @PostMapping("/accounts")
+    @PreAuthorize(AccessConstants.AccessRules.CREATE_ACCOUNT)
+    UUID createAccount(@AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody CreateAccountRequest request) {
+        return createAccount.execute(principal.accountId(), principal.homeBranchId(), request);
+    }
+
+    @PostMapping("/accounts/{accountId}/resend-invite")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void resendInvite(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        resendAccountInvite.execute(accountId, principal.accountId(), principal.homeBranchId());
+    }
+
+    @PostMapping("/accounts/{accountId}/revoke-invite")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void revokeInvite(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        revokeAccountInvite.execute(accountId, principal.accountId(), principal.homeBranchId());
+    }
+
+    @PostMapping("/accounts/{accountId}/transfer-branch")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void transferBranch(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId,
+            @Valid @RequestBody TransferBranchRequest request) {
+        transferAccountBranch.execute(accountId, principal.accountId(), principal.homeBranchId(), request);
+    }
+}
