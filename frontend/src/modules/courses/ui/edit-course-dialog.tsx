@@ -1,6 +1,7 @@
 import type { CourseSummary } from "@/entities/course";
 import { useUpdateCourse } from "@/modules/courses/api/use-courses-mutations";
-import { updateCourseFormSchema } from "@/modules/courses/model/courses-forms";
+import { toGradeColumnPayload, updateCourseFormSchema } from "@/modules/courses/model/courses-forms";
+import { GradeColumnEditor } from "@/modules/courses/ui/grade-column-editor";
 import { useZodForm } from "@/shared/lib/use-zod-form";
 import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
@@ -26,9 +27,17 @@ export function EditCourseDialog({ course, open, onClose }: EditCourseDialogProp
       standardSessionCount: course.standardSessionCount?.toString() ?? "",
       tuitionFee: course.tuitionFee?.toString() ?? "",
       active: course.active,
+      gradeColumns: course.gradeColumns.map((column) => ({
+        name: column.name,
+        weightPercent: column.weightPercent.toString(),
+        maxScore: column.maxScore.toString(),
+      })),
     },
     onSubmit: async (values) => {
-      await updateCourse.mutateAsync(values);
+      await updateCourse.mutateAsync({
+        ...values,
+        gradeColumns: toGradeColumnPayload(values.gradeColumns),
+      });
       onClose();
     },
   });
@@ -76,6 +85,20 @@ export function EditCourseDialog({ course, open, onClose }: EditCourseDialogProp
             invalid={form.fieldErrors.tuitionFee !== undefined}
             onChange={(event) => form.setValue("tuitionFee", event.target.value)}
           />
+        </FormField>
+
+        <FormField
+          label="Cột điểm"
+          htmlFor="edit-course-grade-columns"
+          hint="Không bắt buộc. Nếu có, tổng trọng số phải bằng 100%."
+          error={form.fieldErrors.gradeColumns}
+        >
+          <div id="edit-course-grade-columns">
+            <GradeColumnEditor
+              columns={form.values.gradeColumns}
+              onChange={(columns) => form.setValue("gradeColumns", columns)}
+            />
+          </div>
         </FormField>
 
         <CheckableRow
