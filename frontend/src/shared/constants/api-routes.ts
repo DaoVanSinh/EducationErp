@@ -87,11 +87,6 @@ export const API_ROUTE = {
     classProgress: (classId: string) => `/api/academic/classes/${classId}/progress`,
     classProgressExport: (classId: string) => `/api/academic/classes/${classId}/progress/export`,
   },
-  chat: {
-    /** POST một câu hỏi + lịch sử hội thoại của phiên trình duyệt, nhận lại một câu trả lời đầy đủ.
-     * Không có endpoint GET nào: backend không lưu hội thoại nên không có gì để đọc lại. */
-    messages: "/api/chat/messages",
-  },
 } as const;
 
 /**

@@ -46,17 +46,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   {
     title: "Cá nhân",
     items: [
-      /**
-       * Ruling R5: khác hai trang sổ điểm/tiến trình của Phân hệ 4 (cố tình KHÔNG có mục nav riêng vì
-       * chúng vào từ danh sách lớp), chat KHÔNG có "danh sách" tự nhiên nào để vào từ đó - học viên
-       * đăng nhập và cần thấy ngay lối vào.
-       *
-       * Đặt trong "Cá nhân" chứ không "Điều hành & Nghiệp vụ": AppNav ẩn cả một section khi không mục
-       * nào trong đó hiển thị được, và "Cá nhân" là section duy nhất một học viên vốn đã thấy.
-       * Requirement `createChat` không ghi scope nên học viên (PERSONAL) và admin (ORGANIZATION) đều
-       * thấy, giáo viên không thấy - đúng RBAC mà V27 seed.
-       */
-      { path: APP_ROUTE.chat, label: "Hỏi đáp khóa học", requirement: ACCESS_RULE.createChat },
       { path: APP_ROUTE.profile, label: "Hồ sơ của tôi" },
     ],
   },

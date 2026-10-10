@@ -23,8 +23,6 @@ export const APP_ROUTE = {
   comboDiscountTiers: "/admin/billing/combo-discount-tiers",
   classGradebook: "/admin/academic/classes/:classId/gradebook",
   classProgress: "/admin/academic/classes/:classId/progress",
-  /** Không nằm dưới /admin: đây là màn hình của HỌC VIÊN, không phải màn hình quản trị. */
-  chat: "/chat",
   /** Public: phụ huynh quay về từ cổng thanh toán, có thể chưa đăng nhập (spec mục 10). */
   paymentReturn: "/payment/return/:gateway",
   login: "/login",
