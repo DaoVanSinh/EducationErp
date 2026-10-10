@@ -43,7 +43,6 @@ public final class AccessConstants {
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
         public static final String GRADE = "GRADE";
-        public static final String CHAT = "CHAT";
         public static final String AUDIT_LOG = "AUDIT_LOG";
         public static final String DASHBOARD = "DASHBOARD";
     }
@@ -202,18 +201,6 @@ public final class AccessConstants {
          * ({@code AcademicRbacSeedIT}), thay vì chỉ là một chuỗi rời trong file SQL.
          */
         public static final String CREATE_GRADE = CHECK_PREFIX + Resources.GRADE + CHECK_SEPARATOR
-                + Actions.CREATE + CHECK_SUFFIX;
-
-        /**
-         * Rule thứ TƯ (và cuối cùng ở Phân hệ 5) không mang {@link #MINIMUM_SCOPE}, và đây là chủ
-         * đích. Khác lý do của {@code *_GRADE}: ở đó marker bị bỏ để giáo viên scope
-         * {@code PERSONAL} qua được cửa rồi {@code ClassGradeAccessGuard} hỏi lại "có phải lớp của
-         * anh không". Ở đây KHÔNG có khái niệm sở hữu nào để hỏi lại - học viên được seed
-         * {@code CHAT:CREATE:PERSONAL} (V27) và chỉ cần có quyền ở BẤT KỲ scope nào là được hỏi
-         * chatbot, nên không có guard nào trong {@code modules.chat}. Thêm
-         * {@code @ORGANIZATION} vào đây là chặn đúng người dùng chính của phân hệ.
-         */
-        public static final String CREATE_CHAT = CHECK_PREFIX + Resources.CHAT + CHECK_SEPARATOR
                 + Actions.CREATE + CHECK_SUFFIX;
     }
 }

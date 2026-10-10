@@ -39,20 +39,6 @@ public class CoursesManagement {
     public record CourseTuitionResponse(UUID courseId, BigDecimal tuitionFee, boolean active) {
     }
 
-    /**
-     * Ảnh chụp một khóa học ĐANG MỞ cho chatbot (spec mục 3.3). Không có {@code active} vì method
-     * duy nhất sinh ra nó chỉ trả về khóa đang mở - mang theo một cờ luôn bằng {@code true} là mời
-     * nơi gọi tự filter lại một lần nữa, và một lần filter sai ở đó là một khóa đã đóng lọt vào câu
-     * trả lời của chatbot (Review Focus #3).
-     *
-     * <p>{@code description}/{@code standardSessionCount}/{@code tuitionFee} đều có thể null (khóa
-     * chưa chốt giá, chưa cấu hình số buổi) - {@code ChatPromptRules} dịch từng trường hợp thành một
-     * câu tiếng Việt, không bao giờ in ra "null".
-     */
-    public record OpenCourseSummary(UUID id, String code, String name, String description,
-            Integer standardSessionCount, BigDecimal tuitionFee) {
-    }
-
     private final CourseRepository courses;
     private final ClassRepository classes;
 
@@ -96,22 +82,6 @@ public class CoursesManagement {
                                 column.getWeightPercent(), column.getMaxScore(), column.getDisplayOrder()))
                         .toList())
                 .orElseGet(List::of);
-    }
-
-    /**
-     * Truy xuất khóa học đang mở theo từ khoá tự nhiên, cho chatbot của {@code modules.chat}
-     * (spec mục 3.3). {@code limit} do nơi gọi quyết định vì nó là trần chi phí token của prompt,
-     * không phải một chi tiết của danh mục khóa học.
-     *
-     * <p>Không khớp khóa nào là một danh sách RỖNG, không phải một lỗi - cùng triết lý với
-     * {@link #getGradeColumns(UUID)}.
-     */
-    @Transactional(readOnly = true)
-    public List<OpenCourseSummary> searchOpenCourses(String query, int limit) {
-        return courses.searchActiveByFullText(query, limit).stream()
-                .map(course -> new OpenCourseSummary(course.getId(), course.getCode(), course.getName(),
-                        course.getDescription(), course.getStandardSessionCount(), course.getTuitionFee()))
-                .toList();
     }
 
     private static ClassInfoResponse toClassInfo(Class cls) {

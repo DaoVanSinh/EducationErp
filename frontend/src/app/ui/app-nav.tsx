@@ -4,7 +4,7 @@ import { APP_ROUTE } from "@/shared/constants/app-routes";
 import { cx } from "@/shared/lib/class-names";
 import { MOTION_SPRING } from "@/shared/lib/motion";
 import { m } from "framer-motion";
-import { BookOpen, Building2, CalendarDays, GraduationCap, LayoutDashboard, MessagesSquare, ShieldCheck, UserCircle, UserRoundCheck, Users } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, GraduationCap, LayoutDashboard, ShieldCheck, UserCircle, UserRoundCheck, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
@@ -17,7 +17,6 @@ const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.teachers]: <GraduationCap size={18} aria-hidden />,
   [APP_ROUTE.students]: <UserRoundCheck size={18} aria-hidden />,
   [APP_ROUTE.roles]: <ShieldCheck size={18} aria-hidden />,
-  [APP_ROUTE.chat]: <MessagesSquare size={18} aria-hidden />,
   [APP_ROUTE.profile]: <UserCircle size={18} aria-hidden />,
 };
 
