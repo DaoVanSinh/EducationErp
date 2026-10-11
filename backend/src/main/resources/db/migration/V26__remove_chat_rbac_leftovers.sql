@@ -1,11 +1,14 @@
--- Phân hệ 5 (AI Chatbot) từng seed quyền CHAT qua V26/V27, rồi bị gỡ bỏ hoàn toàn khỏi codebase
--- (bao gồm cả hai file migration đó) khi tính năng chuyển sang một service Python riêng. Migration
--- là append-only: xoá FILE không tự xoá DỮ LIỆU đã chèn vào những database đã chạy V27 trước khi nó
--- bị gỡ. Migration này dọn đúng phần dữ liệu đó, an toàn chạy lại trên một database CHƯA từng có
--- V26/V27 cũ (không có gì để xoá, hai lệnh DELETE dưới đây không khớp dòng nào).
+-- Phân hệ 5 (AI Chatbot) từng seed cột search_vector (V26 cũ: add_course_search_vector) và quyền CHAT
+-- (V27 cũ: seed_chat_rbac), rồi bị gỡ bỏ hoàn toàn khỏi codebase khi tính năng chuyển sang một
+-- service Python riêng. Migration là append-only: xoá FILE không tự xoá SCHEMA/DỮ LIỆU đã áp vào
+-- những database đã chạy hai migration đó trước khi chúng bị gỡ. Migration này dọn đúng phần đó,
+-- đồng thời AN TOÀN trên một database CHƯA từng có V26/V27 cũ (IF EXISTS / WHERE không khớp dòng nào
+-- đều là no-op).
 --
--- Chỉ cần xoá permission_groups + permissions: permission_group_items.permission_group_id/
--- permission_id và role_permission_groups.permission_group_id đều REFERENCES ... ON DELETE CASCADE
--- (V2/V3), nên hai lệnh dưới tự dọn sạch mọi dòng phụ thuộc.
+-- Thứ tự: xoá dữ liệu quyền trước (permission_groups cascade xuống permission_group_items +
+-- role_permission_groups - xem V2/V3), rồi mới gỡ cột/ index không ai dùng nữa.
 DELETE FROM permission_groups WHERE id = '11111111-0000-0000-0000-000000000004';
 DELETE FROM permissions WHERE resource = 'CHAT';
+
+DROP INDEX IF EXISTS idx_courses_search_vector;
+ALTER TABLE courses DROP COLUMN IF EXISTS search_vector;
