@@ -34,7 +34,14 @@ public class ListClasses {
      */
     @Transactional(readOnly = true)
     public PageResponse<ClassResponse> execute(Pageable pageable) {
-        Page<Class> page = classes.findAll(pageable);
+        return execute(pageable, null);
+    }
+
+    /** {@code teacherId} lọc lớp của riêng một giáo viên - dùng cho tab "Lớp đang dạy" của trang
+     * chi tiết giáo viên. {@code null} giữ nguyên hành vi liệt kê toàn bộ. */
+    @Transactional(readOnly = true)
+    public PageResponse<ClassResponse> execute(Pageable pageable, UUID teacherId) {
+        Page<Class> page = teacherId == null ? classes.findAll(pageable) : classes.findAllByTeacherId(teacherId, pageable);
         var branchIds = page.getContent().stream().map(Class::getBranchId).toList();
         var teacherIds = page.getContent().stream().map(Class::getTeacherId).toList();
 

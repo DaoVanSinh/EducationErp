@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,8 +40,9 @@ class ClassAdminController {
 
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_CLASS)
-    PageResponse<ClassResponse> list(@PageableDefault(size = 20) Pageable pageable) {
-        return listClasses.execute(pageable);
+    PageResponse<ClassResponse> list(@PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) UUID teacherId) {
+        return listClasses.execute(pageable, teacherId);
     }
 
     @PostMapping
