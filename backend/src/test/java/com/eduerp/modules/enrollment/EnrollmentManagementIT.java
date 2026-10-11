@@ -132,4 +132,27 @@ class EnrollmentManagementIT {
 
         assertThat(enrollmentManagement.listEnrollmentsByClass(UUID.randomUUID())).isEmpty();
     }
+
+    /** Trang chi tiết học viên cần MỌI lớp của một học viên, không phải mọi học viên của một lớp -
+     * hợp đồng ngược chiều với {@code listEnrollmentsByClass}. */
+    @Test
+    void listsEveryEnrollmentOfAStudentAcrossClasses() {
+        var studentProfileId = newStudentProfileId();
+        var enrollment = saveEnrollment(studentProfileId);
+        saveEnrollment(newStudentProfileId());
+
+        var found = enrollmentManagement.listEnrollmentsByStudent(studentProfileId);
+
+        assertThat(found).hasSize(1);
+        var entry = found.get(0);
+        assertThat(entry.enrollmentId()).isEqualTo(enrollment.getId());
+        assertThat(entry.classId()).isEqualTo(classId);
+        assertThat(entry.courseId()).isEqualTo(courseId);
+        assertThat(entry.status()).isEqualTo(EnrollmentConstants.EnrollmentStatus.ACTIVE);
+    }
+
+    @Test
+    void returnsNoEnrollmentsForAStudentWhoHasNeverEnrolled() {
+        assertThat(enrollmentManagement.listEnrollmentsByStudent(UUID.randomUUID())).isEmpty();
+    }
 }
