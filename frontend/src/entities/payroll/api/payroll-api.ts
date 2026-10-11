@@ -1,5 +1,6 @@
 import {
   contractSummarySchema,
+  myPayslipSchema,
   payrollRunDetailSchema,
   payrollRunSummarySchema,
   payslipSchema,
@@ -15,6 +16,7 @@ import { API_ROUTE } from "@/shared/constants/api-routes";
 
 const contractPageSchema = pageResponseSchema(contractSummarySchema);
 const payrollRunPageSchema = pageResponseSchema(payrollRunSummarySchema);
+const myPayslipPageSchema = pageResponseSchema(myPayslipSchema);
 
 function toContractFormData(payload: CreateContractPayload | UpdateContractPayload, file: File | null): FormData {
   const formData = new FormData();
@@ -50,6 +52,18 @@ export const contractApi = {
 
   async downloadContractFile(contractId: string): Promise<{ blob: Blob; fileName: string | null }> {
     return apiClient.getBlob(API_ROUTE.payroll.contractFile(contractId));
+  },
+
+  /** Hợp đồng CỦA CHÍNH người gọi - không cần quyền READ_PAYROLL (PayrollSelfServiceController). */
+  async listMyContracts(page: number, size: number) {
+    return contractPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.payroll.myContracts, { page, size }));
+  },
+} as const;
+
+export const payslipApi = {
+  /** Phiếu lương CỦA CHÍNH người gọi, xuyên mọi kỳ lương - không cần quyền READ_PAYROLL. */
+  async listMyPayslips(page: number, size: number) {
+    return myPayslipPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.payroll.myPayslips, { page, size }));
   },
 } as const;
 

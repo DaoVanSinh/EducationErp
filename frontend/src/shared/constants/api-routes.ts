@@ -49,6 +49,10 @@ export const API_ROUTE = {
     contract: (contractId: string) => `/api/payroll/contracts/${contractId}`,
     contractTerminate: (contractId: string) => `/api/payroll/contracts/${contractId}/terminate`,
     contractFile: (contractId: string) => `/api/payroll/contracts/${contractId}/file`,
+    /** Hợp đồng/phiếu lương CỦA CHÍNH người gọi - không cần quyền READ_PAYROLL, dùng cho tab
+     * "Lương"/"Hợp đồng" của trang Hồ sơ của tôi. */
+    myContracts: "/api/payroll/me/contracts",
+    myPayslips: "/api/payroll/me/payslips",
     runs: "/api/payroll/runs",
     run: (runId: string) => `/api/payroll/runs/${runId}`,
     runSubmit: (runId: string) => `/api/payroll/runs/${runId}/submit`,
