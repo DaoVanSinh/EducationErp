@@ -11,7 +11,9 @@ export const APP_ROUTE = {
   courses: "/admin/courses",
   classes: "/admin/classes",
   teachers: "/admin/teachers",
+  teacherDetail: "/admin/teachers/:profileId",
   students: "/admin/students",
+  studentDetail: "/admin/students/:profileId",
   payrollContracts: "/admin/payroll/contracts",
   payrollRuns: "/admin/payroll/runs",
   payrollRunDetail: "/admin/payroll/runs/:runId",
@@ -64,4 +66,14 @@ export function buildClassGradebookPath(classId: string): string {
 /** Link thật tới bảng tiến trình học tập của một lớp. */
 export function buildClassProgressPath(classId: string): string {
   return `/admin/academic/classes/${classId}/progress`;
+}
+
+/** Link thật tới trang chi tiết một giáo viên - APP_ROUTE.teacherDetail chỉ là route template. */
+export function buildTeacherDetailPath(profileId: string): string {
+  return `/admin/teachers/${profileId}`;
+}
+
+/** Link thật tới trang chi tiết một học viên - APP_ROUTE.studentDetail chỉ là route template. */
+export function buildStudentDetailPath(profileId: string): string {
+  return `/admin/students/${profileId}`;
 }

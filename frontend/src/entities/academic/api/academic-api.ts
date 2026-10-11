@@ -1,6 +1,7 @@
 import {
   classProgressSchema,
   gradebookSchema,
+  studentAcademicSummarySchema,
   type RecordGradePayload,
 } from "@/entities/academic/model/academic-schema";
 import { apiClient } from "@/shared/api/api-client";
@@ -21,6 +22,12 @@ export const academicApi = {
 
   async recordGrade(payload: RecordGradePayload): Promise<void> {
     await apiClient.post<void>(API_ROUTE.academic.grades, payload);
+  },
+
+  async getStudentSummary(studentProfileId: string) {
+    return studentAcademicSummarySchema.parse(
+      await apiClient.get<unknown>(API_ROUTE.academic.studentSummary(studentProfileId)),
+    );
   },
 
   /** getBlob đi qua lượt tự refresh khi access token hết hạn và đọc luôn tên file từ

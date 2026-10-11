@@ -18,6 +18,12 @@ export const studentApi = {
     );
   },
 
+  async getProfile(profileId: string) {
+    return studentProfileSummarySchema.parse(
+      await apiClient.get<unknown>(API_ROUTE.students.profile(profileId)),
+    );
+  },
+
   async createProfile(payload: CreateStudentProfilePayload): Promise<string> {
     return createdStudentProfileIdSchema.parse(
       await apiClient.post<unknown>(API_ROUTE.students.profiles, payload),

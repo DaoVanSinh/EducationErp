@@ -130,6 +130,41 @@ class ClassGradeAccessGuardTest {
                 .isInstanceOf(NotAssignedToClassException.class);
     }
 
+    /**
+     * {@code canAccess} là phần điều kiện của {@code requireAccessToClass}, tách ra thành một hàm
+     * boolean không ném - dùng cho {@code GetStudentAcademicSummary}, nơi một học viên có thể có
+     * nhiều lớp và một lớp không được phép xem phải bị BỎ QUA lặng lẽ, không làm hỏng cả response.
+     */
+    @Test
+    void canAccessReturnsTrueForTheAssignedTeacher() {
+        stubClassTaughtByAssignedTeacher();
+        stubCallerPermissions(assignedTeacherId, AccessConstants.PermissionScope.PERSONAL);
+        var classInfo = new CoursesManagement.ClassInfoResponse(classId, courseId, branchId,
+                assignedTeacherId, 20, true, 24, List.of());
+
+        assertThat(guard.canAccess(assignedTeacherId, classInfo, AccessConstants.Actions.READ)).isTrue();
+    }
+
+    @Test
+    void canAccessReturnsFalseForATeacherNotAssignedToTheClass() {
+        var otherTeacherId = UUID.randomUUID();
+        stubCallerPermissions(otherTeacherId, AccessConstants.PermissionScope.PERSONAL);
+        var classInfo = new CoursesManagement.ClassInfoResponse(classId, courseId, branchId,
+                assignedTeacherId, 20, true, 24, List.of());
+
+        assertThat(guard.canAccess(otherTeacherId, classInfo, AccessConstants.Actions.READ)).isFalse();
+    }
+
+    @Test
+    void canAccessReturnsTrueForAnOrganizationScopedCallerRegardlessOfAssignment() {
+        var adminId = UUID.randomUUID();
+        stubCallerPermissions(adminId, AccessConstants.PermissionScope.ORGANIZATION);
+        var classInfo = new CoursesManagement.ClassInfoResponse(classId, courseId, branchId,
+                assignedTeacherId, 20, true, 24, List.of());
+
+        assertThat(guard.canAccess(adminId, classInfo, AccessConstants.Actions.READ)).isTrue();
+    }
+
     /** Hai action tách biệt: quyền READ ở ORGANIZATION không mở cửa UPDATE trên lớp người khác. */
     @Test
     void checksTheActionItWasAskedAbout() {

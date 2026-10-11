@@ -5,6 +5,7 @@ import com.eduerp.modules.teachers.dto.CreateTeacherProfileRequest;
 import com.eduerp.modules.teachers.dto.TeacherProfileResponse;
 import com.eduerp.modules.teachers.dto.UpdateTeacherProfileRequest;
 import com.eduerp.modules.teachers.usecase.CreateTeacherProfile;
+import com.eduerp.modules.teachers.usecase.GetTeacherProfile;
 import com.eduerp.modules.teachers.usecase.ListTeacherProfiles;
 import com.eduerp.modules.teachers.usecase.UpdateTeacherProfile;
 import com.eduerp.shared.AccountPrincipal;
@@ -28,12 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 class TeacherAdminController {
 
     private final ListTeacherProfiles listTeacherProfiles;
+    private final GetTeacherProfile getTeacherProfile;
     private final CreateTeacherProfile createTeacherProfile;
     private final UpdateTeacherProfile updateTeacherProfile;
 
-    TeacherAdminController(ListTeacherProfiles listTeacherProfiles, CreateTeacherProfile createTeacherProfile,
-            UpdateTeacherProfile updateTeacherProfile) {
+    TeacherAdminController(ListTeacherProfiles listTeacherProfiles, GetTeacherProfile getTeacherProfile,
+            CreateTeacherProfile createTeacherProfile, UpdateTeacherProfile updateTeacherProfile) {
         this.listTeacherProfiles = listTeacherProfiles;
+        this.getTeacherProfile = getTeacherProfile;
         this.createTeacherProfile = createTeacherProfile;
         this.updateTeacherProfile = updateTeacherProfile;
     }
@@ -42,6 +45,12 @@ class TeacherAdminController {
     @PreAuthorize(AccessConstants.AccessRules.READ_TEACHER)
     PageResponse<TeacherProfileResponse> list(@PageableDefault(size = 20) Pageable pageable) {
         return listTeacherProfiles.execute(pageable);
+    }
+
+    @GetMapping("/{profileId}")
+    @PreAuthorize(AccessConstants.AccessRules.READ_TEACHER)
+    TeacherProfileResponse get(@PathVariable UUID profileId) {
+        return getTeacherProfile.execute(profileId);
     }
 
     @PostMapping

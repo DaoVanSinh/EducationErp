@@ -97,6 +97,7 @@ class GradeAdminControllerIT {
     private UUID assignedTeacherId;
     private UUID classId;
     private UUID enrollmentId;
+    private UUID studentProfileId;
     private UUID midtermColumnId;
     private UUID finalColumnId;
 
@@ -137,7 +138,7 @@ class GradeAdminControllerIT {
         var cls = new Class(savedCourse, "GB-K-" + shortId(), branchId, assignedTeacherId, 20);
         cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
         classId = classes.save(cls).getId();
-        var studentProfileId = profiles.save(
+        studentProfileId = profiles.save(
                 new StudentProfile(newAccount("gb-hv", "Nguyễn Văn A"), null, null, null)).getId();
         enrollmentId = enrollments.saveAndFlush(new Enrollment(studentProfileId, classId,
                 savedCourse.getId(), branchId, assignedTeacherId)).getId();
@@ -278,5 +279,54 @@ class GradeAdminControllerIT {
         assertThat(row.get("studentName").asText()).isEqualTo("Nguyễn Văn A");
         assertThat(row.get("elapsedSessions").isInt()).isTrue();
         assertThat(row.get("progressPercent").asInt()).isBetween(0, 100);
+    }
+
+    /** Tab "Kết quả học tập" của trang chi tiết học viên - giáo viên ĐÚNG lớp thấy điểm/tiến trình
+     * của học viên trong lớp mình dạy. */
+    @Test
+    void returnsTheStudentAcademicSummaryForTheAssignedTeacher() throws Exception {
+        var teacher = signIn(assignedTeacherId, AccessConstants.RoleCodes.TEACHER);
+        assertThat(recordGrade(teacher, midtermColumnId, "8.00")).isEqualTo(200);
+
+        var result = mockMvc.perform(get("/api/academic/students/" + studentProfileId + "/summary")
+                .cookie(teacher)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("studentProfileId").asText()).isEqualTo(studentProfileId.toString());
+        assertThat(body.get("classes")).hasSize(1);
+        var row = body.get("classes").get(0);
+        assertThat(row.get("classId").asText()).isEqualTo(classId.toString());
+        assertThat(row.get("classCode").asText()).isNotBlank();
+        assertThat(row.get("courseName").asText()).isEqualTo("Khoá có sổ điểm");
+    }
+
+    /**
+     * Khẳng định quan trọng nhất của endpoint này: một giáo viên KHÔNG dạy lớp đó vẫn nhận 200 (vì
+     * họ CÓ quyền GRADE:READ:PERSONAL nói chung, giống {@code refusesATeacherWhoIsNotAssignedToTheClass}
+     * ở trên), nhưng lớp của học viên này biến mất khỏi danh sách thay vì 403 cả response.
+     */
+    @Test
+    void hidesTheClassFromATeacherNotAssignedToIt() throws Exception {
+        var outsider = signIn(newAccount("gb-summary-outsider", "Thầy Nam"),
+                AccessConstants.RoleCodes.TEACHER);
+
+        var result = mockMvc.perform(get("/api/academic/students/" + studentProfileId + "/summary")
+                .cookie(outsider)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("classes")).isEmpty();
+    }
+
+    @Test
+    void allowsAnAdminToSeeEveryClassInTheStudentSummary() throws Exception {
+        var admin = signIn(newAccount("gb-summary-admin", "Quản trị"), AccessConstants.RoleCodes.ADMIN);
+
+        var result = mockMvc.perform(get("/api/academic/students/" + studentProfileId + "/summary")
+                .cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(objectMapper.readTree(result.getResponse().getContentAsString()).get("classes")).hasSize(1);
     }
 }

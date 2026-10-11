@@ -86,6 +86,7 @@ export const API_ROUTE = {
     classGradebookExport: (classId: string) => `/api/academic/classes/${classId}/gradebook/export`,
     classProgress: (classId: string) => `/api/academic/classes/${classId}/progress`,
     classProgressExport: (classId: string) => `/api/academic/classes/${classId}/progress/export`,
+    studentSummary: (studentProfileId: string) => `/api/academic/students/${studentProfileId}/summary`,
   },
 } as const;
 

@@ -5,10 +5,12 @@ import com.eduerp.modules.academic.dto.ClassProgressResponse;
 import com.eduerp.modules.academic.dto.ExportedFileResponse;
 import com.eduerp.modules.academic.dto.GradebookResponse;
 import com.eduerp.modules.academic.dto.RecordGradeRequest;
+import com.eduerp.modules.academic.dto.StudentAcademicSummaryResponse;
 import com.eduerp.modules.academic.usecase.ExportClassGradebook;
 import com.eduerp.modules.academic.usecase.ExportClassProgress;
 import com.eduerp.modules.academic.usecase.GetClassGradebook;
 import com.eduerp.modules.academic.usecase.GetClassProgress;
+import com.eduerp.modules.academic.usecase.GetStudentAcademicSummary;
 import com.eduerp.modules.academic.usecase.RecordGrade;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.shared.AccountPrincipal;
@@ -44,15 +46,17 @@ class GradeAdminController {
     private final GetClassProgress getClassProgress;
     private final ExportClassGradebook exportClassGradebook;
     private final ExportClassProgress exportClassProgress;
+    private final GetStudentAcademicSummary getStudentAcademicSummary;
 
     GradeAdminController(RecordGrade recordGrade, GetClassGradebook getClassGradebook,
             GetClassProgress getClassProgress, ExportClassGradebook exportClassGradebook,
-            ExportClassProgress exportClassProgress) {
+            ExportClassProgress exportClassProgress, GetStudentAcademicSummary getStudentAcademicSummary) {
         this.recordGrade = recordGrade;
         this.getClassGradebook = getClassGradebook;
         this.getClassProgress = getClassProgress;
         this.exportClassGradebook = exportClassGradebook;
         this.exportClassProgress = exportClassProgress;
+        this.getStudentAcademicSummary = getStudentAcademicSummary;
     }
 
     /** POST (không PUT): upsert idempotent theo {@code (enrollmentId, courseGradeColumnId)}, và
@@ -90,6 +94,16 @@ class GradeAdminController {
     ResponseEntity<byte[]> exportProgress(@AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID classId) {
         return toDownload(exportClassProgress.execute(principal.accountId(), classId));
+    }
+
+    /** Tab "Kết quả học tập" của trang chi tiết học viên - gộp điểm/tiến trình xuyên mọi lớp đã ghi
+     * danh. Lọc theo quyền nằm TRONG usecase (một lớp không-phải-của-mình bị bỏ qua lặng lẽ), nên
+     * endpoint này không bao giờ 403 - một giáo viên chỉ thấy ít lớp hơn, chứ không bị chặn cả. */
+    @GetMapping("/students/{studentProfileId}/summary")
+    @PreAuthorize(AccessConstants.AccessRules.READ_GRADE)
+    StudentAcademicSummaryResponse studentSummary(@AuthenticationPrincipal AccountPrincipal principal,
+            @PathVariable UUID studentProfileId) {
+        return getStudentAcademicSummary.execute(principal.accountId(), studentProfileId);
     }
 
     /** Không có {@code Content-Disposition} kèm tên file thì trình duyệt lưu file không có phần mở

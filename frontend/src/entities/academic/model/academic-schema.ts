@@ -67,3 +67,29 @@ export interface RecordGradePayload {
   readonly courseGradeColumnId: string;
   readonly score: number;
 }
+
+/**
+ * Một lớp trong tab "Kết quả học tập" của trang chi tiết học viên. `classCode`/`courseName` null
+ * nghĩa là lớp đã bị xoá hẳn - hiển thị "(đã xoá)", không bao giờ in "null". `finalScore`/
+ * `progressPercent` null là "chưa đủ dữ liệu", không phải 0 - cùng triết lý với
+ * `studentGradesRowSchema`/`studentProgressRowSchema`.
+ */
+export const studentClassSummaryRowSchema = z.object({
+  classId: z.string().uuid(),
+  classCode: z.string().nullable(),
+  courseName: z.string().nullable(),
+  status: enrollmentStatusSchema,
+  finalScore: z.number().nullable(),
+  progressPercent: z.number().int().nullable(),
+});
+
+export type StudentClassSummaryRow = z.infer<typeof studentClassSummaryRowSchema>;
+
+/** Danh sách rỗng nghĩa là học viên chưa ghi danh lớp nào, HOẶC người xem (giáo viên) không được
+ * phép thấy lớp nào của học viên này - hai tình huống khác nhau nhưng cùng một hình dạng phản hồi. */
+export const studentAcademicSummarySchema = z.object({
+  studentProfileId: z.string().uuid(),
+  classes: z.array(studentClassSummaryRowSchema),
+});
+
+export type StudentAcademicSummary = z.infer<typeof studentAcademicSummarySchema>;

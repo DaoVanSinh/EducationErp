@@ -6,9 +6,12 @@ import com.eduerp.modules.courses.internal.model.Class;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,12 @@ public class CoursesManagement {
 
     /** {@code tuitionFee} null = khoá học chưa chốt giá (khác với "không tìm thấy khoá học"). */
     public record CourseTuitionResponse(UUID courseId, BigDecimal tuitionFee, boolean active) {
+    }
+
+    /** Ảnh chụp một lớp cho mục đích HIỂN THỊ (mã lớp + tên khóa học) - khác {@link ClassInfoResponse}
+     * (dùng để tính toán nghiệp vụ). Cho trang chi tiết học viên ghép tên lớp vào bảng kết quả học
+     * tập. */
+    public record ClassBasicSummary(UUID classId, String code, UUID courseId, String courseName) {
     }
 
     private final CourseRepository courses;
@@ -82,6 +91,21 @@ public class CoursesManagement {
                                 column.getWeightPercent(), column.getMaxScore(), column.getDisplayOrder()))
                         .toList())
                 .orElseGet(List::of);
+    }
+
+    /**
+     * Mã lớp + tên khóa học theo lô, cho {@code modules.academic.GetStudentAcademicSummary} ghép
+     * vào bảng kết quả học tập của học viên - mirror {@code IdentityManagement.summariesOf}. Id
+     * không tồn tại chỉ vắng mặt trong map, không ném.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, ClassBasicSummary> classSummariesOf(Collection<UUID> classIds) {
+        if (classIds.isEmpty()) {
+            return Map.of();
+        }
+        return classes.findAllById(classIds).stream()
+                .collect(Collectors.toMap(Class::getId, cls -> new ClassBasicSummary(cls.getId(), cls.getCode(),
+                        cls.getCourse().getId(), cls.getCourse().getName())));
     }
 
     private static ClassInfoResponse toClassInfo(Class cls) {

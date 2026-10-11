@@ -137,4 +137,33 @@ class StudentAdminControllerIT {
         var listResult = mockMvc.perform(get("/api/students/profiles").cookie(admin)).andReturn();
         assertThat(listResult.getResponse().getContentAsString()).contains("\"active\":false");
     }
+
+    @Test
+    void getsASingleStudentProfileById() throws Exception {
+        var admin = signIn("student-profile-admin-4@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var studentAccountId = studentAccount("student-profile-3@eduerp.local");
+        var createResult = mockMvc.perform(post("/api/students/profiles").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateStudentProfileRequest(studentAccountId, LocalDate.of(2012, 3, 3),
+                                        "0933333333", "Giới thiệu bạn bè"))))
+                .andReturn();
+        var profileId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
+
+        var result = mockMvc.perform(get("/api/students/profiles/" + profileId).cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(result.getResponse().getContentAsString())
+                .contains("student-profile-3@eduerp.local", "Giới thiệu bạn bè");
+    }
+
+    @Test
+    void returns404ForAnUnknownStudentProfileId() throws Exception {
+        var admin = signIn("student-profile-admin-5@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+
+        var result = mockMvc.perform(get("/api/students/profiles/" + UUID.randomUUID()).cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(404);
+        assertThat(result.getResponse().getContentAsString()).contains("STUDENTS_PROFILE_NOT_FOUND");
+    }
 }
