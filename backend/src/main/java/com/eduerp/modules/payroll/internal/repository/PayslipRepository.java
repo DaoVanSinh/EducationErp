@@ -4,12 +4,20 @@ import com.eduerp.modules.payroll.internal.model.Payslip;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PayslipRepository extends JpaRepository<Payslip, UUID> {
     List<Payslip> findAllByPayrollRun_Id(UUID payrollRunId);
+
+    /** Tab "Lương" của trang Hồ sơ của tôi - xuyên MỌI kỳ lương của một tài khoản. Entity graph nạp
+     * kèm {@code payrollRun} vì mỗi dòng cần year/month của nó (mirror {@code ClassRepository.findAll}). */
+    @EntityGraph(attributePaths = "payrollRun")
+    Page<Payslip> findAllByAccountId(UUID accountId, Pageable pageable);
 
     /**
      * Đếm/cộng dồn theo lô cho cả trang thay vì một query riêng cho từng kỳ lương (N+1) - mirror

@@ -83,6 +83,21 @@ export const payslipSchema = z.object({
 
 export type Payslip = z.infer<typeof payslipSchema>;
 
+/** Một phiếu lương trong tab "Lương" của Hồ sơ của tôi - khớp `payroll.dto.MyPayslipResponse`. Khác
+ * `payslipSchema`: đây là dữ liệu XUYÊN NHIỀU kỳ lương nên có `year`/`month` riêng, và không có
+ * `accountId`/`accountFullName` (luôn là chính người gọi, không cần lặp lại). */
+export const myPayslipSchema = z.object({
+  id: z.string().uuid(),
+  year: z.number().int(),
+  month: z.number().int(),
+  contractType: z.enum([CONTRACT_TYPE.official, CONTRACT_TYPE.collaborator]),
+  grossPay: z.number(),
+  netPay: z.number(),
+  inProbation: z.boolean(),
+});
+
+export type MyPayslip = z.infer<typeof myPayslipSchema>;
+
 export const payrollRunSummarySchema = z.object({
   id: z.string().uuid(),
   year: z.number().int(),

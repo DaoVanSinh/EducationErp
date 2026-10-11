@@ -4,6 +4,11 @@ export const payrollKeys = {
     lists: () => [...payrollKeys.contracts.all, "list"] as const,
     list: (page: number, size: number, accountId?: string) =>
       [...payrollKeys.contracts.lists(), { page, size, accountId }] as const,
+    myList: (page: number, size: number) => [...payrollKeys.contracts.all, "my-list", { page, size }] as const,
+  },
+  payslips: {
+    all: ["payroll", "payslip"] as const,
+    myList: (page: number, size: number) => [...payrollKeys.payslips.all, "my-list", { page, size }] as const,
   },
   runs: {
     all: ["payroll", "run"] as const,

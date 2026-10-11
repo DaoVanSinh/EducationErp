@@ -22,6 +22,25 @@ class DefaultRbacSeedIT {
     @Autowired
     RoleRepository roles;
 
+    @Autowired
+    PermissionRepository permissions;
+
+    /**
+     * Phân hệ 5 (AI Chatbot) từng seed quyền CHAT qua V26/V27 (cũ), rồi bị gỡ hoàn toàn khỏi codebase
+     * khi tính năng chuyển sang service Python riêng - V26 (migration hiện tại, nội dung khác hẳn)
+     * dọn sạch mọi dấu vết đó. Test này chốt lại: không database nào từng áp dụng migration cũ còn
+     * sót quyền CHAT, và một database CHƯA từng thấy nó (mọi CI run) cũng không tự nhiên có.
+     */
+    @Test
+    void noChatPermissionLeftOverFromTheRemovedAiChatbotFeature() {
+        assertThat(permissions.findByResourceAndAction("CHAT", "CREATE")).isEmpty();
+        assertThat(roles.findByCode(AccessConstants.RoleCodes.STUDENT).orElseThrow()
+                .getPermissionGroups().stream()
+                .flatMap(g -> g.getItems().stream())
+                .noneMatch(item -> "CHAT".equals(item.getPermission().getResource())))
+                .isTrue();
+    }
+
     @Test
     void adminRoleHasOrganizationScopeOnEveryResource() {
         var admin = roles.findByCode(AccessConstants.RoleCodes.ADMIN).orElseThrow();
