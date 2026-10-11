@@ -48,12 +48,25 @@ public class ClassGradeAccessGuard {
             String action) {
         var classInfo = courses.getClassInfo(classId)
                 .orElseThrow(() -> new ClassNotFoundException(classId));
-        if (GradeAccessRules.allowsEveryClass(access.effectivePermissions(actorAccountId), action)) {
-            return classInfo;
-        }
-        if (!actorAccountId.equals(classInfo.teacherId())) {
+        if (!canAccess(actorAccountId, classInfo, action)) {
             throw new NotAssignedToClassException(actorAccountId, classId);
         }
         return classInfo;
+    }
+
+    /**
+     * Phần điều kiện của {@link #requireAccessToClass(UUID, UUID, String)}, tách thành một hàm
+     * boolean không ném. {@code GetStudentAcademicSummary} cần nó: một học viên có thể có nhiều
+     * lớp, và một lớp người xem không được phép thấy phải BỎ QUA lặng lẽ, không làm hỏng cả response
+     * như {@code requireAccessToClass} sẽ làm (403 toàn bộ).
+     *
+     * <p>Nhận sẵn {@code classInfo} thay vì {@code classId} để nơi gọi không phải tải lại bản ghi
+     * lớp lần hai khi đã cần nó cho việc khác (lịch học, số buổi chuẩn).
+     */
+    public boolean canAccess(UUID actorAccountId, CoursesManagement.ClassInfoResponse classInfo, String action) {
+        if (GradeAccessRules.allowsEveryClass(access.effectivePermissions(actorAccountId), action)) {
+            return true;
+        }
+        return actorAccountId.equals(classInfo.teacherId());
     }
 }
