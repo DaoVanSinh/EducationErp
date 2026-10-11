@@ -41,8 +41,14 @@ const ClassesPage = lazy(() =>
 const TeachersPage = lazy(() =>
   import("@/modules/teachers").then((module) => ({ default: module.TeachersPage })),
 );
+const TeacherDetailPage = lazy(() =>
+  import("@/modules/teachers").then((module) => ({ default: module.TeacherDetailPage })),
+);
 const StudentsPage = lazy(() =>
   import("@/modules/students").then((module) => ({ default: module.StudentsPage })),
+);
+const StudentDetailPage = lazy(() =>
+  import("@/modules/students").then((module) => ({ default: module.StudentDetailPage })),
 );
 const ContractsPage = lazy(() =>
   import("@/modules/payroll").then((module) => ({ default: module.ContractsPage })),
@@ -118,7 +124,9 @@ export function AppRouter() {
           <Route path={APP_ROUTE.courses} element={<CoursesPage />} />
           <Route path={APP_ROUTE.classes} element={<ClassesPage />} />
           <Route path={APP_ROUTE.teachers} element={<TeachersPage />} />
+          <Route path={APP_ROUTE.teacherDetail} element={<TeacherDetailPage />} />
           <Route path={APP_ROUTE.students} element={<StudentsPage />} />
+          <Route path={APP_ROUTE.studentDetail} element={<StudentDetailPage />} />
           <Route path={APP_ROUTE.payrollContracts} element={<ContractsPage />} />
           <Route path={APP_ROUTE.payrollRuns} element={<PayrollRunsPage />} />
           <Route path={APP_ROUTE.payrollRunDetail} element={<PayrollRunDetailPage />} />

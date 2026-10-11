@@ -1,11 +1,13 @@
 import type { TeacherProfileSummary } from "@/entities/teacher";
 import { Can } from "@/entities/permission";
+import { buildTeacherDetailPath } from "@/shared/constants/app-routes";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { staggerDelay } from "@/shared/lib/motion";
 import { Badge } from "@/shared/ui/badge";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { m } from "framer-motion";
 import { Pencil } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export interface TeachersTableProps {
   readonly rows: readonly TeacherProfileSummary[];
@@ -23,10 +25,10 @@ export function TeachersTable({ rows, onEdit }: TeachersTableProps) {
           transition={staggerDelay(index)}
           className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,2fr)_auto_auto]"
         >
-          <div className="min-w-0">
+          <Link to={buildTeacherDetailPath(teacher.id)} className="min-w-0 hover:underline">
             <p className="truncate text-sm text-mist-100">{teacher.fullName ?? "Chưa rõ tên"}</p>
             <p className="truncate text-xs text-mist-500">{teacher.email ?? "—"}</p>
-          </div>
+          </Link>
           <p className="truncate text-xs text-mist-500">
             {teacher.subjects.length === 0 ? "Chưa có môn dạy" : teacher.subjects.join(", ")}
           </p>
