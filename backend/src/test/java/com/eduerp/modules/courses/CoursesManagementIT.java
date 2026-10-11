@@ -13,6 +13,7 @@ import com.eduerp.modules.organization.internal.repository.BranchRepository;
 import com.redis.testcontainers.RedisContainer;
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -156,5 +157,28 @@ class CoursesManagementIT {
     @Test
     void getGradeColumnsIsEmptyForAnUnknownCourse() {
         assertThat(coursesManagement.getGradeColumns(UUID.randomUUID())).isEmpty();
+    }
+
+    /** Trang chi tiết học viên ({@code modules.academic.GetStudentAcademicSummary}) cần tên lớp +
+     * tên khóa học của mỗi lớp đang học, theo lô - mirror {@code IdentityManagement.summariesOf}. */
+    @Test
+    void classSummariesOfReturnsTheCodeAndCourseNameOfEachClass() {
+        var course = courses.save(new Course("FACADE-C7", "Khoá facade 7", null, 24, null));
+        var branch = branches.save(new Branch("FCD-B7", "Chi nhánh facade 7", null));
+        var teacher = accounts.save(new Account("facade-teacher7@eduerp.local", "hash", "GV 7", null));
+        var cls = classes.save(new Class(course, "FACADE-K7", branch.getId(), teacher.getId(), 12));
+
+        var summaries = coursesManagement.classSummariesOf(List.of(cls.getId()));
+
+        assertThat(summaries).hasSize(1);
+        var summary = summaries.get(cls.getId());
+        assertThat(summary.code()).isEqualTo("FACADE-K7");
+        assertThat(summary.courseId()).isEqualTo(course.getId());
+        assertThat(summary.courseName()).isEqualTo("Khoá facade 7");
+    }
+
+    @Test
+    void classSummariesOfIsEmptyForAnEmptyInput() {
+        assertThat(coursesManagement.classSummariesOf(List.of())).isEmpty();
     }
 }
