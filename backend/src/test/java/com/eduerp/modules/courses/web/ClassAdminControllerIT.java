@@ -123,6 +123,30 @@ class ClassAdminControllerIT {
         assertThat(createdNode).isTrue();
     }
 
+    /** Tab "Lớp đang dạy" của trang chi tiết giáo viên lọc theo chính giáo viên đó - lớp của giáo
+     * viên khác không được lẫn vào. */
+    @Test
+    void filtersClassesByTeacherId() throws Exception {
+        var admin = signIn("class-filter-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var course = courses.save(new Course("TA-FLT", "Tiếng Anh lọc", null, null, null));
+        var branch = branches.save(new Branch("CG-FLT", "Chi nhánh lọc", null));
+        var teacherA = accounts.save(new Account("teacher-flt-a@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Thầy A", null));
+        var teacherB = accounts.save(new Account("teacher-flt-b@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Thầy B", null));
+        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-FLT-A",
+                branch.getId(), teacherA.getId(), 20));
+        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-FLT-B",
+                branch.getId(), teacherB.getId(), 20));
+
+        var result = mockMvc.perform(get("/api/courses/classes?teacherId=" + teacherA.getId()).cookie(admin))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var items = objectMapper.readTree(result.getResponse().getContentAsString()).get("items");
+        assertThat(items.findValuesAsText("code")).containsExactly("TA-FLT-A");
+    }
+
     @Test
     void rejectsACreateWithANonExistentTeacher() throws Exception {
         var admin = signIn("class-bad-teacher@eduerp.local", AccessConstants.RoleCodes.ADMIN);

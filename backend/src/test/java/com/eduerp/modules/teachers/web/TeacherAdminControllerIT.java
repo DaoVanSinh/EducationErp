@@ -135,4 +135,32 @@ class TeacherAdminControllerIT {
         var listResult = mockMvc.perform(get("/api/teachers/profiles").cookie(admin)).andReturn();
         assertThat(listResult.getResponse().getContentAsString()).contains("\"active\":false");
     }
+
+    @Test
+    void getsASingleTeacherProfileById() throws Exception {
+        var admin = signIn("teacher-profile-admin-4@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var teacherAccountId = teacherAccount("teacher-profile-3@eduerp.local");
+        var createResult = mockMvc.perform(post("/api/teachers/profiles").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateTeacherProfileRequest(teacherAccountId, List.of("Hoá"), "0922222222", "Mô tả"))))
+                .andReturn();
+        var profileId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
+
+        var result = mockMvc.perform(get("/api/teachers/profiles/" + profileId).cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(result.getResponse().getContentAsString())
+                .contains("teacher-profile-3@eduerp.local", "Hoá");
+    }
+
+    @Test
+    void returns404ForAnUnknownTeacherProfileId() throws Exception {
+        var admin = signIn("teacher-profile-admin-5@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+
+        var result = mockMvc.perform(get("/api/teachers/profiles/" + UUID.randomUUID()).cookie(admin)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(404);
+        assertThat(result.getResponse().getContentAsString()).contains("TEACHERS_PROFILE_NOT_FOUND");
+    }
 }

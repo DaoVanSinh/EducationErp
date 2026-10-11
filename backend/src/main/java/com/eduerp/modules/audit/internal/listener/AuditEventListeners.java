@@ -1,5 +1,6 @@
 package com.eduerp.modules.audit.internal.listener;
 
+import com.eduerp.modules.academic.AcademicEvents;
 import com.eduerp.modules.access.AccessEvents;
 import com.eduerp.modules.audit.AuditConstants;
 import com.eduerp.modules.audit.internal.model.AuditLog;
@@ -185,5 +186,18 @@ class AuditEventListeners {
     void on(BillingEvents.ComboCancelled event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.COMBO_CANCEL,
                 AuditConstants.EntityTypes.COMBO, event.comboId().toString(), event.actorBranchId()));
+    }
+
+    /**
+     * Spec mục 9. Điểm là một con số có hệ quả với học viên nên mọi lần nhập/sửa phải có dấu vết -
+     * mirror 1:1 các listener của enrollment/billing. {@code entityId} là {@code enrollmentId}:
+     * {@code audit_logs} chỉ có một cột {@code entity_id}, và câu hỏi người đọc nhật ký đặt ra là
+     * "điểm của lượt ghi danh nào vừa bị sửa", không phải "dòng grade_entries nào".
+     */
+    @ApplicationModuleListener
+    void on(AcademicEvents.GradeRecorded event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.GRADE_RECORD,
+                AuditConstants.EntityTypes.GRADE_ENTRY, event.enrollmentId().toString(),
+                event.actorBranchId()));
     }
 }

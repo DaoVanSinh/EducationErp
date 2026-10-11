@@ -79,6 +79,15 @@ export const API_ROUTE = {
     paymentStatus: (gatewayTransactionId: string) =>
       `/api/billing/payments/${gatewayTransactionId}/status`,
   },
+  academic: {
+    /** POST upsert điểm một cột - classId/enrollmentId/courseGradeColumnId nằm trong body. */
+    grades: "/api/academic/grades",
+    classGradebook: (classId: string) => `/api/academic/classes/${classId}/gradebook`,
+    classGradebookExport: (classId: string) => `/api/academic/classes/${classId}/gradebook/export`,
+    classProgress: (classId: string) => `/api/academic/classes/${classId}/progress`,
+    classProgressExport: (classId: string) => `/api/academic/classes/${classId}/progress/export`,
+    studentSummary: (studentProfileId: string) => `/api/academic/students/${studentProfileId}/summary`,
+  },
 } as const;
 
 /**

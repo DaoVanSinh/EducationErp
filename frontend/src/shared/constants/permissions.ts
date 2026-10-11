@@ -15,6 +15,7 @@ export const RESOURCE = {
   payroll: "PAYROLL",
   enrollment: "ENROLLMENT",
   invoice: "INVOICE",
+  grade: "GRADE",
 } as const;
 
 /** Bản sao của IdentityConstants.Actions. */
@@ -66,6 +67,7 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.payroll]: "Lương & Hợp đồng",
   [RESOURCE.enrollment]: "Ghi danh",
   [RESOURCE.invoice]: "Hoá đơn học phí",
+  [RESOURCE.grade]: "Điểm & Tiến trình học tập",
 };
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -206,4 +208,16 @@ export const ACCESS_RULE = {
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
   },
+  /**
+   * Hai entry DUY NHẤT trong file không ghi scope, và đó là chủ đích: ba rule `*_GRADE` ở backend
+   * không có marker `@ORGANIZATION` (AccessConstants.AccessRules.READ_GRADE), nên câu hỏi đúng là
+   * "có quyền GRADE ở bất kỳ scope nào không". Ghi `organization` ở đây sẽ ẩn màn hình sổ điểm khỏi
+   * giáo viên — những người duy nhất thực sự nhập điểm.
+   *
+   * Giao diện chỉ dùng hai rule này để quyết định HIỂN THỊ. Nguồn sự thật cho "lớp này có phải lớp
+   * của tôi không" là lỗi 403 ACADEMIC_NOT_ASSIGNED_TO_CLASS từ backend (spec mục 10) — frontend
+   * không có dữ liệu để tự kết luận điều đó và không được thử.
+   */
+  readGrade: { resource: RESOURCE.grade, action: ACTION.read },
+  updateGrade: { resource: RESOURCE.grade, action: ACTION.update },
 } as const;

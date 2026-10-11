@@ -41,8 +41,14 @@ const ClassesPage = lazy(() =>
 const TeachersPage = lazy(() =>
   import("@/modules/teachers").then((module) => ({ default: module.TeachersPage })),
 );
+const TeacherDetailPage = lazy(() =>
+  import("@/modules/teachers").then((module) => ({ default: module.TeacherDetailPage })),
+);
 const StudentsPage = lazy(() =>
   import("@/modules/students").then((module) => ({ default: module.StudentsPage })),
+);
+const StudentDetailPage = lazy(() =>
+  import("@/modules/students").then((module) => ({ default: module.StudentDetailPage })),
 );
 const ContractsPage = lazy(() =>
   import("@/modules/payroll").then((module) => ({ default: module.ContractsPage })),
@@ -68,6 +74,12 @@ const ComboDetailPage = lazy(() =>
 );
 const ComboDiscountTiersPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.ComboDiscountTiersPage })),
+);
+const GradebookPage = lazy(() =>
+  import("@/modules/academic").then((module) => ({ default: module.GradebookPage })),
+);
+const ClassProgressPage = lazy(() =>
+  import("@/modules/academic").then((module) => ({ default: module.ClassProgressPage })),
 );
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
@@ -112,7 +124,9 @@ export function AppRouter() {
           <Route path={APP_ROUTE.courses} element={<CoursesPage />} />
           <Route path={APP_ROUTE.classes} element={<ClassesPage />} />
           <Route path={APP_ROUTE.teachers} element={<TeachersPage />} />
+          <Route path={APP_ROUTE.teacherDetail} element={<TeacherDetailPage />} />
           <Route path={APP_ROUTE.students} element={<StudentsPage />} />
+          <Route path={APP_ROUTE.studentDetail} element={<StudentDetailPage />} />
           <Route path={APP_ROUTE.payrollContracts} element={<ContractsPage />} />
           <Route path={APP_ROUTE.payrollRuns} element={<PayrollRunsPage />} />
           <Route path={APP_ROUTE.payrollRunDetail} element={<PayrollRunDetailPage />} />
@@ -122,6 +136,8 @@ export function AppRouter() {
           <Route path={APP_ROUTE.combos} element={<CombosPage />} />
           <Route path={APP_ROUTE.comboDetail} element={<ComboDetailPage />} />
           <Route path={APP_ROUTE.comboDiscountTiers} element={<ComboDiscountTiersPage />} />
+          <Route path={APP_ROUTE.classGradebook} element={<GradebookPage />} />
+          <Route path={APP_ROUTE.classProgress} element={<ClassProgressPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
         </Route>

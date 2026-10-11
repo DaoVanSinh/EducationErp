@@ -12,6 +12,8 @@ import com.eduerp.modules.organization.internal.model.Branch;
 import com.eduerp.modules.organization.internal.repository.BranchRepository;
 import com.redis.testcontainers.RedisContainer;
 import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,5 +97,88 @@ class CoursesManagementIT {
     @Test
     void getCourseTuitionIsEmptyForAnUnknownCourse() {
         assertThat(coursesManagement.getCourseTuition(UUID.randomUUID())).isEmpty();
+    }
+
+    /**
+     * Ba field mới của spec mục 4. {@code modules.academic} dựa vào ĐÚNG một lần gọi facade này để
+     * có đủ dữ liệu cho cả hai việc: kiểm "giáo viên này có dạy lớp này không" ({@code teacherId}) và
+     * đếm số buổi đã học ({@code schedule} + {@code standardSessionCount}).
+     */
+    @Test
+    void getClassInfoExposesTeacherScheduleAndStandardSessionCount() {
+        var course = courses.save(new Course("FACADE-C4", "Khoá facade 4", null, 24, null));
+        var branch = branches.save(new Branch("FCD-B4", "Chi nhánh facade 4", null));
+        var teacher = accounts.save(new Account("facade-teacher4@eduerp.local", "hash", "GV 4", null));
+        var cls = new Class(course, "FACADE-K4", branch.getId(), teacher.getId(), 12);
+        cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
+        cls.addSchedule(CoursesConstants.DayOfWeek.WED, LocalTime.of(18, 0), LocalTime.of(20, 0));
+        var saved = classes.save(cls);
+
+        var info = coursesManagement.getClassInfo(saved.getId()).orElseThrow();
+
+        assertThat(info.teacherId()).isEqualTo(teacher.getId());
+        assertThat(info.standardSessionCount()).isEqualTo(24);
+        assertThat(info.schedule()).hasSize(2);
+        assertThat(info.schedule().get(0).dayOfWeek()).isEqualTo(CoursesConstants.DayOfWeek.MON);
+        assertThat(info.schedule().get(0).startTime()).isEqualTo(LocalTime.of(18, 0));
+    }
+
+    /** Review Focus #8 + #12 ở tầng facade: hai trạng thái "chưa cấu hình" phải phân biệt được với
+     * "không tìm thấy lớp" - Optional có giá trị, hai field bên trong rỗng/null. */
+    @Test
+    void getClassInfoReportsAnUnconfiguredSessionCountAndAnEmptySchedule() {
+        var course = courses.save(new Course("FACADE-C5", "Khoá facade 5", null, null, null));
+        var branch = branches.save(new Branch("FCD-B5", "Chi nhánh facade 5", null));
+        var teacher = accounts.save(new Account("facade-teacher5@eduerp.local", "hash", "GV 5", null));
+        var cls = classes.save(new Class(course, "FACADE-K5", branch.getId(), teacher.getId(), 12));
+
+        var info = coursesManagement.getClassInfo(cls.getId()).orElseThrow();
+
+        assertThat(info.standardSessionCount()).isNull();
+        assertThat(info.schedule()).isEmpty();
+    }
+
+    @Test
+    void getGradeColumnsReturnsTheColumnsInDisplayOrder() {
+        var course = new Course("FACADE-C6", "Khoá facade 6", null, 24, null);
+        course.addGradeColumn("Cuối kỳ", new BigDecimal("60.00"), new BigDecimal("10.00"), 1);
+        course.addGradeColumn("Giữa kỳ", new BigDecimal("40.00"), new BigDecimal("10.00"), 0);
+        var saved = courses.save(course);
+
+        var columns = coursesManagement.getGradeColumns(saved.getId());
+
+        assertThat(columns).extracting(com.eduerp.modules.courses.dto.GradeColumnResponse::name)
+                .as("@OrderBy(displayOrder ASC) quyết định thứ tự, không phải thứ tự thêm vào")
+                .containsExactly("Giữa kỳ", "Cuối kỳ");
+    }
+
+    /** Khoá không tồn tại trả danh sách rỗng, không ném - nơi gọi (modules.academic) đã có lỗi riêng
+     * cho "không tìm thấy lớp", không cần hai lỗi cho cùng một tình huống. */
+    @Test
+    void getGradeColumnsIsEmptyForAnUnknownCourse() {
+        assertThat(coursesManagement.getGradeColumns(UUID.randomUUID())).isEmpty();
+    }
+
+    /** Trang chi tiết học viên ({@code modules.academic.GetStudentAcademicSummary}) cần tên lớp +
+     * tên khóa học của mỗi lớp đang học, theo lô - mirror {@code IdentityManagement.summariesOf}. */
+    @Test
+    void classSummariesOfReturnsTheCodeAndCourseNameOfEachClass() {
+        var course = courses.save(new Course("FACADE-C7", "Khoá facade 7", null, 24, null));
+        var branch = branches.save(new Branch("FCD-B7", "Chi nhánh facade 7", null));
+        var teacher = accounts.save(new Account("facade-teacher7@eduerp.local", "hash", "GV 7", null));
+        var cls = classes.save(new Class(course, "FACADE-K7", branch.getId(), teacher.getId(), 12));
+
+        var summaries = coursesManagement.classSummariesOf(List.of(cls.getId()));
+
+        assertThat(summaries).hasSize(1);
+        var summary = summaries.get(cls.getId());
+        assertThat(summary.code()).isEqualTo("FACADE-K7");
+        assertThat(summary.courseId()).isEqualTo(course.getId());
+        assertThat(summary.courseName()).isEqualTo("Khoá facade 7");
+    }
+
+    @Test
+    void classSummariesOfIsEmptyForAnEmptyInput() {
+        assertThat(coursesManagement.classSummariesOf(List.of())).isEmpty();
     }
 }

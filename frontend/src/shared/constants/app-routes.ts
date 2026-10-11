@@ -11,7 +11,9 @@ export const APP_ROUTE = {
   courses: "/admin/courses",
   classes: "/admin/classes",
   teachers: "/admin/teachers",
+  teacherDetail: "/admin/teachers/:profileId",
   students: "/admin/students",
+  studentDetail: "/admin/students/:profileId",
   payrollContracts: "/admin/payroll/contracts",
   payrollRuns: "/admin/payroll/runs",
   payrollRunDetail: "/admin/payroll/runs/:runId",
@@ -21,6 +23,8 @@ export const APP_ROUTE = {
   combos: "/admin/billing/combos",
   comboDetail: "/admin/billing/combos/:comboId",
   comboDiscountTiers: "/admin/billing/combo-discount-tiers",
+  classGradebook: "/admin/academic/classes/:classId/gradebook",
+  classProgress: "/admin/academic/classes/:classId/progress",
   /** Public: phụ huynh quay về từ cổng thanh toán, có thể chưa đăng nhập (spec mục 10). */
   paymentReturn: "/payment/return/:gateway",
   login: "/login",
@@ -53,3 +57,23 @@ export function buildComboDetailPath(comboId: string): string {
 
 /** Tên param cổng thanh toán trong APP_ROUTE.paymentReturn, dùng với useParams(). */
 export const PAYMENT_RETURN_GATEWAY_PARAM = "gateway";
+
+/** Link thật tới sổ điểm của một lớp - APP_ROUTE.classGradebook chỉ là route template. */
+export function buildClassGradebookPath(classId: string): string {
+  return `/admin/academic/classes/${classId}/gradebook`;
+}
+
+/** Link thật tới bảng tiến trình học tập của một lớp. */
+export function buildClassProgressPath(classId: string): string {
+  return `/admin/academic/classes/${classId}/progress`;
+}
+
+/** Link thật tới trang chi tiết một giáo viên - APP_ROUTE.teacherDetail chỉ là route template. */
+export function buildTeacherDetailPath(profileId: string): string {
+  return `/admin/teachers/${profileId}`;
+}
+
+/** Link thật tới trang chi tiết một học viên - APP_ROUTE.studentDetail chỉ là route template. */
+export function buildStudentDetailPath(profileId: string): string {
+  return `/admin/students/${profileId}`;
+}

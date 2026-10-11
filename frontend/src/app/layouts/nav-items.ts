@@ -16,17 +16,37 @@ export interface NavSection {
 
 export const NAV_SECTIONS: readonly NavSection[] = [
   {
-    title: "Điều hành & Nghiệp vụ",
+    title: "Tổng quan",
     items: [
       { path: APP_ROUTE.dashboard, label: "Tổng quan", requirement: ACCESS_RULE.readDashboard },
+    ],
+  },
+  {
+    title: "Tổ chức",
+    items: [
       { path: APP_ROUTE.accounts, label: "Tài khoản", requirement: ACCESS_RULE.readAccount },
       { path: APP_ROUTE.branches, label: "Chi nhánh", requirement: ACCESS_RULE.readBranch },
+    ],
+  },
+  {
+    title: "Đào tạo",
+    items: [
       { path: APP_ROUTE.courses, label: "Khóa học", requirement: ACCESS_RULE.readCourse },
       { path: APP_ROUTE.classes, label: "Lớp học", requirement: ACCESS_RULE.readClass },
       { path: APP_ROUTE.teachers, label: "Giáo viên", requirement: ACCESS_RULE.readTeacher },
       { path: APP_ROUTE.students, label: "Học viên", requirement: ACCESS_RULE.readStudent },
+    ],
+  },
+  {
+    title: "Nhân sự",
+    items: [
       { path: APP_ROUTE.payrollContracts, label: "Hợp đồng lao động", requirement: ACCESS_RULE.readPayroll },
       { path: APP_ROUTE.payrollRuns, label: "Kỳ lương", requirement: ACCESS_RULE.readPayroll },
+    ],
+  },
+  {
+    title: "Tuyển sinh & Học phí",
+    items: [
       { path: APP_ROUTE.enrollments, label: "Ghi danh", requirement: ACCESS_RULE.readEnrollment },
       { path: APP_ROUTE.invoices, label: "Hoá đơn học phí", requirement: ACCESS_RULE.readInvoice },
       { path: APP_ROUTE.combos, label: "Combo khoá học", requirement: ACCESS_RULE.readInvoice },

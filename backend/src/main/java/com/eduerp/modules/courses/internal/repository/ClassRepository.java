@@ -21,4 +21,9 @@ public interface ClassRepository extends JpaRepository<Class, UUID> {
     @Override
     @EntityGraph(attributePaths = "course")
     Page<Class> findAll(Pageable pageable);
+
+    /** Tab "Lớp đang dạy" của trang chi tiết giáo viên - mirror {@code findAll} (cùng entity graph,
+     * cùng lý do không đưa {@code schedule} vào vì đây vẫn là truy vấn có {@code Pageable}). */
+    @EntityGraph(attributePaths = "course")
+    Page<Class> findAllByTeacherId(UUID teacherId, Pageable pageable);
 }
