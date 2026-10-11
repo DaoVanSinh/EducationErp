@@ -5,6 +5,7 @@ import com.eduerp.modules.students.dto.CreateStudentProfileRequest;
 import com.eduerp.modules.students.dto.StudentProfileResponse;
 import com.eduerp.modules.students.dto.UpdateStudentProfileRequest;
 import com.eduerp.modules.students.usecase.CreateStudentProfile;
+import com.eduerp.modules.students.usecase.GetStudentProfile;
 import com.eduerp.modules.students.usecase.ListStudentProfiles;
 import com.eduerp.modules.students.usecase.UpdateStudentProfile;
 import com.eduerp.shared.AccountPrincipal;
@@ -28,12 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 class StudentAdminController {
 
     private final ListStudentProfiles listStudentProfiles;
+    private final GetStudentProfile getStudentProfile;
     private final CreateStudentProfile createStudentProfile;
     private final UpdateStudentProfile updateStudentProfile;
 
-    StudentAdminController(ListStudentProfiles listStudentProfiles, CreateStudentProfile createStudentProfile,
-            UpdateStudentProfile updateStudentProfile) {
+    StudentAdminController(ListStudentProfiles listStudentProfiles, GetStudentProfile getStudentProfile,
+            CreateStudentProfile createStudentProfile, UpdateStudentProfile updateStudentProfile) {
         this.listStudentProfiles = listStudentProfiles;
+        this.getStudentProfile = getStudentProfile;
         this.createStudentProfile = createStudentProfile;
         this.updateStudentProfile = updateStudentProfile;
     }
@@ -42,6 +45,12 @@ class StudentAdminController {
     @PreAuthorize(AccessConstants.AccessRules.READ_STUDENT)
     PageResponse<StudentProfileResponse> list(@PageableDefault(size = 20) Pageable pageable) {
         return listStudentProfiles.execute(pageable);
+    }
+
+    @GetMapping("/{profileId}")
+    @PreAuthorize(AccessConstants.AccessRules.READ_STUDENT)
+    StudentProfileResponse get(@PathVariable UUID profileId) {
+        return getStudentProfile.execute(profileId);
     }
 
     @PostMapping
