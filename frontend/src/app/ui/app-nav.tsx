@@ -4,7 +4,23 @@ import { APP_ROUTE } from "@/shared/constants/app-routes";
 import { cx } from "@/shared/lib/class-names";
 import { MOTION_SPRING } from "@/shared/lib/motion";
 import { m } from "framer-motion";
-import { BookOpen, Building2, CalendarDays, GraduationCap, LayoutDashboard, ShieldCheck, UserCircle, UserRoundCheck, Users } from "lucide-react";
+import {
+  BadgePercent,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  ClipboardList,
+  FileSignature,
+  GraduationCap,
+  LayoutDashboard,
+  Package,
+  Receipt,
+  ShieldCheck,
+  UserCircle,
+  UserRoundCheck,
+  Users,
+  Wallet,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
@@ -16,6 +32,12 @@ const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.classes]: <CalendarDays size={18} aria-hidden />,
   [APP_ROUTE.teachers]: <GraduationCap size={18} aria-hidden />,
   [APP_ROUTE.students]: <UserRoundCheck size={18} aria-hidden />,
+  [APP_ROUTE.payrollContracts]: <FileSignature size={18} aria-hidden />,
+  [APP_ROUTE.payrollRuns]: <Wallet size={18} aria-hidden />,
+  [APP_ROUTE.enrollments]: <ClipboardList size={18} aria-hidden />,
+  [APP_ROUTE.invoices]: <Receipt size={18} aria-hidden />,
+  [APP_ROUTE.combos]: <Package size={18} aria-hidden />,
+  [APP_ROUTE.comboDiscountTiers]: <BadgePercent size={18} aria-hidden />,
   [APP_ROUTE.roles]: <ShieldCheck size={18} aria-hidden />,
   [APP_ROUTE.profile]: <UserCircle size={18} aria-hidden />,
 };
