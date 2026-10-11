@@ -18,6 +18,12 @@ export const teacherApi = {
     );
   },
 
+  async getProfile(profileId: string) {
+    return teacherProfileSummarySchema.parse(
+      await apiClient.get<unknown>(API_ROUTE.teachers.profile(profileId)),
+    );
+  },
+
   async createProfile(payload: CreateTeacherProfilePayload): Promise<string> {
     return createdTeacherProfileIdSchema.parse(
       await apiClient.post<unknown>(API_ROUTE.teachers.profiles, payload),

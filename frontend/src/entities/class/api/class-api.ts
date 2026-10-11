@@ -12,9 +12,9 @@ const classPageSchema = pageResponseSchema(classSummarySchema);
 const createdClassIdSchema = z.string().uuid();
 
 export const classApi = {
-  async listClasses(page: number, size: number) {
+  async listClasses(page: number, size: number, teacherId?: string) {
     return classPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.courses.classes, { page, size }),
+      await apiClient.get<unknown>(API_ROUTE.courses.classes, { page, size, teacherId }),
     );
   },
 
