@@ -10,8 +10,11 @@ export function SessionExpiryWatcher() {
     () =>
       apiClient.onSessionExpired(() => {
         queueMicrotask(() => {
-          queryClient.clear();
-          queryClient.setQueryData(accountKeys.session(), null);
+          const currentSession = queryClient.getQueryData(accountKeys.session());
+          if (currentSession != null) {
+            queryClient.clear();
+            queryClient.setQueryData(accountKeys.session(), null);
+          }
         });
       }),
     [queryClient],
