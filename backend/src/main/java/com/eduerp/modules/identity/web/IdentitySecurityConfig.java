@@ -4,14 +4,14 @@ import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.identity.internal.token.JwtTokenService;
 import com.eduerp.modules.identity.internal.token.TokenBlacklistService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
@@ -30,7 +30,7 @@ class IdentitySecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtTokenService jwtTokenService, TokenBlacklistService blacklist,
-            AccessManagement access, AccountRepository accounts) throws Exception {
+            AccessManagement access, AccountRepository accounts, ObjectMapper objectMapper) throws Exception {
         http
                 // Token nằm trong cookie nên CSRF là rủi ro thật: chỉ miễn đúng các endpoint chưa có
                 // phiên (chưa thể có CSRF token trong trang). Mọi hành động trên phiên đã đăng nhập -
@@ -41,6 +41,9 @@ class IdentitySecurityConfig {
                         .ignoringRequestMatchers("/api/auth/login", "/api/auth/complete-invite", "/api/auth/refresh",
                                 "/api/account/forgot-password", "/api/account/reset-password"))
                 .authorizeHttpRequests(auth -> auth
+                        // Lượt dispatch ERROR không mang cookie xác thực: chặn nó thì mọi lỗi lọt về
+                        // /error (400/404/500...) đều bị đổi thành 401 - lưới an toàn sau GlobalExceptionHandler.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/complete-invite", "/api/auth/refresh",
                                 "/api/account/forgot-password", "/api/account/reset-password")
                         .permitAll()
@@ -49,7 +52,8 @@ class IdentitySecurityConfig {
                         .requestMatchers("/actuator/health/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                        .authenticationEntryPoint(ProblemDetailSecurityHandlers.unauthenticated(objectMapper))
+                        .accessDeniedHandler(ProblemDetailSecurityHandlers.accessDenied(objectMapper)))
                 .addFilterBefore(new CookieAuthenticationFilter(jwtTokenService, blacklist, access, accounts),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
