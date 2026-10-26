@@ -14,11 +14,29 @@ export interface NavSection {
   readonly items: readonly NavItem[];
 }
 
+/**
+ * Thứ tự section cũng là thứ tự ưu tiên chọn trang chủ sau đăng nhập (useLandingPath): mục đầu tiên
+ * người dùng có quyền là nơi họ được đưa tới - admin vào Tổng quan, giáo viên vào Lớp của tôi, học
+ * viên vào Học tập của tôi.
+ */
 export const NAV_SECTIONS: readonly NavSection[] = [
   {
     title: "Tổng quan",
     items: [
       { path: APP_ROUTE.dashboard, label: "Tổng quan", requirement: ACCESS_RULE.readDashboard },
+    ],
+  },
+  {
+    title: "Giảng dạy",
+    items: [
+      { path: APP_ROUTE.myTeachingClasses, label: "Lớp của tôi", requirement: ACCESS_RULE.readTeaching },
+    ],
+  },
+  {
+    title: "Học tập",
+    items: [
+      { path: APP_ROUTE.myLearning, label: "Học tập của tôi", requirement: ACCESS_RULE.readLearning },
+      { path: APP_ROUTE.myInvoices, label: "Học phí của tôi", requirement: ACCESS_RULE.readLearning },
     ],
   },
   {

@@ -1,12 +1,10 @@
 package com.eduerp.modules.courses.usecase;
 
-import com.eduerp.core.exception.AppValidationException;
 import com.eduerp.modules.courses.ClassNotFoundException;
 import com.eduerp.modules.courses.CoursesEvents;
 import com.eduerp.modules.courses.dto.UpdateClassRequest;
+import com.eduerp.modules.courses.internal.TeacherAssignmentGuard;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
-import com.eduerp.modules.identity.IdentityManagement;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -16,21 +14,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class UpdateClass {
 
     private final ClassRepository classes;
-    private final IdentityManagement identity;
+    private final TeacherAssignmentGuard teacherGuard;
     private final ApplicationEventPublisher events;
 
-    UpdateClass(ClassRepository classes, IdentityManagement identity, ApplicationEventPublisher events) {
+    UpdateClass(ClassRepository classes, TeacherAssignmentGuard teacherGuard, ApplicationEventPublisher events) {
         this.classes = classes;
-        this.identity = identity;
+        this.teacherGuard = teacherGuard;
         this.events = events;
     }
 
     @Transactional
     public void execute(UUID classId, UUID actorAccountId, UUID actorBranchId, UpdateClassRequest request) {
         var existing = classes.findById(classId).orElseThrow(() -> new ClassNotFoundException(classId));
-        if (!identity.summariesOf(List.of(request.teacherId())).containsKey(request.teacherId())) {
-            throw new AppValidationException("teacherId", "Giáo viên không tồn tại");
-        }
+        teacherGuard.requireTeacher(request.teacherId());
 
         existing.setTeacherId(request.teacherId());
         existing.setMaxSeats(request.maxSeats());

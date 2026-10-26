@@ -1,5 +1,6 @@
 import { AuthLayout } from "@/app/layouts/auth-layout";
 import { RedirectWhenSignedIn } from "@/app/router/redirect-when-signed-in";
+import { HomeRoute } from "@/app/router/home-route";
 import { RequireAuth } from "@/app/router/require-auth";
 import { FullScreenLoader } from "@/app/ui/full-screen-loader";
 import { APP_ROUTE } from "@/shared/constants/app-routes";
@@ -81,6 +82,15 @@ const GradebookPage = lazy(() =>
 const ClassProgressPage = lazy(() =>
   import("@/modules/academic").then((module) => ({ default: module.ClassProgressPage })),
 );
+const MyClassesPage = lazy(() =>
+  import("@/modules/teaching").then((module) => ({ default: module.MyClassesPage })),
+);
+const MyLearningPage = lazy(() =>
+  import("@/modules/learning").then((module) => ({ default: module.MyLearningPage })),
+);
+const MyInvoicesPage = lazy(() =>
+  import("@/modules/learning").then((module) => ({ default: module.MyInvoicesPage })),
+);
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
 );
@@ -118,7 +128,10 @@ export function AppRouter() {
         </Route>
 
         <Route element={<RequireAuth />}>
-          <Route path={APP_ROUTE.dashboard} element={<DashboardPage />} />
+          <Route path={APP_ROUTE.dashboard} element={<HomeRoute dashboard={<DashboardPage />} />} />
+          <Route path={APP_ROUTE.myTeachingClasses} element={<MyClassesPage />} />
+          <Route path={APP_ROUTE.myLearning} element={<MyLearningPage />} />
+          <Route path={APP_ROUTE.myInvoices} element={<MyInvoicesPage />} />
           <Route path={APP_ROUTE.accounts} element={<AccountsPage />} />
           <Route path={APP_ROUTE.branches} element={<BranchesPage />} />
           <Route path={APP_ROUTE.courses} element={<CoursesPage />} />

@@ -8,7 +8,16 @@ const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, {
   minute: "2-digit",
 });
 
+const dateFormat = new Intl.DateTimeFormat(LOCALE, {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
 const numberFormat = new Intl.NumberFormat(LOCALE);
+
+/** Đơn vị tiền tệ hiển thị sau số tiền. */
+const CURRENCY_SUFFIX = " đ";
 
 const relativeFormat = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
 
@@ -43,8 +52,17 @@ export const formatter = {
     return relativeFormat.format(-Math.round(elapsedMs / divisor), step.unit);
   },
 
+  /** Ngày không kèm giờ - nhận cả LocalDate ("2026-11-02") lẫn Instant ISO. */
+  date(isoDate: string): string {
+    return dateFormat.format(new Date(isoDate));
+  },
+
   count(value: number): string {
     return numberFormat.format(value);
+  },
+
+  money(value: number): string {
+    return `${numberFormat.format(value)}${CURRENCY_SUFFIX}`;
   },
 
   /** Chữ cái đầu của tên, dùng cho ảnh đại diện khi tài khoản chưa có avatar. */

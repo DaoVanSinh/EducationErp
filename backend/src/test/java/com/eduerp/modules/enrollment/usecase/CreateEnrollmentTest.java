@@ -155,6 +155,20 @@ class CreateEnrollmentTest {
                 .isInstanceOf(DuplicateActiveEnrollmentException.class);
     }
 
+    /** Học viên đã chiếm chỗ cuối của một lớp đầy mà ghi danh lại phải nhận "đã ghi danh", không
+     * phải "lớp đã đủ chỗ" - kiểm trùng đứng TRƯỚC kiểm sĩ số. */
+    @Test
+    void reportsDuplicateRatherThanClassFullWhenTheSameStudentReEnrollsIntoAFullClass() {
+        stubActiveStudent();
+        stubActiveClass();
+        stubSeatsTaken(MAX_SEATS);
+        when(enrollments.existsByStudentProfileIdAndClassIdAndStatus(studentProfileId, classId,
+                EnrollmentConstants.EnrollmentStatus.ACTIVE)).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request()))
+                .isInstanceOf(DuplicateActiveEnrollmentException.class);
+    }
+
     @Test
     void snapshotsCourseAndBranchFromTheClassAndPublishesEnrollmentCreated() {
         stubActiveStudent();

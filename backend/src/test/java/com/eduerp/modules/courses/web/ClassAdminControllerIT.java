@@ -98,13 +98,19 @@ class ClassAdminControllerIT {
         return result.getResponse().getCookie(IdentityConstants.Cookies.ACCESS_TOKEN);
     }
 
+    /** Người được phân công dạy phải có role TEACHER (TeacherAssignmentGuard). */
+    private Account saveTeacher(String email, String fullName) {
+        var teacher = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), fullName, null));
+        access.assignRole(teacher.getId(), AccessConstants.RoleCodes.TEACHER);
+        return teacher;
+    }
+
     @Test
     void createsAClassWithScheduleThenListsIt() throws Exception {
         var admin = signIn("class-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var course = courses.save(new Course("TA-GT", "Tiếng Anh giao tiếp", null, null, null));
         var branch = branches.save(new Branch("CG01", "Chi nhánh Cầu Giấy", null));
-        var teacher = accounts.save(new Account("teacher-1@eduerp.local",
-                passwordEncoder.encode(PASSWORD), "Cô Lan", null));
+        var teacher = saveTeacher("teacher-1@eduerp.local", "Cô Lan");
 
         var request = new CreateClassRequest(course.getId(), "TA-GT-K15", branch.getId(), teacher.getId(), 20,
                 List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0))));
@@ -164,6 +170,52 @@ class ClassAdminControllerIT {
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
     }
 
+    /** Giao lớp cho một tài khoản tồn tại nhưng KHÔNG phải giáo viên (vd học viên) phải bị chặn. */
+    @Test
+    void rejectsAssigningAClassToAnAccountThatIsNotATeacher() throws Exception {
+        var admin = signIn("class-non-teacher-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var course = courses.save(new Course("TA-NT", "Tiếng Anh NT", null, null, null));
+        var branch = branches.save(new Branch("CG-NT", "Chi nhánh NT", null));
+        var student = accounts.save(new Account("class-student-as-teacher@eduerp.local",
+                passwordEncoder.encode(PASSWORD), "Học viên A", null));
+        access.assignRole(student.getId(), AccessConstants.RoleCodes.STUDENT);
+
+        var request = new CreateClassRequest(course.getId(), "TA-NT-K1", branch.getId(), student.getId(),
+                20, List.of());
+        var result = mockMvc.perform(post("/api/courses/classes")
+                        .cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+        assertThat(classes.findByCode("TA-NT-K1")).isEmpty();
+    }
+
+    /** Cổng giảng dạy: giáo viên chỉ thấy lớp của chính mình, học viên bị chặn. */
+    @Test
+    void teacherSeesOnlyOwnClassesThroughTheTeachingPortal() throws Exception {
+        var teacherCookie = signIn("class-portal-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
+        var me = accounts.findByEmail("class-portal-teacher@eduerp.local").orElseThrow();
+        var other = saveTeacher("class-portal-other@eduerp.local", "Thầy Khác");
+        var course = courses.save(new Course("TA-PT", "Tiếng Anh PT", null, null, null));
+        var branch = branches.save(new Branch("CG-PT", "Chi nhánh PT", null));
+        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-PT-MINE",
+                branch.getId(), me.getId(), 20));
+        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-PT-OTHER",
+                branch.getId(), other.getId(), 20));
+
+        var result = mockMvc.perform(get("/api/courses/me/classes").cookie(teacherCookie)).andReturn();
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        var items = objectMapper.readTree(result.getResponse().getContentAsString()).get("items");
+        assertThat(items.findValuesAsText("code")).containsExactly("TA-PT-MINE");
+
+        var studentCookie = signIn("class-portal-student@eduerp.local", AccessConstants.RoleCodes.STUDENT);
+        var forbidden = mockMvc.perform(get("/api/courses/me/classes").cookie(studentCookie)).andReturn();
+        assertThat(forbidden.getResponse().getStatus()).isEqualTo(403);
+    }
+
     @Test
     void rejectsACreateWithANonExistentBranch() throws Exception {
         var admin = signIn("class-bad-branch@eduerp.local", AccessConstants.RoleCodes.ADMIN);
@@ -208,8 +260,7 @@ class ClassAdminControllerIT {
         var admin = signIn("class-empty-schedule@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var course = courses.save(new Course("TA-GT5", "Tiếng Anh giao tiếp 5", null, null, null));
         var branch = branches.save(new Branch("CG05", "Chi nhánh 5", null));
-        var teacher = accounts.save(new Account("teacher-6@eduerp.local",
-                passwordEncoder.encode(PASSWORD), "Thầy Đức", null));
+        var teacher = saveTeacher("teacher-6@eduerp.local", "Thầy Đức");
 
         var request = new CreateClassRequest(course.getId(), "TA-GT5-K1", branch.getId(), teacher.getId(),
                 20, List.of());
@@ -234,8 +285,7 @@ class ClassAdminControllerIT {
         var branch = branches.save(new Branch("CG03", "Chi nhánh 3", null));
         var teacher1 = accounts.save(new Account("teacher-2@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Nam", null));
-        var teacher2 = accounts.save(new Account("teacher-3@eduerp.local",
-                passwordEncoder.encode(PASSWORD), "Cô Hoa", null));
+        var teacher2 = saveTeacher("teacher-3@eduerp.local", "Cô Hoa");
         var seedClass = new com.eduerp.modules.courses.internal.model.Class(course, "TA-GT3-K1",
                 branch.getId(), teacher1.getId(), 15);
         seedClass.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));

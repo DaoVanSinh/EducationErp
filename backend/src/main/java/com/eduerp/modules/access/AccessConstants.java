@@ -43,6 +43,10 @@ public final class AccessConstants {
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
         public static final String GRADE = "GRADE";
+        /** Lớp mà CHÍNH giáo viên đang đăng nhập được phân công dạy - cổng giảng dạy. */
+        public static final String TEACHING = "TEACHING";
+        /** Lớp/điểm/học phí của CHÍNH học viên đang đăng nhập - cổng học tập. */
+        public static final String LEARNING = "LEARNING";
         public static final String AUDIT_LOG = "AUDIT_LOG";
         public static final String DASHBOARD = "DASHBOARD";
     }
@@ -202,5 +206,17 @@ public final class AccessConstants {
          */
         public static final String CREATE_GRADE = CHECK_PREFIX + Resources.GRADE + CHECK_SEPARATOR
                 + Actions.CREATE + CHECK_SUFFIX;
+
+        /**
+         * Hai cổng tự phục vụ theo vai trò (đề cương ĐATN: RBAC rõ ràng cho Admin/Teacher/Student).
+         * Không có {@link #MINIMUM_SCOPE}: dữ liệu trả về LUÔN lọc theo chính {@code principal}, không
+         * bao giờ nhận id người khác từ client, nên scope PERSONAL là đủ. Vẫn gác bằng permission thay
+         * vì để trống như {@code /api/account/me}: có permission thì frontend biết hiện menu nào cho ai,
+         * và admin bật/tắt được cổng cho từng role qua màn hình phân quyền.
+         */
+        public static final String READ_TEACHING = CHECK_PREFIX + Resources.TEACHING + CHECK_SEPARATOR
+                + Actions.READ + CHECK_SUFFIX;
+        public static final String READ_LEARNING = CHECK_PREFIX + Resources.LEARNING + CHECK_SEPARATOR
+                + Actions.READ + CHECK_SUFFIX;
     }
 }

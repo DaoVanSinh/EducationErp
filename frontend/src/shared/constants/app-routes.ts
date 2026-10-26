@@ -25,6 +25,12 @@ export const APP_ROUTE = {
   comboDiscountTiers: "/admin/billing/combo-discount-tiers",
   classGradebook: "/admin/academic/classes/:classId/gradebook",
   classProgress: "/admin/academic/classes/:classId/progress",
+  /** Cổng giảng dạy - lớp giáo viên đang đăng nhập được phân công dạy. */
+  myTeachingClasses: "/teaching/classes",
+  /** Cổng học tập - lớp, lịch, điểm, tiến trình của học viên đang đăng nhập. */
+  myLearning: "/learning/classes",
+  /** Cổng học tập - học phí và lịch sử thanh toán của học viên đang đăng nhập. */
+  myInvoices: "/learning/invoices",
   /** Public: phụ huynh quay về từ cổng thanh toán, có thể chưa đăng nhập (spec mục 10). */
   paymentReturn: "/payment/return/:gateway",
   login: "/login",

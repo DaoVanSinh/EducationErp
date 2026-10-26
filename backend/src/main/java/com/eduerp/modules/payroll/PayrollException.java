@@ -8,7 +8,7 @@ public sealed class PayrollException extends AppException
         permits ContractNotFoundException, PayrollRunNotFoundException, PayslipNotFoundException,
         ContractAlreadyTerminatedException, ContractAlreadyActiveException, PayrollRunNotEditableException,
         PayrollRunNotPendingApprovalException, InvalidContractTermsException, PayrollRunAlreadyExistsException,
-        ContractFileNotFoundException {
+        ContractFileNotFoundException, PayrollRunEmptyException {
 
     protected PayrollException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);

@@ -1,4 +1,4 @@
-import { useAccounts } from "@/entities/account";
+import { useTeacherOptions } from "@/modules/courses/hooks/use-teacher-options";
 import { useCourses } from "@/entities/course";
 import { useRbacCatalog } from "@/entities/rbac-catalog";
 import { useCreateClass } from "@/modules/courses/api/use-courses-mutations";
@@ -21,7 +21,7 @@ export function CreateClassDialog({ open, onClose }: CreateClassDialogProps) {
   const createClass = useCreateClass();
   const courses = useCourses(0, 100);
   const catalog = useRbacCatalog();
-  const teachers = useAccounts(0, 100, null);
+  const teacherOptions = useTeacherOptions();
 
   const form = useZodForm({
     schema: createClassFormSchema,
@@ -87,9 +87,9 @@ export function CreateClassDialog({ open, onClose }: CreateClassDialogProps) {
             onChange={(event) => form.setValue("teacherId", event.target.value)}
           >
             <option value="">-- Chọn giáo viên --</option>
-            {(teachers.data?.items ?? []).map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.fullName}
+            {teacherOptions.map((teacher) => (
+              <option key={teacher.accountId} value={teacher.accountId}>
+                {teacher.label}
               </option>
             ))}
           </GlassSelect>

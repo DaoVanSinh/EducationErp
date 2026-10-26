@@ -35,6 +35,8 @@ export const API_ROUTE = {
     course: (courseId: string) => `/api/courses/courses/${courseId}`,
     classes: "/api/courses/classes",
     class: (classId: string) => `/api/courses/classes/${classId}`,
+    /** Cổng giảng dạy: lớp của CHÍNH giáo viên đang đăng nhập (READ_TEACHING). */
+    myClasses: "/api/courses/me/classes",
   },
   teachers: {
     profiles: "/api/teachers/profiles",
@@ -82,6 +84,8 @@ export const API_ROUTE = {
     /** Public ở backend - trang Return URL gọi được khi phụ huynh chưa đăng nhập. */
     paymentStatus: (gatewayTransactionId: string) =>
       `/api/billing/payments/${gatewayTransactionId}/status`,
+    /** Cổng học tập: hoá đơn + lịch sử thanh toán của CHÍNH học viên (READ_LEARNING). */
+    myInvoices: "/api/billing/me/invoices",
   },
   academic: {
     /** POST upsert điểm một cột - classId/enrollmentId/courseGradeColumnId nằm trong body. */
@@ -91,6 +95,8 @@ export const API_ROUTE = {
     classProgress: (classId: string) => `/api/academic/classes/${classId}/progress`,
     classProgressExport: (classId: string) => `/api/academic/classes/${classId}/progress/export`,
     studentSummary: (studentProfileId: string) => `/api/academic/students/${studentProfileId}/summary`,
+    /** Cổng học tập: lớp, lịch, điểm, tiến trình của CHÍNH học viên (READ_LEARNING). */
+    myClasses: "/api/academic/me/classes",
   },
 } as const;
 

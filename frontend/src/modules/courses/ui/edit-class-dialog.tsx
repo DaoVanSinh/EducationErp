@@ -1,4 +1,4 @@
-import { useAccounts } from "@/entities/account";
+import { useTeacherOptions } from "@/modules/courses/hooks/use-teacher-options";
 import type { ClassSummary } from "@/entities/class";
 import { useUpdateClass } from "@/modules/courses/api/use-courses-mutations";
 import { updateClassFormSchema } from "@/modules/courses/model/courses-forms";
@@ -20,7 +20,7 @@ export interface EditClassDialogProps {
 
 export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
   const updateClass = useUpdateClass(cls.id);
-  const teachers = useAccounts(0, 100, null);
+  const teacherOptions = useTeacherOptions();
 
   const form = useZodForm({
     schema: updateClassFormSchema,
@@ -48,9 +48,9 @@ export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
             invalid={form.fieldErrors.teacherId !== undefined}
             onChange={(event) => form.setValue("teacherId", event.target.value)}
           >
-            {(teachers.data?.items ?? []).map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.fullName}
+            {teacherOptions.map((teacher) => (
+              <option key={teacher.accountId} value={teacher.accountId}>
+                {teacher.label}
               </option>
             ))}
           </GlassSelect>

@@ -18,6 +18,11 @@ export const classApi = {
     );
   },
 
+  /** Cổng giảng dạy: backend tự lọc theo giáo viên đang đăng nhập, không nhận teacherId từ client. */
+  async listMyTeachingClasses(page: number, size: number) {
+    return classPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.courses.myClasses, { page, size }));
+  },
+
   async createClass(payload: CreateClassPayload): Promise<string> {
     return createdClassIdSchema.parse(
       await apiClient.post<unknown>(API_ROUTE.courses.classes, payload),

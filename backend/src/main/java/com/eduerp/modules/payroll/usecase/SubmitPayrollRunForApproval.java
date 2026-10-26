@@ -2,6 +2,7 @@ package com.eduerp.modules.payroll.usecase;
 
 import com.eduerp.modules.payroll.InvalidContractTermsException;
 import com.eduerp.modules.payroll.PayrollConstants;
+import com.eduerp.modules.payroll.PayrollRunEmptyException;
 import com.eduerp.modules.payroll.PayrollRunNotEditableException;
 import com.eduerp.modules.payroll.PayrollRunNotFoundException;
 import com.eduerp.modules.payroll.internal.repository.PayrollRunRepository;
@@ -28,6 +29,9 @@ public class SubmitPayrollRunForApproval {
             throw new PayrollRunNotEditableException(payrollRunId);
         }
         var runPayslips = payslips.findAllByPayrollRun_Id(payrollRunId);
+        if (runPayslips.isEmpty()) {
+            throw new PayrollRunEmptyException(payrollRunId);
+        }
         var hasUnfilledCollaboratorHours = runPayslips.stream()
                 .anyMatch(p -> p.getContractType() == PayrollConstants.ContractType.COLLABORATOR
                         && p.getHoursWorked() != null && p.getHoursWorked().signum() == 0);

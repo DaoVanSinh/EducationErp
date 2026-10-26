@@ -167,13 +167,16 @@ class PayrollRunAdminControllerIT {
     void rejectSendsTheRunBackToDraftWithAReason() throws Exception {
         var admin = signIn("payroll-run-admin-2@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         createOfficialContract(admin, "run-official-2@eduerp.local");
-        mockMvc.perform(post("/api/payroll/runs").cookie(admin).with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new CreatePayrollRunRequest(2027, 2))));
-        var listResult = mockMvc.perform(get("/api/payroll/runs").cookie(admin)).andReturn();
-        var runId = objectMapper.readTree(listResult.getResponse().getContentAsString()).get("items").get(0)
-                .get("id").asText();
-        mockMvc.perform(post("/api/payroll/runs/" + runId + "/submit").cookie(admin).with(csrf()));
+        // Lấy id từ chính response tạo kỳ lương: items[0] của danh sách có thể là kỳ của test khác
+        // (cùng container DB) - và từ khi kỳ rỗng bị chặn gửi duyệt, chọn nhầm kỳ là test đỏ ngẫu nhiên.
+        var createResult = mockMvc.perform(post("/api/payroll/runs").cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreatePayrollRunRequest(2027, 2))))
+                .andReturn();
+        var runId = objectMapper.readTree(createResult.getResponse().getContentAsString()).get("id").asText();
+        var submitResult = mockMvc.perform(post("/api/payroll/runs/" + runId + "/submit").cookie(admin).with(csrf()))
+                .andReturn();
+        assertThat(submitResult.getResponse().getStatus()).isEqualTo(200);
 
         var rejectResult = mockMvc.perform(post("/api/payroll/runs/" + runId + "/reject").cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

@@ -16,6 +16,8 @@ export const RESOURCE = {
   enrollment: "ENROLLMENT",
   invoice: "INVOICE",
   grade: "GRADE",
+  teaching: "TEACHING",
+  learning: "LEARNING",
 } as const;
 
 /** Bản sao của IdentityConstants.Actions. */
@@ -68,6 +70,8 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.enrollment]: "Ghi danh",
   [RESOURCE.invoice]: "Hoá đơn học phí",
   [RESOURCE.grade]: "Điểm & Tiến trình học tập",
+  [RESOURCE.teaching]: "Cổng giảng dạy (lớp của tôi)",
+  [RESOURCE.learning]: "Cổng học tập (lớp, điểm, học phí của tôi)",
 };
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -220,4 +224,11 @@ export const ACCESS_RULE = {
    */
   readGrade: { resource: RESOURCE.grade, action: ACTION.read },
   updateGrade: { resource: RESOURCE.grade, action: ACTION.update },
+  /**
+   * Cổng theo vai trò (AccessConstants.AccessRules.READ_TEACHING/READ_LEARNING): cũng không ghi
+   * scope vì backend không đòi - dữ liệu luôn lọc theo chính người đăng nhập. TEACHER chỉ có
+   * readTeaching, STUDENT chỉ có readLearning, ADMIN không có cái nào.
+   */
+  readTeaching: { resource: RESOURCE.teaching, action: ACTION.read },
+  readLearning: { resource: RESOURCE.learning, action: ACTION.read },
 } as const;

@@ -41,6 +41,18 @@ public class StudentsManagement {
     }
 
     /**
+     * Hồ sơ học viên gắn với một tài khoản đăng nhập - cho cổng học tập
+     * ({@code modules.academic}/{@code modules.billing}) đổi {@code principal.accountId()} sang
+     * {@code studentProfileId}. Tài khoản chưa có hồ sơ trả {@link Optional#empty()}: cổng hiển thị
+     * danh sách rỗng chứ không lỗi.
+     */
+    @Transactional(readOnly = true)
+    public Optional<StudentSummaryResponse> findProfileByAccountId(UUID accountId) {
+        return profiles.findByAccountId(accountId).map(profile ->
+                new StudentSummaryResponse(profile.getId(), profile.getAccountId(), profile.isActive()));
+    }
+
+    /**
      * Hồ sơ của một loạt học viên theo id - tránh N+1 khi {@code modules.academic} in tên cả lớp
      * trong bảng điểm (rule #3), mirror {@code IdentityManagement.summariesOf}. Id không tồn tại chỉ
      * vắng mặt trong map, không ném: một học viên bị xoá hồ sơ không được làm đổ cả bảng điểm.

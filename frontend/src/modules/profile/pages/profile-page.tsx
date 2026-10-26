@@ -29,7 +29,11 @@ export function ProfilePage() {
 
       {session.data ? (
         <>
-          <SegmentedTabs tabs={TABS} activeTab={controller.activeTab} onTabChange={controller.setActiveTab} />
+          <SegmentedTabs
+            tabs={TABS.filter((tab) => controller.isTabVisible(tab.key))}
+            activeTab={controller.activeTab}
+            onTabChange={controller.setActiveTab}
+          />
           <ProfileTabContent activeTab={controller.activeTab} session={session.data} />
         </>
       ) : (

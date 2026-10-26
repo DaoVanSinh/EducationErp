@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.eduerp.modules.payroll.InvalidContractTermsException;
 import com.eduerp.modules.payroll.PayrollConstants;
+import com.eduerp.modules.payroll.PayrollRunEmptyException;
 import com.eduerp.modules.payroll.PayrollRunNotEditableException;
 import com.eduerp.modules.payroll.internal.model.PayrollRun;
 import com.eduerp.modules.payroll.internal.model.Payslip;
@@ -47,6 +48,19 @@ class SubmitPayrollRunForApprovalTest {
 
         assertThatThrownBy(() -> useCase.execute(runId, UUID.randomUUID(), UUID.randomUUID()))
                 .isInstanceOf(InvalidContractTermsException.class);
+    }
+
+    /** Mỗi tháng chỉ một kỳ lương: duyệt một kỳ rỗng là khoá luôn tháng đó, nên chặn ngay lúc gửi duyệt. */
+    @Test
+    void rejectsSubmittingARunWithoutAnyPayslip() {
+        var run = new PayrollRun(2026, 1);
+        var runId = UUID.randomUUID();
+        when(runs.findById(runId)).thenReturn(Optional.of(run));
+        when(payslips.findAllByPayrollRun_Id(runId)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> useCase.execute(runId, UUID.randomUUID(), UUID.randomUUID()))
+                .isInstanceOf(PayrollRunEmptyException.class);
+        assertThat(run.getStatus()).isEqualTo(PayrollConstants.PayrollRunStatus.DRAFT);
     }
 
     @Test

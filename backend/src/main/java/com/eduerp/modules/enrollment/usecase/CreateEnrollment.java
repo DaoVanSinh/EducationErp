@@ -50,18 +50,20 @@ public class CreateEnrollment {
             throw new ClassNotActiveException(request.classId());
         }
 
+        // Lớp phòng thủ thứ nhất của Review Focus #1 - partial unique index trong V17 là lớp thứ hai.
+        // Kiểm TRƯỚC sĩ số: học viên đã ghi danh lớp đầy mà bấm ghi danh lại phải nhận đúng lỗi "đã
+        // ghi danh", không phải "lớp đã đủ chỗ" (chính học viên đó đang chiếm một chỗ).
+        if (enrollments.existsByStudentProfileIdAndClassIdAndStatus(request.studentProfileId(), request.classId(),
+                EnrollmentConstants.EnrollmentStatus.ACTIVE)) {
+            throw new DuplicateActiveEnrollmentException(request.studentProfileId(), request.classId());
+        }
+
         // >= maxSeats: đúng ranh giới ở Review Focus #2 - khi đã có maxSeats chỗ ACTIVE thì chỗ tiếp
         // theo là chỗ thứ maxSeats + 1, không còn chỗ.
         var activeSeats = enrollments.countByClassIdAndStatus(request.classId(),
                 EnrollmentConstants.EnrollmentStatus.ACTIVE);
         if (activeSeats >= classInfo.maxSeats()) {
             throw new ClassFullException(request.classId(), classInfo.maxSeats());
-        }
-
-        // Lớp phòng thủ thứ nhất của Review Focus #1 - partial unique index trong V17 là lớp thứ hai.
-        if (enrollments.existsByStudentProfileIdAndClassIdAndStatus(request.studentProfileId(), request.classId(),
-                EnrollmentConstants.EnrollmentStatus.ACTIVE)) {
-            throw new DuplicateActiveEnrollmentException(request.studentProfileId(), request.classId());
         }
 
         var saved = enrollments.save(new Enrollment(request.studentProfileId(), request.classId(),
