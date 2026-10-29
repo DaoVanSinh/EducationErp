@@ -32,7 +32,14 @@ export function AccountActionsMenu({ account, isSelf, commands, onOpenDialog, on
   return (
     <Can {...ACCESS_RULE.updateAccount}>
       <div className="relative justify-self-start lg:justify-self-end">
-        <GlassButton variant="secondary" size="sm" onClick={menu.onToggle} icon={<MoreHorizontal size={14} aria-hidden />}>
+        <GlassButton
+          variant="secondary"
+          size="sm"
+          onClick={menu.onToggle}
+          aria-haspopup="menu"
+          aria-expanded={menu.open}
+          icon={<MoreHorizontal size={14} aria-hidden />}
+        >
           Thao tác
         </GlassButton>
         <DropdownMenu open={menu.open} onClose={menu.onClose} className="right-0 top-full mt-2">

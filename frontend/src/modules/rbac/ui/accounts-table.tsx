@@ -23,7 +23,9 @@ export function AccountsTable({ rows, currentAccountId, onOpenDialog, onCommand 
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={staggerDelay(index)}
-          className="glass grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto] min-w-0 w-full"
+          // Mỗi dòng kính (backdrop-filter + transform) là một stacking context riêng: z-50 của menu chỉ
+          // có nghĩa bên trong dòng, nên dòng đang mở menu phải tự nổi lên trên các dòng phía sau.
+          className="glass relative has-[[aria-expanded=true]]:z-20 grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto] min-w-0 w-full"
         >
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar fullName={account.fullName} size="sm" />
