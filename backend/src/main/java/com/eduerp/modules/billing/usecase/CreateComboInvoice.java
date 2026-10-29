@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.ComboNotFoundException;
@@ -39,8 +41,11 @@ public class CreateComboInvoice {
     private final ComboRepository combos;
     private final ApplicationEventPublisher events;
 
+    private final BillingBranchGuard branchGuard;
+
     CreateComboInvoice(InvoiceRepository invoices, ComboRepository combos,
-            ApplicationEventPublisher events) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.combos = combos;
         this.events = events;
@@ -51,6 +56,7 @@ public class CreateComboInvoice {
             CreateComboInvoiceRequest request) {
         var combo = combos.findById(request.comboId())
                 .orElseThrow(() -> new ComboNotFoundException(request.comboId()));
+        branchGuard.require(actorAccountId, AccessConstants.Actions.CREATE, combo.getBranchId());
 
         var liveInvoices = invoices.findAllByComboIdAndStatusNot(request.comboId(),
                 BillingConstants.InvoiceStatus.CANCELLED);

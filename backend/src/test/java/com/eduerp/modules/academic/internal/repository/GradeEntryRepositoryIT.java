@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.internal.repository;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -81,7 +82,7 @@ class GradeEntryRepositoryIT {
         var savedCourse = courses.saveAndFlush(course);
         midtermColumnId = savedCourse.getGradeColumns().get(0).getId();
         finalColumnId = savedCourse.getGradeColumns().get(1).getId();
-        var cls = classes.save(new Class(savedCourse, "GE-K-" + shortId(), branchId, teacherId, 20));
+        var cls = classes.save(ClassFixtures.inProgress(savedCourse, "GE-K-" + shortId(), branchId, teacherId, 20));
         var studentAccount = accounts.save(
                 new Account("ge-hv-" + shortId() + "@eduerp.local", "hash", "HV", null));
         var studentProfileId = profiles.save(

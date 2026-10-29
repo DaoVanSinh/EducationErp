@@ -1,5 +1,10 @@
-import { permissionLabel, useRbacCatalog, type PermissionOption } from "@/entities/rbac-catalog";
-import { useCreatePermissionGroup } from "@/modules/rbac/api/use-rbac-mutations";
+import {
+  permissionLabel,
+  useRbacCatalog,
+  type PermissionGroupOption,
+  type PermissionOption,
+} from "@/entities/rbac-catalog";
+import { useCreatePermissionGroup, useUpdatePermissionGroup } from "@/modules/rbac/api/use-rbac-mutations";
 import { createPermissionGroupFormSchema } from "@/modules/rbac/model/rbac-forms";
 import { PERMISSION_SCOPE, type PermissionScope } from "@/shared/constants/permissions";
 import { useZodForm } from "@/shared/lib/use-zod-form";
@@ -15,18 +20,37 @@ interface PermissionGroupItem {
  * backend thật có). */
 export const RESOURCE_FILTER_ALL = "ALL";
 
-export function useCreatePermissionGroupController({ onClose }: { readonly onClose: () => void }) {
+/**
+ * Form nhóm quyền dùng chung cho TẠO mới và SỬA (truyền {@code group}). Khi sửa, danh sách (quyền, phạm vi)
+ * nạp sẵn từ danh mục và gửi lại TOÀN BỘ - backend đồng bộ theo đúng danh sách gửi lên.
+ */
+export function useCreatePermissionGroupController({
+  onClose,
+  group,
+}: {
+  readonly onClose: () => void;
+  readonly group?: PermissionGroupOption;
+}) {
   const catalog = useRbacCatalog();
   const createPermissionGroup = useCreatePermissionGroup();
+  const updatePermissionGroup = useUpdatePermissionGroup(group?.id ?? "");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedResource, setSelectedResource] = useState<string>(RESOURCE_FILTER_ALL);
 
   const form = useZodForm({
     schema: createPermissionGroupFormSchema,
-    initialValues: { name: "", description: "", items: [] as PermissionGroupItem[] },
+    initialValues: {
+      name: group?.name ?? "",
+      description: group?.description ?? "",
+      items: (group?.items ?? []).map((item) => ({ permissionId: item.permissionId, scope: item.scope })),
+    },
     onSubmit: async (values) => {
-      await createPermissionGroup.mutateAsync(values);
-      form.reset();
+      if (group === undefined) {
+        await createPermissionGroup.mutateAsync(values);
+        form.reset();
+      } else {
+        await updatePermissionGroup.mutateAsync(values);
+      }
       onClose();
     },
   });
@@ -83,6 +107,7 @@ export function useCreatePermissionGroupController({ onClose }: { readonly onClo
   };
 
   return {
+    isEditing: group !== undefined,
     values: form.values,
     fieldErrors: form.fieldErrors,
     submitError: form.submitError,

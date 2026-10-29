@@ -1,5 +1,6 @@
 package com.eduerp.modules.enrollment.usecase;
 
+import com.eduerp.modules.access.TestAccess;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,9 +23,9 @@ class EnrollmentTransitionsTest {
 
     private final EnrollmentRepository enrollments = mock(EnrollmentRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final WithdrawEnrollment withdraw = new WithdrawEnrollment(enrollments, events);
-    private final CompleteEnrollment complete = new CompleteEnrollment(enrollments, events);
-    private final GetEnrollment get = new GetEnrollment(enrollments);
+    private final WithdrawEnrollment withdraw = new WithdrawEnrollment(enrollments, events, TestAccess.organizationWide());
+    private final CompleteEnrollment complete = new CompleteEnrollment(enrollments, events, TestAccess.organizationWide());
+    private final GetEnrollment get = new GetEnrollment(enrollments, TestAccess.organizationWide());
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();
@@ -92,7 +93,7 @@ class EnrollmentTransitionsTest {
         var enrollment = activeEnrollment();
         when(enrollments.findById(enrollment.getId())).thenReturn(Optional.of(enrollment));
 
-        var response = get.execute(enrollment.getId());
+        var response = get.execute(actorAccountId, enrollment.getId());
 
         assertThat(response.id()).isEqualTo(enrollment.getId());
         assertThat(response.status()).isEqualTo(EnrollmentConstants.EnrollmentStatus.ACTIVE);
@@ -103,6 +104,6 @@ class EnrollmentTransitionsTest {
         var enrollmentId = UUID.randomUUID();
         when(enrollments.findById(enrollmentId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> get.execute(enrollmentId)).isInstanceOf(EnrollmentNotFoundException.class);
+        assertThatThrownBy(() -> get.execute(actorAccountId, enrollmentId)).isInstanceOf(EnrollmentNotFoundException.class);
     }
 }

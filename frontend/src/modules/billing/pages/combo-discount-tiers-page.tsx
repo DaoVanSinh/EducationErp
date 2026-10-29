@@ -21,7 +21,7 @@ export function ComboDiscountTiersPage() {
           title="Bậc giảm giá combo"
           description="Số khoá tối thiểu → % giảm. Chưa có bậc nào phù hợp thì hệ thống từ chối tạo combo, không tự giảm 0%."
           actions={
-            <Can {...ACCESS_RULE.createInvoice}>
+            <Can {...ACCESS_RULE.createComboDiscountTier}>
               <GlassButton onClick={controller.openCreateDialog} icon={<Plus size={16} aria-hidden />}>
                 Thêm bậc
               </GlassButton>

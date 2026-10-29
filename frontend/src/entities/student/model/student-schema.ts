@@ -13,8 +13,14 @@ export const studentProfileSummarySchema = z.object({
 
 export type StudentProfileSummary = z.infer<typeof studentProfileSummarySchema>;
 
-export interface CreateStudentProfilePayload {
-  readonly accountId: string;
+/**
+ * Tạo học viên MỘT bước: tài khoản đăng nhập (email mời + mật khẩu tạm) và hồ sơ học viên cùng lúc.
+ * {@code homeBranchId} bị backend bỏ qua với người chỉ có quyền theo chi nhánh (luôn là chi nhánh của họ).
+ */
+export interface CreateStudentPayload {
+  readonly email: string;
+  readonly fullName: string;
+  readonly homeBranchId: string | null;
   readonly dateOfBirth: string | null;
   readonly phone: string | null;
   readonly sourceChannel: string | null;

@@ -1,6 +1,5 @@
-import { useClasses } from "@/entities/class";
+import { ClassStatusBadge, useClasses } from "@/entities/class";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
-import { Badge } from "@/shared/ui/badge";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { Pagination } from "@/shared/ui/pagination";
@@ -16,7 +15,7 @@ export interface TeacherClassesListProps {
  * (giữ nguyên hành vi nút Sửa hiện có, không mở rộng phạm vi). */
 export function TeacherClassesList({ teacherAccountId }: TeacherClassesListProps) {
   const [page, setPage] = useState(0);
-  const classes = useClasses(page, DEFAULT_PAGE_SIZE, teacherAccountId);
+  const classes = useClasses(page, DEFAULT_PAGE_SIZE, { teacherId: teacherAccountId });
 
   if (classes.isError) {
     return <ErrorNotice error={classes.error} />;
@@ -45,9 +44,7 @@ export function TeacherClassesList({ teacherAccountId }: TeacherClassesListProps
             <p className="truncate text-sm text-mist-100">{cls.code}</p>
             <p className="truncate text-sm text-mist-100">{cls.courseName}</p>
             <p className="truncate text-xs text-mist-400">{cls.branchName ?? "—"}</p>
-            <Badge tone={cls.active ? "positive" : "neutral"}>
-              {cls.active ? "Đang hoạt động" : "Đã vô hiệu hoá"}
-            </Badge>
+            <ClassStatusBadge status={cls.status} />
           </li>
         ))}
       </ul>

@@ -1,6 +1,7 @@
 package com.eduerp.modules.access.internal.rules;
 
 import com.eduerp.modules.access.AccessConstants;
+import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,5 +15,15 @@ public class AccessRules {
     public boolean isBroaderOrEqual(AccessConstants.PermissionScope candidate,
             AccessConstants.PermissionScope current) {
         return candidate.rank() >= current.rank();
+    }
+
+    /** Vai trò Quản trị viên hệ thống chỉ xem, không sửa qua giao diện. */
+    public boolean isLockedRole(String roleCode) {
+        return AccessConstants.RoleCodes.ADMIN.equals(roleCode);
+    }
+
+    /** Nhóm quyền "Toàn quyền hệ thống" chỉ xem, không sửa qua giao diện. */
+    public boolean isLockedPermissionGroup(UUID permissionGroupId) {
+        return AccessConstants.SystemPermissionGroups.FULL_ACCESS_ID.equals(permissionGroupId);
     }
 }

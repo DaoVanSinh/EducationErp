@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -27,8 +28,8 @@ class ComboReadUseCasesTest {
 
     private final ComboRepository combos = mock(ComboRepository.class);
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
-    private final ListCombos listCombos = new ListCombos(combos);
-    private final GetComboDetail getComboDetail = new GetComboDetail(combos, invoices);
+    private final ListCombos listCombos = new ListCombos(combos, mock(BillingBranchGuard.class));
+    private final GetComboDetail getComboDetail = new GetComboDetail(combos, invoices, mock(BillingBranchGuard.class));
 
     private final UUID comboId = UUID.randomUUID();
     private final UUID studentProfileId = UUID.randomUUID();
@@ -51,10 +52,10 @@ class ComboReadUseCasesTest {
     @Test
     void listPassesTheOptionalStudentFilterStraightToTheRepositoryAndMapsThePage() {
         var pageable = PageRequest.of(0, 20);
-        when(combos.search(studentProfileId, pageable))
+        when(combos.search(studentProfileId, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(comboWithTwoCourses()), pageable, 1));
 
-        var page = listCombos.execute(pageable, studentProfileId);
+        var page = listCombos.execute(null, pageable, studentProfileId);
 
         assertThat(page.totalItems()).isEqualTo(1);
         assertThat(page.items()).singleElement().satisfies(item -> {
@@ -68,9 +69,9 @@ class ComboReadUseCasesTest {
     @Test
     void listAcceptsANullStudentFilter() {
         var pageable = PageRequest.of(0, 20);
-        when(combos.search(null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(combos.search(null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(listCombos.execute(pageable, null).items()).isEmpty();
+        assertThat(listCombos.execute(null, pageable, null).items()).isEmpty();
     }
 
     @Test
@@ -84,7 +85,7 @@ class ComboReadUseCasesTest {
         when(combos.findById(comboId)).thenReturn(Optional.of(combo));
         when(invoices.findAllByComboId(comboId)).thenReturn(List.of(paid, cancelled));
 
-        var detail = getComboDetail.execute(comboId);
+        var detail = getComboDetail.execute(null, comboId);
 
         assertThat(detail.combo().id()).isEqualTo(comboId);
         assertThat(detail.combo().courseCount()).isEqualTo(2);
@@ -104,7 +105,7 @@ class ComboReadUseCasesTest {
     void detailRejectsAnUnknownCombo() {
         when(combos.findById(comboId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> getComboDetail.execute(comboId))
+        assertThatThrownBy(() -> getComboDetail.execute(null, comboId))
                 .isInstanceOf(ComboNotFoundException.class);
     }
 }

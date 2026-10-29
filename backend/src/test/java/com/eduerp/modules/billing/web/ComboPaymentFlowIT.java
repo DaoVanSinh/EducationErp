@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.web;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -140,7 +141,7 @@ class ComboPaymentFlowIT {
         var course = courses.save(new Course("CPF-C-" + shortId(), "Khoá", null, 24, tuitionFee));
         var teacherId = accounts.save(new Account("cpf-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        return classes.save(new Class(course, "CPF-K-" + shortId(), branchId, teacherId, 20)).getId();
+        return classes.save(ClassFixtures.inProgress(course, "CPF-K-" + shortId(), branchId, teacherId, 20)).getId();
     }
 
     private String enrol(Cookie admin, UUID studentProfileId, UUID classId) throws Exception {

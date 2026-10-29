@@ -11,10 +11,13 @@ import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.IdentityManagement;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
+/**
+ * "Là giáo viên" = có năng lực giảng dạy ({@code TEACHING:READ}), không phải mang đúng mã vai trò - vai trò
+ * tự tạo có cổng giảng dạy cũng được phân công dạy lớp.
+ */
 class TeacherAssignmentGuardTest {
 
     private final IdentityManagement identity = mock(IdentityManagement.class);
@@ -27,6 +30,11 @@ class TeacherAssignmentGuardTest {
                 new IdentityManagement.AccountBasicInfo(accountId, "a@eduerp.local", "A")));
     }
 
+    private void stubTeachingCapability(boolean granted) {
+        when(access.grants(accountId, AccessConstants.Resources.TEACHING, AccessConstants.Actions.READ))
+                .thenReturn(granted);
+    }
+
     @Test
     void rejectsAnAccountThatDoesNotExist() {
         when(identity.summariesOf(anyCollection())).thenReturn(Map.of());
@@ -35,27 +43,17 @@ class TeacherAssignmentGuardTest {
     }
 
     @Test
-    void rejectsAStudentAccount() {
+    void rejectsAnAccountWithoutTheTeachingCapability() {
         stubExistingAccount();
-        when(access.roleOf(accountId)).thenReturn(Optional.of(
-                new AccessManagement.RoleSummary(AccessConstants.RoleCodes.STUDENT, "Học viên")));
+        stubTeachingCapability(false);
 
         assertThatThrownBy(() -> guard.requireTeacher(accountId)).isInstanceOf(AppValidationException.class);
     }
 
     @Test
-    void rejectsAnAccountWithoutAnyRole() {
+    void acceptsAnyAccountWithTheTeachingCapabilityWhateverItsRoleIsCalled() {
         stubExistingAccount();
-        when(access.roleOf(accountId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> guard.requireTeacher(accountId)).isInstanceOf(AppValidationException.class);
-    }
-
-    @Test
-    void acceptsATeacherAccount() {
-        stubExistingAccount();
-        when(access.roleOf(accountId)).thenReturn(Optional.of(
-                new AccessManagement.RoleSummary(AccessConstants.RoleCodes.TEACHER, "Giáo viên")));
+        stubTeachingCapability(true);
 
         assertThatCode(() -> guard.requireTeacher(accountId)).doesNotThrowAnyException();
     }

@@ -51,4 +51,25 @@ public class PermissionGroup {
     public List<PermissionGroupItem> getItems() {
         return Collections.unmodifiableList(items);
     }
+
+    /**
+     * Đồng bộ danh sách quyền về đúng {@code desired} (permissionId → scope) bằng cách SỬA TẠI CHỖ dòng
+     * đang có, chỉ xoá dòng thừa và thêm dòng thiếu. Không "xoá hết rồi thêm lại": Hibernate flush lệnh
+     * INSERT trước DELETE, nên thêm lại cùng permission trong một lần flush sẽ vi phạm ràng buộc UNIQUE
+     * {@code (permission_group_id, permission_id)} của V2.
+     */
+    public void syncItems(java.util.Map<UUID, Permission> permissionsById,
+            java.util.Map<UUID, AccessConstants.PermissionScope> desired) {
+        items.removeIf(item -> !desired.containsKey(item.getPermission().getId()));
+        var existing = new java.util.HashMap<UUID, PermissionGroupItem>();
+        items.forEach(item -> existing.put(item.getPermission().getId(), item));
+        desired.forEach((permissionId, scope) -> {
+            var current = existing.get(permissionId);
+            if (current == null) {
+                items.add(new PermissionGroupItem(this, permissionsById.get(permissionId), scope));
+            } else {
+                current.changeScope(scope);
+            }
+        });
+    }
 }

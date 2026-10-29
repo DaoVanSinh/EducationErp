@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.web;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -131,7 +132,7 @@ class ComboAdminControllerIT {
         var course = courses.save(new Course("CMBW-C-" + shortId(), "Khoá", null, 24, tuitionFee));
         var teacherId = accounts.save(new Account("cmb-web-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        return classes.save(new Class(course, "CMBW-K-" + shortId(), branchId, teacherId, 20)).getId();
+        return classes.save(ClassFixtures.inProgress(course, "CMBW-K-" + shortId(), branchId, teacherId, 20)).getId();
     }
 
     private ComboFixture newTwoCourseFixture(Cookie admin) throws Exception {

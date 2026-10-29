@@ -1,87 +1,45 @@
-import type { NamedReference } from "@/shared/api/schemas";
-import { cx } from "@/shared/lib/class-names";
+import type { PermissionGroupOption } from "@/entities/rbac-catalog";
+import { PermissionItemsSummary } from "@/modules/rbac/ui/groups/permission-items-summary";
 import { Badge } from "@/shared/ui/badge";
-import { m } from "framer-motion";
-import { Key, KeyRound } from "lucide";
-import { ChevronRight } from "lucide-react";
-import { MorphIcon } from "morphicons/react";
-import { useState } from "react";
+import { GlassButton } from "@/shared/ui/glass-button";
+import { KeyRound, Lock, Pencil } from "lucide-react";
 
 export interface GroupItemCardProps {
-  readonly group: NamedReference;
-  readonly isSelected?: boolean;
-  readonly onSelect?: (id: string) => void;
+  readonly group: PermissionGroupOption;
+  readonly canEdit: boolean;
+  readonly onEdit: (group: PermissionGroupOption) => void;
 }
 
-export function GroupItemCard({ group, isSelected = false, onSelect }: GroupItemCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  const handleClick = () => {
-    if (onSelect) {
-      onSelect(group.id);
-    }
-  };
-
-  const isActive = isSelected || isHovered;
-
+/** Một nhóm quyền kèm đúng danh sách (quyền, phạm vi) bên trong - bấm Sửa để đổi. */
+export function GroupItemCard({ group, canEdit, onEdit }: GroupItemCardProps) {
   return (
-    <m.div
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      onKeyDown={(e) => {
-        if (onSelect && (e.key === "Enter" || e.key === " ")) {
-          onSelect(group.id);
-        }
-      }}
-      className={cx(
-        "group relative flex items-center justify-between gap-4 rounded-2xl border p-4 transition-all duration-200",
-        isSelected
-          ? "border-amber-400 bg-white/95 shadow-md shadow-amber-500/15 ring-2 ring-amber-300/40"
-          : "glass-deep glass-sheen border-white/90 hover:border-amber-300/80 hover:bg-white/80 hover:shadow-md",
-        onSelect ? "cursor-pointer" : "",
-      )}
-    >
-      <div className="flex min-w-0 items-center gap-3.5">
-        <div
-          className={cx(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 shadow-xs",
-            isSelected
-              ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-amber-500/30"
-              : "border border-amber-100/80 bg-amber-50/70 text-amber-600 group-hover:bg-amber-500 group-hover:text-white",
-          )}
-        >
-          <MorphIcon
-            icon={isActive ? KeyRound : Key}
-            spring="snappy"
-            reducedMotion="user"
-            size={20}
-            strokeWidth={isActive ? 2.2 : 1.8}
-            label={group.name}
-          />
+    <div className="glass-deep glass-sheen flex flex-col gap-3 rounded-2xl border border-white/90 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-amber-100/80 bg-amber-50/70 text-amber-600">
+            <KeyRound size={18} aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <h4 className="truncate text-sm font-bold text-slate-900">{group.name}</h4>
+            <p className="truncate text-xs text-slate-500">{group.description ?? `${group.items.length} quyền`}</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h4 className="truncate text-sm font-bold text-slate-900">{group.name}</h4>
-          <p className="mt-0.5 truncate text-xs text-slate-500 font-mono">
-            ID: {group.id.slice(0, 8)}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 shrink-0">
-        <Badge tone="neutral">Nhóm quyền</Badge>
-        {onSelect ? (
-          <ChevronRight
-            size={16}
-            className="text-slate-400 transition-colors group-hover:text-amber-500"
-            aria-hidden
-          />
+        {group.locked ? (
+          <Badge tone="warning">
+            <Lock size={11} aria-hidden /> Chỉ xem
+          </Badge>
         ) : null}
       </div>
-    </m.div>
+
+      <PermissionItemsSummary items={group.items} />
+
+      {canEdit && !group.locked ? (
+        <div className="flex justify-end">
+          <GlassButton variant="secondary" size="sm" onClick={() => onEdit(group)} icon={<Pencil size={14} aria-hidden />}>
+            Sửa nhóm quyền
+          </GlassButton>
+        </div>
+      ) : null}
+    </div>
   );
 }

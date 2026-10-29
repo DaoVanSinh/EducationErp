@@ -25,7 +25,7 @@ export function ComboDiscountTiersTable({ rows, onToggleActive, isMutating }: Co
           <Badge tone={tier.active ? "positive" : "neutral"}>
             {tier.active ? "Đang áp dụng" : "Đã tắt"}
           </Badge>
-          <Can {...ACCESS_RULE.updateInvoice}>
+          <Can {...ACCESS_RULE.updateComboDiscountTier}>
             <GlassButton
               variant="ghost"
               size="sm"

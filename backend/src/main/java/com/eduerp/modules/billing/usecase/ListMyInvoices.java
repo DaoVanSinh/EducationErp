@@ -43,7 +43,7 @@ public class ListMyInvoices {
         if (profile == null) {
             return List.of();
         }
-        var mine = invoices.search(profile.studentProfileId(), null, null, Pageable.unpaged()).getContent();
+        var mine = invoices.search(profile.studentProfileId(), null, null, null, Pageable.unpaged()).getContent();
         if (mine.isEmpty()) {
             return List.of();
         }

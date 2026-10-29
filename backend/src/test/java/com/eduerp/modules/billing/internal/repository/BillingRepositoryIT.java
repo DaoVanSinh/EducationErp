@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.internal.repository;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -90,7 +91,7 @@ class BillingRepositoryIT {
         courseId = course.getId();
         var teacherId = accounts.save(new Account("bil-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        var classId = classes.save(new Class(course, "BIL-K-" + shortId(), branchId, teacherId, 20)).getId();
+        var classId = classes.save(ClassFixtures.inProgress(course, "BIL-K-" + shortId(), branchId, teacherId, 20)).getId();
         var studentAccountId = accounts
                 .save(new Account("bil-hv-" + shortId() + "@eduerp.local", "hash", "HV", null)).getId();
         studentProfileId = profiles.save(new StudentProfile(studentAccountId, null, null, null)).getId();
@@ -163,14 +164,14 @@ class BillingRepositoryIT {
         invoices.saveAndFlush(cancelled);
         var pageable = PageRequest.of(0, 20);
 
-        assertThat(invoices.search(null, null, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(invoices.search(studentProfileId, null, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(invoices.search(null, enrollmentId, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(invoices.search(null, null, BillingConstants.InvoiceStatus.UNPAID, pageable).getContent())
+        assertThat(invoices.search(null, null, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(invoices.search(studentProfileId, null, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(invoices.search(null, enrollmentId, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(invoices.search(null, null, BillingConstants.InvoiceStatus.UNPAID, null, pageable).getContent())
                 .extracting(Invoice::getId).containsExactly(unpaid.getId());
         assertThat(invoices.search(studentProfileId, enrollmentId, BillingConstants.InvoiceStatus.CANCELLED,
-                pageable).getTotalElements()).isEqualTo(1);
-        assertThat(invoices.search(UUID.randomUUID(), null, null, pageable).getTotalElements()).isZero();
+                null, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(invoices.search(UUID.randomUUID(), null, null, null, pageable).getTotalElements()).isZero();
     }
 
     @Test

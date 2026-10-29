@@ -52,13 +52,13 @@ class ComboDiscountTierAdminController {
     }
 
     @PostMapping
-    @PreAuthorize(AccessConstants.AccessRules.CREATE_INVOICE)
+    @PreAuthorize(AccessConstants.AccessRules.CREATE_COMBO_DISCOUNT_TIER)
     ComboDiscountTierResponse create(@Valid @RequestBody CreateComboDiscountTierRequest request) {
         return createComboDiscountTier.execute(request);
     }
 
     @PatchMapping("/{tierId}")
-    @PreAuthorize(AccessConstants.AccessRules.UPDATE_INVOICE)
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_COMBO_DISCOUNT_TIER)
     ComboDiscountTierResponse update(@PathVariable UUID tierId,
             @Valid @RequestBody UpdateComboDiscountTierRequest request) {
         return updateComboDiscountTier.execute(tierId, request);

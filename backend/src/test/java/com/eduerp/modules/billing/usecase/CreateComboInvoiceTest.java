@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +38,7 @@ class CreateComboInvoiceTest {
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final ComboRepository combos = mock(ComboRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final CreateComboInvoice useCase = new CreateComboInvoice(invoices, combos, events);
+    private final CreateComboInvoice useCase = new CreateComboInvoice(invoices, combos, events, mock(BillingBranchGuard.class));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

@@ -5,9 +5,12 @@ import com.eduerp.modules.identity.dto.AccountSummaryResponse;
 import com.eduerp.modules.identity.dto.CreateAccountRequest;
 import com.eduerp.modules.identity.dto.TransferBranchRequest;
 import com.eduerp.modules.identity.usecase.CreateAccount;
+import com.eduerp.modules.identity.usecase.DisableAccount;
+import com.eduerp.modules.identity.usecase.EnableAccount;
 import com.eduerp.modules.identity.usecase.ListAccounts;
 import com.eduerp.modules.identity.usecase.ResendAccountInvite;
 import com.eduerp.modules.identity.usecase.RevokeAccountInvite;
+import com.eduerp.modules.identity.usecase.SignOutEverywhere;
 import com.eduerp.modules.identity.usecase.TransferAccountBranch;
 import com.eduerp.shared.AccountPrincipal;
 import com.eduerp.shared.PageResponse;
@@ -39,23 +42,51 @@ class AccountAdminController {
     private final CreateAccount createAccount;
     private final ResendAccountInvite resendAccountInvite;
     private final RevokeAccountInvite revokeAccountInvite;
+    private final DisableAccount disableAccount;
+    private final EnableAccount enableAccount;
+    private final SignOutEverywhere signOutEverywhere;
 
     AccountAdminController(ListAccounts listAccounts, TransferAccountBranch transferAccountBranch,
             CreateAccount createAccount, ResendAccountInvite resendAccountInvite,
-            RevokeAccountInvite revokeAccountInvite) {
+            RevokeAccountInvite revokeAccountInvite, DisableAccount disableAccount, EnableAccount enableAccount,
+            SignOutEverywhere signOutEverywhere) {
         this.listAccounts = listAccounts;
         this.transferAccountBranch = transferAccountBranch;
         this.createAccount = createAccount;
         this.resendAccountInvite = resendAccountInvite;
         this.revokeAccountInvite = revokeAccountInvite;
+        this.disableAccount = disableAccount;
+        this.enableAccount = enableAccount;
+        this.signOutEverywhere = signOutEverywhere;
     }
 
-    /** {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. */
+    /**
+     * {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. Người chỉ có
+     * quyền scope BRANCH luôn bị ép về chi nhánh của mình (lớp 2, trong use case).
+     */
     @GetMapping("/accounts")
     @PreAuthorize(AccessConstants.AccessRules.READ_ACCOUNT)
-    PageResponse<AccountSummaryResponse> listAccounts(@PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) UUID branchId) {
-        return listAccounts.execute(pageable, branchId);
+    PageResponse<AccountSummaryResponse> listAccounts(@AuthenticationPrincipal AccountPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID branchId) {
+        return listAccounts.execute(principal.accountId(), pageable, branchId);
+    }
+
+    @PostMapping("/accounts/{accountId}/disable")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void disable(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        disableAccount.execute(accountId, principal.accountId(), principal.homeBranchId());
+    }
+
+    @PostMapping("/accounts/{accountId}/enable")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void enable(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        enableAccount.execute(accountId, principal.accountId(), principal.homeBranchId());
+    }
+
+    @PostMapping("/accounts/{accountId}/sign-out-everywhere")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    void signOutEverywhere(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        signOutEverywhere.execute(accountId, principal.accountId(), principal.homeBranchId());
     }
 
     @PostMapping("/accounts")

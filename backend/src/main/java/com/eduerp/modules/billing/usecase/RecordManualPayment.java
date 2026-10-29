@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.InvalidPaymentAmountException;
@@ -25,8 +27,11 @@ public class RecordManualPayment {
     private final PaymentRepository payments;
     private final ApplicationEventPublisher events;
 
+    private final BillingBranchGuard branchGuard;
+
     RecordManualPayment(InvoiceRepository invoices, PaymentRepository payments,
-            ApplicationEventPublisher events) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.payments = payments;
         this.events = events;
@@ -35,6 +40,7 @@ public class RecordManualPayment {
     @Transactional
     public InvoiceResponse execute(UUID invoiceId, BigDecimal amount, UUID actorAccountId, UUID actorBranchId) {
         var invoice = invoices.findById(invoiceId).orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+        branchGuard.require(actorAccountId, AccessConstants.Actions.UPDATE, invoice.getBranchId());
         if (!BillingRules.isPayable(invoice.getStatus())) {
             throw new InvoiceNotPayableException(invoiceId, invoice.getStatus());
         }

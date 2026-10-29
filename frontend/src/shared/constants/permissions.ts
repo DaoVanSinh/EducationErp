@@ -18,6 +18,9 @@ export const RESOURCE = {
   grade: "GRADE",
   teaching: "TEACHING",
   learning: "LEARNING",
+  attendance: "ATTENDANCE",
+  assignment: "ASSIGNMENT",
+  practice: "PRACTICE",
 } as const;
 
 /** Bản sao của IdentityConstants.Actions. */
@@ -72,6 +75,9 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.grade]: "Điểm & Tiến trình học tập",
   [RESOURCE.teaching]: "Cổng giảng dạy (lớp của tôi)",
   [RESOURCE.learning]: "Cổng học tập (lớp, điểm, học phí của tôi)",
+  [RESOURCE.attendance]: "Điểm danh",
+  [RESOURCE.assignment]: "Bài tập, mini-test & mini-task",
+  [RESOURCE.practice]: "Tự luyện tập (làm mini-task)",
 };
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -83,20 +89,22 @@ export const ACTION_LABEL: Record<string, string> = {
 };
 
 /**
- * Bản sao của IdentityConstants.AccessRules: yêu cầu quyền của từng nhóm endpoint. Mọi endpoint quản
- * trị đều đòi scope ORGANIZATION — một quyền ACCOUNT:UPDATE:PERSONAL chỉ đủ để tự sửa hồ sơ mình.
+ * Bản sao của AccessConstants.AccessRules: yêu cầu quyền của từng nhóm endpoint. Cấu hình hệ thống (vai trò,
+ * nhóm quyền, chi nhánh, danh mục khoá học, lương, tạo/sửa tài khoản) đòi scope ORGANIZATION; thao tác vận
+ * hành theo chi nhánh (lớp, học viên, ghi danh, học phí, xem tài khoản, tổng quan) chấp nhận BRANCH - backend
+ * tự lọc về chi nhánh chủ quản. Một quyền ACCOUNT:UPDATE:PERSONAL chỉ đủ để tự sửa hồ sơ mình.
  * Giao diện phải hỏi đúng câu backend hỏi, nếu không sẽ có nút hiện ra rồi bấm vào là 403.
  */
 export const ACCESS_RULE = {
   readDashboard: {
     resource: RESOURCE.dashboard,
     action: ACTION.read,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   readAccount: {
     resource: RESOURCE.account,
     action: ACTION.read,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   updateAccount: {
     resource: RESOURCE.account,
@@ -105,6 +113,12 @@ export const ACCESS_RULE = {
   },
   readRole: { resource: RESOURCE.role, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
   createRole: { resource: RESOURCE.role, action: ACTION.create, scope: PERMISSION_SCOPE.organization },
+  updateRole: { resource: RESOURCE.role, action: ACTION.update, scope: PERMISSION_SCOPE.organization },
+  updatePermissionGroup: {
+    resource: RESOURCE.permissionGroup,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
+  },
   createPermissionGroup: {
     resource: RESOURCE.permissionGroup,
     action: ACTION.create,
@@ -121,7 +135,7 @@ export const ACCESS_RULE = {
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
   },
-  readCourse: { resource: RESOURCE.course, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  readCourse: { resource: RESOURCE.course, action: ACTION.read, scope: PERMISSION_SCOPE.branch },
   createCourse: {
     resource: RESOURCE.course,
     action: ACTION.create,
@@ -132,18 +146,18 @@ export const ACCESS_RULE = {
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
   },
-  readClass: { resource: RESOURCE.class, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  readClass: { resource: RESOURCE.class, action: ACTION.read, scope: PERMISSION_SCOPE.branch },
   createClass: {
     resource: RESOURCE.class,
     action: ACTION.create,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   updateClass: {
     resource: RESOURCE.class,
     action: ACTION.update,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
-  readTeacher: { resource: RESOURCE.teacher, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  readTeacher: { resource: RESOURCE.teacher, action: ACTION.read, scope: PERMISSION_SCOPE.branch },
   createTeacher: {
     resource: RESOURCE.teacher,
     action: ACTION.create,
@@ -154,16 +168,16 @@ export const ACCESS_RULE = {
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
   },
-  readStudent: { resource: RESOURCE.student, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
+  readStudent: { resource: RESOURCE.student, action: ACTION.read, scope: PERMISSION_SCOPE.branch },
   createStudent: {
     resource: RESOURCE.student,
     action: ACTION.create,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   updateStudent: {
     resource: RESOURCE.student,
     action: ACTION.update,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   createAccount: {
     resource: RESOURCE.account,
@@ -189,28 +203,39 @@ export const ACCESS_RULE = {
   readEnrollment: {
     resource: RESOURCE.enrollment,
     action: ACTION.read,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   createEnrollment: {
     resource: RESOURCE.enrollment,
     action: ACTION.create,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   updateEnrollment: {
     resource: RESOURCE.enrollment,
     action: ACTION.update,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
-  readInvoice: { resource: RESOURCE.invoice, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
-  createInvoice: {
+  /** Bậc giảm giá combo là cấu hình giá toàn trung tâm - chỉ ORGANIZATION (AccessRules.*_COMBO_DISCOUNT_TIER). */
+  createComboDiscountTier: {
     resource: RESOURCE.invoice,
     action: ACTION.create,
     scope: PERMISSION_SCOPE.organization,
   },
-  updateInvoice: {
+  updateComboDiscountTier: {
     resource: RESOURCE.invoice,
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
+  },
+  readInvoice: { resource: RESOURCE.invoice, action: ACTION.read, scope: PERMISSION_SCOPE.branch },
+  createInvoice: {
+    resource: RESOURCE.invoice,
+    action: ACTION.create,
+    scope: PERMISSION_SCOPE.branch,
+  },
+  updateInvoice: {
+    resource: RESOURCE.invoice,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.branch,
   },
   /**
    * Hai entry DUY NHẤT trong file không ghi scope, và đó là chủ đích: ba rule `*_GRADE` ở backend
@@ -231,4 +256,16 @@ export const ACCESS_RULE = {
    */
   readTeaching: { resource: RESOURCE.teaching, action: ACTION.read },
   readLearning: { resource: RESOURCE.learning, action: ACTION.read },
+  /**
+   * Điểm danh, bài tập/mini-test, mini-task: không ghi scope vì backend không đòi - giáo viên chỉ có
+   * scope PERSONAL. Nguồn sự thật cho "lớp này có phải lớp của tôi không" là lỗi 403
+   * *_NOT_ASSIGNED_TO_CLASS từ backend, giống sổ điểm.
+   */
+  readAttendance: { resource: RESOURCE.attendance, action: ACTION.read },
+  updateAttendance: { resource: RESOURCE.attendance, action: ACTION.update },
+  readAssignment: { resource: RESOURCE.assignment, action: ACTION.read },
+  createAssignment: { resource: RESOURCE.assignment, action: ACTION.create },
+  updateAssignment: { resource: RESOURCE.assignment, action: ACTION.update },
+  /** Học viên nộp một lượt làm mini-task của chính mình (PRACTICE:CREATE). */
+  createPractice: { resource: RESOURCE.practice, action: ACTION.create },
 } as const;

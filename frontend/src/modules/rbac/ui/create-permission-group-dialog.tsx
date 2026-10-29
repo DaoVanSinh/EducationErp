@@ -1,4 +1,4 @@
-import { permissionLabel } from "@/entities/rbac-catalog";
+import { permissionLabel, type PermissionGroupOption } from "@/entities/rbac-catalog";
 import {
   RESOURCE_FILTER_ALL,
   useCreatePermissionGroupController,
@@ -17,10 +17,13 @@ import { KeyRound, Search } from "lucide-react";
 export interface CreatePermissionGroupDialogProps {
   readonly open: boolean;
   readonly onClose: () => void;
+  /** Truyền vào để SỬA nhóm quyền này thay vì tạo mới. */
+  readonly group?: PermissionGroupOption;
 }
 
-export function CreatePermissionGroupDialog({ open, onClose }: CreatePermissionGroupDialogProps) {
+export function CreatePermissionGroupDialog({ open, onClose, group }: CreatePermissionGroupDialogProps) {
   const {
+    isEditing,
     values,
     fieldErrors,
     submitError,
@@ -38,14 +41,18 @@ export function CreatePermissionGroupDialog({ open, onClose }: CreatePermissionG
     handleSubmit,
     setName,
     setDescription,
-  } = useCreatePermissionGroupController({ onClose });
+  } = useCreatePermissionGroupController({ onClose, group });
 
   return (
     <GlassModal
       open={open}
       onClose={onClose}
-      title="Tạo nhóm quyền"
-      description="Gom các quyền hạn nghiệp vụ thành nhóm để gán linh hoạt cho vai trò và tài khoản."
+      title={isEditing ? `Sửa nhóm quyền: ${group?.name ?? ""}` : "Tạo nhóm quyền"}
+      description={
+        isEditing
+          ? "Mọi vai trò đang dùng nhóm này nhận quyền mới ngay ở lần thao tác kế tiếp của người dùng."
+          : "Gom các quyền hạn nghiệp vụ thành nhóm để gán linh hoạt cho vai trò và tài khoản."
+      }
       icon={<KeyRound size={22} aria-hidden />}
       className="max-w-3xl"
     >
@@ -180,7 +187,7 @@ export function CreatePermissionGroupDialog({ open, onClose }: CreatePermissionG
           Huỷ
         </GlassButton>
         <GlassButton type="submit" form="create-permission-group-form" loading={isSubmitting}>
-          Tạo nhóm quyền
+          {isEditing ? "Lưu nhóm quyền" : "Tạo nhóm quyền"}
         </GlassButton>
       </footer>
     </GlassModal>

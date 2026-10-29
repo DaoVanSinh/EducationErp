@@ -6,6 +6,8 @@ import com.eduerp.modules.courses.internal.model.Class;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +37,17 @@ public class CoursesManagement {
      * định nghĩa một record y hệt - một khái niệm, một kiểu.
      */
     public record ClassInfoResponse(UUID classId, UUID courseId, UUID branchId, UUID teacherId, int maxSeats,
-            boolean active, Integer standardSessionCount, List<WeeklyScheduleSlot> schedule) {
+            int minSeats, CoursesConstants.ClassStatus status, LocalDate startDate, LocalDate endDate,
+            Instant startedAt, Instant endedAt, Integer standardSessionCount, List<WeeklyScheduleSlot> schedule) {
+
+        /** Lớp còn nhận ghi danh: đang tuyển sinh hoặc đang học (cho phép vào học muộn). */
+        public boolean acceptsEnrollment() {
+            return status.isOpen();
+        }
+
+        public boolean isInProgress() {
+            return status == CoursesConstants.ClassStatus.IN_PROGRESS;
+        }
     }
 
     /** {@code tuitionFee} null = khoá học chưa chốt giá (khác với "không tìm thấy khoá học"). */
@@ -113,7 +125,8 @@ public class CoursesManagement {
                 .map(slot -> new WeeklyScheduleSlot(slot.getDayOfWeek(), slot.getStartTime(), slot.getEndTime()))
                 .toList();
         return new ClassInfoResponse(cls.getId(), cls.getCourse().getId(), cls.getBranchId(),
-                cls.getTeacherId(), cls.getMaxSeats(), cls.isActive(),
+                cls.getTeacherId(), cls.getMaxSeats(), cls.getMinSeats(), cls.getStatus(), cls.getStartDate(),
+                cls.getEndDate(), cls.getStartedAt(), cls.getEndedAt(),
                 cls.getCourse().getStandardSessionCount(), schedule);
     }
 }

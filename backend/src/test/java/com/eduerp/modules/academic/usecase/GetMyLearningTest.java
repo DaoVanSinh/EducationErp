@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.usecase;
 
+import com.eduerp.modules.courses.TestClassInfos;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
@@ -67,7 +68,7 @@ class GetMyLearningTest {
         when(enrollments.listEnrollmentsByStudent(profileId)).thenReturn(List.of(
                 new EnrollmentManagement.StudentEnrollmentEntry(enrollmentId, classId, courseId,
                         EnrollmentConstants.EnrollmentStatus.ACTIVE, at(2026, 1, 1, 8), null)));
-        when(courses.getClassInfo(classId)).thenReturn(Optional.of(new CoursesManagement.ClassInfoResponse(
+        when(courses.getClassInfo(classId)).thenReturn(Optional.of(TestClassInfos.of(
                 classId, courseId, UUID.randomUUID(), teacherId, 20, true, 10, MON_EVENING)));
         when(courses.classSummariesOf(anyCollection())).thenReturn(Map.of(classId,
                 new CoursesManagement.ClassBasicSummary(classId, "A201", courseId, "TOEIC")));

@@ -25,7 +25,9 @@ export function useEnrollmentsPageController() {
     classFilter.length === 0 ? undefined : classFilter,
   );
   const students = useStudents(0, REFERENCE_PAGE_SIZE);
+  // Bộ lọc xem được mọi lớp (kể cả đã kết thúc); ô chọn lớp khi ghi danh chỉ lớp còn nhận ghi danh.
   const classes = useClasses(0, REFERENCE_PAGE_SIZE);
+  const openClasses = useClasses(0, REFERENCE_PAGE_SIZE, { openOnly: true });
   const withdraw = useWithdrawEnrollment();
   const complete = useCompleteEnrollment();
 
@@ -56,6 +58,7 @@ export function useEnrollmentsPageController() {
     setClassFilter,
     students,
     classes,
+    openClasses,
     createDialogOpen,
     openCreateDialog,
     closeCreateDialog,

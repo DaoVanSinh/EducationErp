@@ -1,5 +1,6 @@
 package com.eduerp.modules.students;
 
+import com.eduerp.modules.identity.IdentityManagement;
 import com.eduerp.modules.students.internal.model.StudentProfile;
 import com.eduerp.modules.students.internal.repository.StudentProfileRepository;
 import java.util.Collection;
@@ -25,8 +26,11 @@ public class StudentsManagement {
 
     private final StudentProfileRepository profiles;
 
-    StudentsManagement(StudentProfileRepository profiles) {
+    private final IdentityManagement identity;
+
+    StudentsManagement(StudentProfileRepository profiles, IdentityManagement identity) {
         this.profiles = profiles;
+        this.identity = identity;
     }
 
     @Transactional(readOnly = true)
@@ -65,5 +69,26 @@ public class StudentsManagement {
         return profiles.findAllById(studentProfileIds).stream()
                 .collect(Collectors.toMap(StudentProfile::getId, profile -> new StudentSummaryResponse(
                         profile.getId(), profile.getAccountId(), profile.isActive())));
+    }
+
+    /**
+     * Họ tên của một loạt học viên theo {@code studentProfileId} - cho các bảng theo lớp của
+     * {@code modules.attendance}/{@code modules.assessment} (điểm danh, bài tập, mini-task). Hai lần
+     * đọc theo LÔ (hồ sơ, rồi tài khoản), không bao giờ một câu cho mỗi học viên (rule #3). Hồ sơ hoặc
+     * tài khoản không tra được chỉ VẮNG MẶT trong map - nơi gọi hiển thị tên trống.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> displayNamesOf(Collection<UUID> studentProfileIds) {
+        var summaries = summariesOf(studentProfileIds);
+        if (summaries.isEmpty()) {
+            return Map.of();
+        }
+        var accounts = identity.summariesOf(summaries.values().stream()
+                .map(StudentSummaryResponse::accountId).toList());
+        return summaries.entrySet().stream()
+                .filter(entry -> accounts.get(entry.getValue().accountId()) != null)
+                .filter(entry -> accounts.get(entry.getValue().accountId()).fullName() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> accounts.get(entry.getValue().accountId()).fullName()));
     }
 }

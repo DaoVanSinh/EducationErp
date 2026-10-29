@@ -91,6 +91,24 @@ const MyLearningPage = lazy(() =>
 const MyInvoicesPage = lazy(() =>
   import("@/modules/learning").then((module) => ({ default: module.MyInvoicesPage })),
 );
+const MyAttendancePage = lazy(() =>
+  import("@/modules/learning").then((module) => ({ default: module.MyAttendancePage })),
+);
+const MyAssessmentsPage = lazy(() =>
+  import("@/modules/learning").then((module) => ({ default: module.MyAssessmentsPage })),
+);
+const PracticeMiniTaskPage = lazy(() =>
+  import("@/modules/learning").then((module) => ({ default: module.PracticeMiniTaskPage })),
+);
+const ClassAttendancePage = lazy(() =>
+  import("@/modules/attendance").then((module) => ({ default: module.ClassAttendancePage })),
+);
+const ClassAssignmentsPage = lazy(() =>
+  import("@/modules/assessment").then((module) => ({ default: module.ClassAssignmentsPage })),
+);
+const ClassMiniTasksPage = lazy(() =>
+  import("@/modules/assessment").then((module) => ({ default: module.ClassMiniTasksPage })),
+);
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
 );
@@ -132,6 +150,12 @@ export function AppRouter() {
           <Route path={APP_ROUTE.myTeachingClasses} element={<MyClassesPage />} />
           <Route path={APP_ROUTE.myLearning} element={<MyLearningPage />} />
           <Route path={APP_ROUTE.myInvoices} element={<MyInvoicesPage />} />
+          <Route path={APP_ROUTE.myAttendance} element={<MyAttendancePage />} />
+          <Route path={APP_ROUTE.myAssessments} element={<MyAssessmentsPage />} />
+          <Route path={APP_ROUTE.practiceMiniTask} element={<PracticeMiniTaskPage />} />
+          <Route path={APP_ROUTE.classAttendance} element={<ClassAttendancePage />} />
+          <Route path={APP_ROUTE.classAssignments} element={<ClassAssignmentsPage />} />
+          <Route path={APP_ROUTE.classMiniTasks} element={<ClassMiniTasksPage />} />
           <Route path={APP_ROUTE.accounts} element={<AccountsPage />} />
           <Route path={APP_ROUTE.branches} element={<BranchesPage />} />
           <Route path={APP_ROUTE.courses} element={<CoursesPage />} />

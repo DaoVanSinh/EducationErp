@@ -1,4 +1,4 @@
-import { teacherApi, teacherKeys, type CreateTeacherProfilePayload, type UpdateTeacherProfilePayload } from "@/entities/teacher";
+import { teacherApi, teacherKeys, type CreateTeacherPayload, type UpdateTeacherProfilePayload } from "@/entities/teacher";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useTeachersInvalidation(): () => Promise<void> {
@@ -8,10 +8,10 @@ function useTeachersInvalidation(): () => Promise<void> {
   };
 }
 
-export function useCreateTeacherProfile() {
+export function useCreateTeacher() {
   const invalidate = useTeachersInvalidation();
   return useMutation({
-    mutationFn: (payload: CreateTeacherProfilePayload) => teacherApi.createProfile(payload),
+    mutationFn: (payload: CreateTeacherPayload) => teacherApi.createProfile(payload),
     onSuccess: invalidate,
   });
 }

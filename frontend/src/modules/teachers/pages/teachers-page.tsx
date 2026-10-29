@@ -30,7 +30,7 @@ export function TeachersPage() {
           actions={
             <Can {...ACCESS_RULE.createTeacher}>
               <GlassButton onClick={() => setCreateDialogOpen(true)} icon={<Plus size={16} aria-hidden />}>
-                Hồ sơ mới
+                Thêm giáo viên
               </GlassButton>
             </Can>
           }
@@ -52,7 +52,7 @@ export function TeachersPage() {
               <EmptyState
                 icon={<GraduationCap size={28} aria-hidden />}
                 title="Chưa có hồ sơ giáo viên nào"
-                description="Tạo tài khoản giáo viên ở trang Tài khoản trước, rồi tạo hồ sơ ở đây."
+                description="Thêm giáo viên mới - hệ thống tạo luôn tài khoản đăng nhập và gửi email mời."
               />
             ) : (
               <>

@@ -52,6 +52,16 @@ public class Role {
         permissionGroups.add(group);
     }
 
+    /** Mã vai trò bất biến (đã được tham chiếu ở seed/log); chỉ tên hiển thị đổi được. */
+    public void rename(String name) {
+        this.name = name;
+    }
+
+    public void replacePermissionGroups(java.util.Collection<PermissionGroup> groups) {
+        permissionGroups.clear();
+        permissionGroups.addAll(groups);
+    }
+
     public Set<PermissionGroup> getPermissionGroups() {
         return Collections.unmodifiableSet(permissionGroups);
     }

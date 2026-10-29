@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.usecase;
 
+import com.eduerp.modules.courses.TestClassInfos;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,7 +55,7 @@ class RecordGradeTest {
 
     private void stubAccessGranted() {
         when(guard.requireAccessToClass(actorAccountId, classId, AccessConstants.Actions.UPDATE))
-                .thenReturn(new CoursesManagement.ClassInfoResponse(classId, courseId, actorBranchId,
+                .thenReturn(TestClassInfos.of(classId, courseId, actorBranchId,
                         actorAccountId, 20, true, 24, List.of()));
     }
 

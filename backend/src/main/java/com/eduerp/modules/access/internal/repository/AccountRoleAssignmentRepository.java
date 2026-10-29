@@ -12,6 +12,10 @@ public interface AccountRoleAssignmentRepository extends JpaRepository<AccountRo
 
     long countByRole_Code(String roleCode);
 
+    /** Ai đang giữ một trong các vai trò này - để xoá cache quyền khi vai trò bị sửa. */
+    @Query("SELECT a.accountId FROM AccountRoleAssignment a WHERE a.role.id IN :roleIds")
+    List<UUID> findAccountIdsByRoleIds(@Param("roleIds") Collection<UUID> roleIds);
+
     /**
      * Đếm ở database chứ không tải hết account về rồi group trong bộ nhớ — bảng này lớn dần theo
      * từng khoá tuyển sinh, còn dashboard thì được mở liên tục. LEFT JOIN từ {@code Role} chứ không

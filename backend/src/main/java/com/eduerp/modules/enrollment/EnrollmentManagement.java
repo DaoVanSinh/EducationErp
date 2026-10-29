@@ -81,7 +81,7 @@ public class EnrollmentManagement {
      */
     @Transactional(readOnly = true)
     public List<StudentEnrollmentEntry> listEnrollmentsByStudent(UUID studentProfileId) {
-        return enrollments.search(studentProfileId, null, null, Pageable.unpaged()).stream()
+        return enrollments.search(studentProfileId, null, null, null, Pageable.unpaged()).stream()
                 .map(enrollment -> new StudentEnrollmentEntry(enrollment.getId(), enrollment.getClassId(),
                         enrollment.getCourseId(), enrollment.getStatus(), enrollment.getEnrolledAt(),
                         enrollment.getWithdrawnAt()))

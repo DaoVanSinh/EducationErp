@@ -19,4 +19,11 @@ class NotificationEventListeners {
     void on(AccessEvents.AccountJoinedGroup event) {
         notifications.push(event.accountId(), NotificationConstants.EventTypes.PERMISSION_CHANGED, null);
     }
+
+    /** Sửa vai trò/nhóm quyền hoặc đổi vai trò: báo từng người bị ảnh hưởng để trình duyệt tải lại phiên. */
+    @ApplicationModuleListener
+    void on(AccessEvents.PermissionsChanged event) {
+        event.accountIds().forEach(accountId ->
+                notifications.push(accountId, NotificationConstants.EventTypes.PERMISSION_CHANGED, null));
+    }
 }

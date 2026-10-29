@@ -31,6 +31,15 @@ export const APP_ROUTE = {
   myLearning: "/learning/classes",
   /** Cổng học tập - học phí và lịch sử thanh toán của học viên đang đăng nhập. */
   myInvoices: "/learning/invoices",
+  /** Cổng học tập - điểm danh của học viên đang đăng nhập. */
+  myAttendance: "/learning/attendance",
+  /** Cổng học tập - bài tập/mini-test và mini-task của học viên đang đăng nhập. */
+  myAssessments: "/learning/assessments",
+  /** Trang làm một mini-task (route template). */
+  practiceMiniTask: "/learning/mini-tasks/:miniTaskId",
+  classAttendance: "/admin/attendance/classes/:classId",
+  classAssignments: "/admin/assessment/classes/:classId/assignments",
+  classMiniTasks: "/admin/assessment/classes/:classId/mini-tasks",
   /** Public: phụ huynh quay về từ cổng thanh toán, có thể chưa đăng nhập (spec mục 10). */
   paymentReturn: "/payment/return/:gateway",
   login: "/login",
@@ -82,4 +91,24 @@ export function buildTeacherDetailPath(profileId: string): string {
 /** Link thật tới trang chi tiết một học viên - APP_ROUTE.studentDetail chỉ là route template. */
 export function buildStudentDetailPath(profileId: string): string {
   return `/admin/students/${profileId}`;
+}
+
+/** Link thật tới bảng điểm danh của một lớp. */
+export function buildClassAttendancePath(classId: string): string {
+  return `/admin/attendance/classes/${classId}`;
+}
+
+/** Link thật tới trang bài tập / mini-test của một lớp. */
+export function buildClassAssignmentsPath(classId: string): string {
+  return `/admin/assessment/classes/${classId}/assignments`;
+}
+
+/** Link thật tới trang mini-task của một lớp. */
+export function buildClassMiniTasksPath(classId: string): string {
+  return `/admin/assessment/classes/${classId}/mini-tasks`;
+}
+
+/** Link thật tới trang làm một mini-task của học viên. */
+export function buildPracticeMiniTaskPath(miniTaskId: string): string {
+  return `/learning/mini-tasks/${miniTaskId}`;
 }

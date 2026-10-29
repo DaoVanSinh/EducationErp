@@ -15,11 +15,20 @@ import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.stereotype.Component;
 
-/** JWT "gọn": chỉ {@code sub} + {@code jti} + {@code typ}; quyền không bao giờ nằm trong token. */
+/**
+ * JWT "gọn": chỉ {@code sub} + {@code jti} + {@code typ} + {@code iat}; quyền không bao giờ nằm trong
+ * token. {@code iat} có để buộc đăng xuất thu hồi được mọi token phát hành trước một mốc
+ * ({@link SessionRevocationService}).
+ */
 @Component
 public class JwtTokenService {
 
     private static final String TYPE_CLAIM = "typ";
+    /**
+     * Thời điểm phát hành tính bằng MILI-giây. {@code iat} chuẩn của JWT chỉ có giây: thu hồi phiên theo mốc
+     * giây thì một lần đăng nhập lại ngay sau khi mở khoá (cùng giây) cũng bị coi là "phát hành trước mốc".
+     */
+    private static final String ISSUED_AT_MILLIS_CLAIM = "ims";
 
     private final SecretKey key;
     private final IdentityProperties properties;
@@ -41,8 +50,10 @@ public class JwtTokenService {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
             String type = claims.get(TYPE_CLAIM, String.class);
+            Long issuedAtMillis = claims.get(ISSUED_AT_MILLIS_CLAIM, Long.class);
             return new DecodedToken(UUID.fromString(claims.getSubject()), claims.getId(),
-                    claims.getExpiration().toInstant(), type);
+                    claims.getExpiration().toInstant(), type,
+                    issuedAtMillis == null ? null : Instant.ofEpochMilli(issuedAtMillis));
         } catch (JwtException | IllegalArgumentException e) {
             throw new TokenInvalidException("Token không hợp lệ hoặc đã hết hạn");
         }
@@ -50,11 +61,14 @@ public class JwtTokenService {
 
     private IssuedToken issue(UUID accountId, Duration ttl, String type) {
         String jti = UUID.randomUUID().toString();
-        Instant expiresAt = Instant.now().plus(ttl);
+        Instant issuedAt = Instant.now();
+        Instant expiresAt = issuedAt.plus(ttl);
         String token = Jwts.builder()
                 .subject(accountId.toString())
                 .id(jti)
                 .claim(TYPE_CLAIM, type)
+                .issuedAt(Date.from(issuedAt))
+                .claim(ISSUED_AT_MILLIS_CLAIM, issuedAt.toEpochMilli())
                 .expiration(Date.from(expiresAt))
                 .signWith(key)
                 .compact();

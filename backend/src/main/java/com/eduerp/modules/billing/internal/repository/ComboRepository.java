@@ -19,6 +19,8 @@ public interface ComboRepository extends JpaRepository<Combo, UUID> {
     @Query("""
             SELECT c FROM Combo c
             WHERE (:studentProfileId IS NULL OR c.studentProfileId = :studentProfileId)
+              AND (:branchId IS NULL OR c.branchId = :branchId)
             """)
-    Page<Combo> search(@Param("studentProfileId") UUID studentProfileId, Pageable pageable);
+    Page<Combo> search(@Param("studentProfileId") UUID studentProfileId, @Param("branchId") UUID branchId,
+            Pageable pageable);
 }

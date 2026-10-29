@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.internal.repository;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -98,7 +99,7 @@ class ComboRepositoryIT {
     private UUID newEnrollmentId(UUID studentProfileId) {
         var teacherId = accounts.save(new Account("cmb-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        var classId = classes.save(new Class(course, "CMB-K-" + shortId(), branchId, teacherId, 20)).getId();
+        var classId = classes.save(ClassFixtures.inProgress(course, "CMB-K-" + shortId(), branchId, teacherId, 20)).getId();
         return enrollments.save(new Enrollment(studentProfileId, classId, courseId, branchId, actorId)).getId();
     }
 
@@ -235,8 +236,8 @@ class ComboRepositoryIT {
         combos.saveAndFlush(second);
         var pageable = PageRequest.of(0, 20);
 
-        assertThat(combos.search(null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(combos.search(mine, pageable).getTotalElements()).isEqualTo(1);
-        assertThat(combos.search(UUID.randomUUID(), pageable).getTotalElements()).isZero();
+        assertThat(combos.search(null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(combos.search(mine, null, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(combos.search(UUID.randomUUID(), null, pageable).getTotalElements()).isZero();
     }
 }

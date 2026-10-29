@@ -1,5 +1,7 @@
 package com.eduerp.modules.enrollment.usecase;
 
+import com.eduerp.modules.access.TestAccess;
+import com.eduerp.modules.courses.TestClassInfos;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,7 +37,7 @@ class CreateEnrollmentTest {
     private final StudentsManagement students = mock(StudentsManagement.class);
     private final CoursesManagement courses = mock(CoursesManagement.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final CreateEnrollment useCase = new CreateEnrollment(enrollments, students, courses, events);
+    private final CreateEnrollment useCase = new CreateEnrollment(enrollments, students, courses, TestAccess.organizationWide(), events);
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();
@@ -56,7 +58,7 @@ class CreateEnrollmentTest {
 
     private void stubActiveClass() {
         when(courses.getClassInfo(classId)).thenReturn(Optional.of(
-                new CoursesManagement.ClassInfoResponse(classId, courseId, classBranchId, classTeacherId,
+                TestClassInfos.of(classId, courseId, classBranchId, classTeacherId,
                         MAX_SEATS, true, 24, List.of())));
     }
 
@@ -99,7 +101,7 @@ class CreateEnrollmentTest {
     void rejectsADeactivatedClass() {
         stubActiveStudent();
         when(courses.getClassInfo(classId)).thenReturn(Optional.of(
-                new CoursesManagement.ClassInfoResponse(classId, courseId, classBranchId, classTeacherId,
+                TestClassInfos.of(classId, courseId, classBranchId, classTeacherId,
                         MAX_SEATS, false, 24, List.of())));
 
         assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request()))

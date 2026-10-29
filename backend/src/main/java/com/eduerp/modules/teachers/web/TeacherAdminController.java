@@ -1,10 +1,10 @@
 package com.eduerp.modules.teachers.web;
 
 import com.eduerp.modules.access.AccessConstants;
-import com.eduerp.modules.teachers.dto.CreateTeacherProfileRequest;
+import com.eduerp.modules.teachers.dto.CreateTeacherRequest;
 import com.eduerp.modules.teachers.dto.TeacherProfileResponse;
 import com.eduerp.modules.teachers.dto.UpdateTeacherProfileRequest;
-import com.eduerp.modules.teachers.usecase.CreateTeacherProfile;
+import com.eduerp.modules.teachers.usecase.CreateTeacher;
 import com.eduerp.modules.teachers.usecase.GetTeacherProfile;
 import com.eduerp.modules.teachers.usecase.ListTeacherProfiles;
 import com.eduerp.modules.teachers.usecase.UpdateTeacherProfile;
@@ -30,14 +30,14 @@ class TeacherAdminController {
 
     private final ListTeacherProfiles listTeacherProfiles;
     private final GetTeacherProfile getTeacherProfile;
-    private final CreateTeacherProfile createTeacherProfile;
+    private final CreateTeacher createTeacher;
     private final UpdateTeacherProfile updateTeacherProfile;
 
     TeacherAdminController(ListTeacherProfiles listTeacherProfiles, GetTeacherProfile getTeacherProfile,
-            CreateTeacherProfile createTeacherProfile, UpdateTeacherProfile updateTeacherProfile) {
+            CreateTeacher createTeacher, UpdateTeacherProfile updateTeacherProfile) {
         this.listTeacherProfiles = listTeacherProfiles;
         this.getTeacherProfile = getTeacherProfile;
-        this.createTeacherProfile = createTeacherProfile;
+        this.createTeacher = createTeacher;
         this.updateTeacherProfile = updateTeacherProfile;
     }
 
@@ -56,8 +56,8 @@ class TeacherAdminController {
     @PostMapping
     @PreAuthorize(AccessConstants.AccessRules.CREATE_TEACHER)
     UUID create(@AuthenticationPrincipal AccountPrincipal principal,
-            @Valid @RequestBody CreateTeacherProfileRequest request) {
-        return createTeacherProfile.execute(principal.accountId(), principal.homeBranchId(), request);
+            @Valid @RequestBody CreateTeacherRequest request) {
+        return createTeacher.execute(principal.accountId(), principal.homeBranchId(), request);
     }
 
     @PatchMapping("/{profileId}")

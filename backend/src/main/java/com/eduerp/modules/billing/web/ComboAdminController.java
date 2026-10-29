@@ -59,9 +59,10 @@ class ComboAdminController {
 
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_INVOICE)
-    PageResponse<ComboResponse> list(@PageableDefault(size = 20) Pageable pageable,
+    PageResponse<ComboResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID studentProfileId) {
-        return listCombos.execute(pageable, studentProfileId);
+        return listCombos.execute(principal.accountId(), pageable, studentProfileId);
     }
 
     @PostMapping
@@ -82,8 +83,8 @@ class ComboAdminController {
 
     @GetMapping("/{comboId}")
     @PreAuthorize(AccessConstants.AccessRules.READ_INVOICE)
-    ComboDetailResponse get(@PathVariable UUID comboId) {
-        return getComboDetail.execute(comboId);
+    ComboDetailResponse get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID comboId) {
+        return getComboDetail.execute(principal.accountId(), comboId);
     }
 
     @PostMapping("/{comboId}/cancel")

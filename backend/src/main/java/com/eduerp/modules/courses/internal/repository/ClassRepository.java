@@ -1,14 +1,20 @@
 package com.eduerp.modules.courses.internal.repository;
 
+import com.eduerp.modules.courses.CoursesConstants;
 import com.eduerp.modules.courses.internal.model.Class;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface ClassRepository extends JpaRepository<Class, UUID> {
+public interface ClassRepository extends JpaRepository<Class, UUID>, JpaSpecificationExecutor<Class> {
     Optional<Class> findByCode(String code);
 
     /**
@@ -22,8 +28,18 @@ public interface ClassRepository extends JpaRepository<Class, UUID> {
     @EntityGraph(attributePaths = "course")
     Page<Class> findAll(Pageable pageable);
 
-    /** Tab "Lớp đang dạy" của trang chi tiết giáo viên - mirror {@code findAll} (cùng entity graph,
-     * cùng lý do không đưa {@code schedule} vào vì đây vẫn là truy vấn có {@code Pageable}). */
+    /** Danh sách có bộ lọc (chi nhánh, giáo viên, trạng thái) - cùng entity graph, cùng lý do với {@link #findAll(Pageable)}. */
+    @Override
+    @EntityGraph(attributePaths = "course")
+    Page<Class> findAll(Specification<Class> specification, Pageable pageable);
+
+    /** Cổng giảng dạy - lớp của chính một giáo viên. */
     @EntityGraph(attributePaths = "course")
     Page<Class> findAllByTeacherId(UUID teacherId, Pageable pageable);
+
+    /** Số lớp còn mở mà một giáo viên đang được phân công - chặn đổi vai trò làm mất năng lực giáo viên. */
+    long countByTeacherIdAndStatusIn(UUID teacherId, Collection<CoursesConstants.ClassStatus> statuses);
+
+    /** Ứng viên của tác vụ tự khai giảng: đang tuyển sinh và đã tới (hoặc qua) ngày khai giảng. */
+    List<Class> findAllByStatusAndStartDateLessThanEqual(CoursesConstants.ClassStatus status, LocalDate date);
 }

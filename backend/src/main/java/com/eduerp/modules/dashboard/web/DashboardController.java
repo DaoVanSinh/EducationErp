@@ -1,5 +1,7 @@
 package com.eduerp.modules.dashboard.web;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.eduerp.shared.AccountPrincipal;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.dashboard.dto.DashboardStatsResponse;
 import com.eduerp.modules.dashboard.usecase.GetDashboardStats;
@@ -20,10 +22,14 @@ class DashboardController {
         this.getDashboardStats = getDashboardStats;
     }
 
-    /** {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. */
+    /**
+     * {@code branchId} bỏ trống nghĩa là xem toàn tổ chức — hành vi gốc, không lọc gì. Người chỉ có quyền
+     * scope BRANCH luôn thấy số liệu chi nhánh của mình (lớp 2, trong use case).
+     */
     @GetMapping("/stats")
     @PreAuthorize(AccessConstants.AccessRules.READ_DASHBOARD)
-    DashboardStatsResponse stats(@RequestParam(required = false) UUID branchId) {
-        return getDashboardStats.execute(branchId);
+    DashboardStatsResponse stats(@AuthenticationPrincipal AccountPrincipal principal,
+            @RequestParam(required = false) UUID branchId) {
+        return getDashboardStats.execute(principal.accountId(), branchId);
     }
 }

@@ -30,6 +30,20 @@ public final class IdentityConstants {
         public static final String ACCOUNT_SESSIONS = "sessions:account";
         public static final String PASSWORD_RESET_TOKEN = "pwreset:token";
         public static final String ACCOUNT_INVITE = "invite:account";
+        /**
+         * Mốc "mọi token phát hành trước thời điểm này đều vô hiệu" của một tài khoản (epoch giây) - cơ
+         * chế buộc đăng xuất (spec 6.3). Bao trùm cả refresh token, thứ mà tập {@link #ACCOUNT_SESSIONS}
+         * (chỉ theo dõi access token) không thu hồi được.
+         */
+        public static final String SESSION_NOT_BEFORE = "sessions:notbefore";
+    }
+
+    public static final class ErrorCodes {
+        private ErrorCodes() {
+        }
+
+        public static final String SELF_MODIFICATION_FORBIDDEN = "IDENTITY_SELF_MODIFICATION_FORBIDDEN";
+        public static final String ACCOUNT_NEVER_ACTIVATED = "IDENTITY_ACCOUNT_NEVER_ACTIVATED";
     }
 
     public static final class Cookies {

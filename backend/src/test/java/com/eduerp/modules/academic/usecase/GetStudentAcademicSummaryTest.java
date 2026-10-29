@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.usecase;
 
+import com.eduerp.modules.courses.TestClassInfos;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -66,7 +67,7 @@ class GetStudentAcademicSummaryTest {
 
     private CoursesManagement.ClassInfoResponse classInfo(UUID teacherId, Integer standardSessionCount,
             List<WeeklyScheduleSlot> schedule) {
-        return new CoursesManagement.ClassInfoResponse(classId, courseId, UUID.randomUUID(), teacherId, 20,
+        return TestClassInfos.of(classId, courseId, UUID.randomUUID(), teacherId, 20,
                 true, standardSessionCount, schedule);
     }
 

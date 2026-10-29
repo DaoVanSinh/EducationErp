@@ -6,7 +6,9 @@ import com.eduerp.modules.identity.AccountNotFoundException;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.TokenInvalidException;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
+import com.eduerp.modules.identity.internal.rules.IdentityRules;
 import com.eduerp.modules.identity.internal.token.JwtTokenService;
+import com.eduerp.modules.identity.internal.token.SessionRevocationService;
 import com.eduerp.modules.identity.internal.token.TokenBlacklistService;
 import com.eduerp.shared.AccountPrincipal;
 import jakarta.servlet.FilterChain;
@@ -28,13 +30,18 @@ class CookieAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenService jwtTokenService;
     private final TokenBlacklistService blacklist;
+    private final SessionRevocationService revocations;
+    private final IdentityRules rules;
     private final AccessManagement access;
     private final AccountRepository accounts;
 
     CookieAuthenticationFilter(JwtTokenService jwtTokenService, TokenBlacklistService blacklist,
-            AccessManagement access, AccountRepository accounts) {
+            SessionRevocationService revocations, IdentityRules rules, AccessManagement access,
+            AccountRepository accounts) {
         this.jwtTokenService = jwtTokenService;
         this.blacklist = blacklist;
+        this.revocations = revocations;
+        this.rules = rules;
         this.access = access;
         this.accounts = accounts;
     }
@@ -52,11 +59,12 @@ class CookieAuthenticationFilter extends OncePerRequestFilter {
             if (!IdentityConstants.TokenTypes.ACCESS.equals(decoded.type())) {
                 return;
             }
-            if (blacklist.isBlacklisted(decoded.jti())) {
+            if (blacklist.isBlacklisted(decoded.jti()) || revocations.isRevoked(decoded)) {
                 return;
             }
             var account = accounts.findById(decoded.accountId()).orElse(null);
-            if (account == null) {
+            // Tài khoản bị khoá mất quyền truy cập NGAY ở request kế tiếp, không đợi access token hết hạn.
+            if (account == null || !rules.canSignIn(account.getStatus())) {
                 return;
             }
             var permissions = access.effectivePermissions(account.getId());

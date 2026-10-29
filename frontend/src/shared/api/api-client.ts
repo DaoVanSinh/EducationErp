@@ -75,6 +75,10 @@ class ApiClient {
     return this.request<T>(path, { method: HTTP_METHOD.patch, body });
   }
 
+  async put<T>(path: string, body?: unknown): Promise<T> {
+    return this.request<T>(path, { method: HTTP_METHOD.put, body });
+  }
+
   async postForm<T>(path: string, formData: FormData): Promise<T> {
     return this.request<T>(path, { method: HTTP_METHOD.post, body: formData });
   }

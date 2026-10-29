@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.CourseNotFoundException;
@@ -35,8 +37,11 @@ public class CreateInvoice {
     private final CoursesManagement coursesManagement;
     private final ApplicationEventPublisher events;
 
+    private final BillingBranchGuard branchGuard;
+
     CreateInvoice(InvoiceRepository invoices, EnrollmentManagement enrollmentManagement,
-            CoursesManagement coursesManagement, ApplicationEventPublisher events) {
+            CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.enrollmentManagement = enrollmentManagement;
         this.coursesManagement = coursesManagement;
@@ -47,6 +52,7 @@ public class CreateInvoice {
     public InvoiceResponse execute(UUID actorAccountId, UUID actorBranchId, CreateInvoiceRequest request) {
         var enrollment = enrollmentManagement.getEnrollment(request.enrollmentId())
                 .orElseThrow(() -> new EnrollmentNotFoundException(request.enrollmentId()));
+        branchGuard.require(actorAccountId, AccessConstants.Actions.CREATE, enrollment.branchId());
         if (enrollment.status() != EnrollmentConstants.EnrollmentStatus.ACTIVE) {
             throw new EnrollmentNotActiveForBillingException(request.enrollmentId());
         }

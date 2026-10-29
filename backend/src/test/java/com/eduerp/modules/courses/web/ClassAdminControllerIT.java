@@ -12,6 +12,7 @@ import com.eduerp.modules.courses.CoursesConstants;
 import com.eduerp.modules.courses.dto.CreateClassRequest;
 import com.eduerp.modules.courses.dto.UpdateClassRequest;
 import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import com.eduerp.modules.courses.internal.model.Course;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +51,7 @@ import org.testcontainers.utility.DockerImageName;
 class ClassAdminControllerIT {
 
     private static final String PASSWORD = "Password123!";
+    private static final LocalDate TODAY = LocalDate.now(java.time.ZoneId.of(CoursesConstants.Schedules.CENTER_ZONE_ID));
 
     @Container
     @ServiceConnection
@@ -112,7 +115,7 @@ class ClassAdminControllerIT {
         var branch = branches.save(new Branch("CG01", "Chi nhánh Cầu Giấy", null));
         var teacher = saveTeacher("teacher-1@eduerp.local", "Cô Lan");
 
-        var request = new CreateClassRequest(course.getId(), "TA-GT-K15", branch.getId(), teacher.getId(), 20,
+        var request = new CreateClassRequest(course.getId(), "TA-GT-K15", branch.getId(), teacher.getId(), 20, 1, TODAY, null,
                 List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0))));
         var createResult = mockMvc.perform(post("/api/courses/classes")
                         .cookie(admin).with(csrf())
@@ -140,9 +143,9 @@ class ClassAdminControllerIT {
                 passwordEncoder.encode(PASSWORD), "Thầy A", null));
         var teacherB = accounts.save(new Account("teacher-flt-b@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy B", null));
-        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-FLT-A",
+        classes.save(ClassFixtures.inProgress(course, "TA-FLT-A",
                 branch.getId(), teacherA.getId(), 20));
-        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-FLT-B",
+        classes.save(ClassFixtures.inProgress(course, "TA-FLT-B",
                 branch.getId(), teacherB.getId(), 20));
 
         var result = mockMvc.perform(get("/api/courses/classes?teacherId=" + teacherA.getId()).cookie(admin))
@@ -160,7 +163,7 @@ class ClassAdminControllerIT {
         var branch = branches.save(new Branch("CG02", "Chi nhánh 2", null));
 
         var request = new CreateClassRequest(course.getId(), "TA-GT2-K1", branch.getId(), UUID.randomUUID(),
-                20, List.of());
+                20, 1, TODAY, null, List.of());
         var result = mockMvc.perform(post("/api/courses/classes")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -181,7 +184,7 @@ class ClassAdminControllerIT {
         access.assignRole(student.getId(), AccessConstants.RoleCodes.STUDENT);
 
         var request = new CreateClassRequest(course.getId(), "TA-NT-K1", branch.getId(), student.getId(),
-                20, List.of());
+                20, 1, TODAY, null, List.of());
         var result = mockMvc.perform(post("/api/courses/classes")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -200,9 +203,9 @@ class ClassAdminControllerIT {
         var other = saveTeacher("class-portal-other@eduerp.local", "Thầy Khác");
         var course = courses.save(new Course("TA-PT", "Tiếng Anh PT", null, null, null));
         var branch = branches.save(new Branch("CG-PT", "Chi nhánh PT", null));
-        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-PT-MINE",
+        classes.save(ClassFixtures.inProgress(course, "TA-PT-MINE",
                 branch.getId(), me.getId(), 20));
-        classes.save(new com.eduerp.modules.courses.internal.model.Class(course, "TA-PT-OTHER",
+        classes.save(ClassFixtures.inProgress(course, "TA-PT-OTHER",
                 branch.getId(), other.getId(), 20));
 
         var result = mockMvc.perform(get("/api/courses/me/classes").cookie(teacherCookie)).andReturn();
@@ -224,7 +227,7 @@ class ClassAdminControllerIT {
                 passwordEncoder.encode(PASSWORD), "Cô Mai", null));
 
         var request = new CreateClassRequest(course.getId(), "TA-GT4-K1", UUID.randomUUID(), teacher.getId(),
-                20, List.of());
+                20, 1, TODAY, null, List.of());
         var result = mockMvc.perform(post("/api/courses/classes")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -263,7 +266,7 @@ class ClassAdminControllerIT {
         var teacher = saveTeacher("teacher-6@eduerp.local", "Thầy Đức");
 
         var request = new CreateClassRequest(course.getId(), "TA-GT5-K1", branch.getId(), teacher.getId(),
-                20, List.of());
+                20, 1, TODAY, null, List.of());
         var result = mockMvc.perform(post("/api/courses/classes")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -286,13 +289,13 @@ class ClassAdminControllerIT {
         var teacher1 = accounts.save(new Account("teacher-2@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Nam", null));
         var teacher2 = saveTeacher("teacher-3@eduerp.local", "Cô Hoa");
-        var seedClass = new com.eduerp.modules.courses.internal.model.Class(course, "TA-GT3-K1",
+        var seedClass = ClassFixtures.inProgress(course, "TA-GT3-K1",
                 branch.getId(), teacher1.getId(), 15);
         seedClass.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
         seedClass.addSchedule(CoursesConstants.DayOfWeek.WED, LocalTime.of(18, 0), LocalTime.of(20, 0));
         var classId = classes.save(seedClass).getId();
 
-        var updateRequest = new UpdateClassRequest(teacher2.getId(), 25, true,
+        var updateRequest = new UpdateClassRequest(teacher2.getId(), 25, 1, seedClass.getStartDate(), null,
                 List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.TUE, LocalTime.of(19, 0), LocalTime.of(21, 0))));
         var result = mockMvc.perform(patch("/api/courses/classes/" + classId)
                         .cookie(admin).with(csrf())
@@ -332,7 +335,7 @@ class ClassAdminControllerIT {
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdateClassRequest(teacher.getId(), 10, true, List.of()))))
+                                new UpdateClassRequest(teacher.getId(), 10, 1, TODAY, null, List.of()))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(404);
@@ -352,7 +355,8 @@ class ClassAdminControllerIT {
      * đúng là phần ListClasses tự kiểm soát: 1 câu trang (classes JOIN courses qua entity graph), 1
      * batch tên chi nhánh, 1 batch tên giáo viên, 1 batch lịch học - đúng bằng
      * {@code getQueryExecutionCount()} đo được. 3 lớp thuộc 3 khóa học/chi nhánh/giáo viên KHÁC NHAU mà
-     * vẫn giữ nguyên ở 4 câu (không tăng theo số lớp) mới là bằng chứng N+1 đã hết; ngưỡng ≤ 4 phản ánh
+     * vẫn giữ nguyên ở 4 câu (không tăng theo số lớp) mới là bằng chứng N+1 đã hết. Từ V31 có thêm đúng 1 câu
+     * đếm sĩ số đang học của CẢ trang (GROUP BY class_id, qua ClassRosterPort) - ngưỡng ≤ 5 phản ánh
      * đúng con số sàn này, không giòn trước các câu phụ của tầng xác thực (vốn không do module này sinh
      * ra và không nên tính vào chuẩn N+1 của ListClasses).
      */
@@ -364,7 +368,7 @@ class ClassAdminControllerIT {
             var branch = branches.save(new Branch("NPO-B" + i, "Chi nhánh N+1 " + i, null));
             var teacher = accounts.save(new Account("npo-teacher-" + i + "@eduerp.local",
                     passwordEncoder.encode(PASSWORD), "Giáo viên N+1 " + i, null));
-            var cls = new com.eduerp.modules.courses.internal.model.Class(course, "NPO-K" + i,
+            var cls = ClassFixtures.inProgress(course, "NPO-K" + i,
                     branch.getId(), teacher.getId(), 20);
             cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
             classes.save(cls);
@@ -378,7 +382,7 @@ class ClassAdminControllerIT {
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         assertThat(statistics.getQueryExecutionCount())
                 .as("số lượt truy vấn ORM riêng của ListClasses khi liệt kê 3 lớp ở 3 khóa học khác nhau")
-                .isLessThanOrEqualTo(4);
+                .isLessThanOrEqualTo(5);
     }
 
     @Test
@@ -390,7 +394,7 @@ class ClassAdminControllerIT {
                 passwordEncoder.encode(PASSWORD), "Thầy Dũng", null));
 
         var request = new CreateClassRequest(course.getId(), "TA-GT7-K1", branch.getId(), teacherAccount.getId(),
-                20, List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0))));
+                20, 1, TODAY, null, List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0))));
         var result = mockMvc.perform(post("/api/courses/classes")
                         .cookie(teacher).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

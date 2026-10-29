@@ -70,8 +70,8 @@ public class GetClassProgress {
 
     private static StudentProgressRow toRow(EnrollmentManagement.ClassRosterEntry entry,
             CoursesManagement.ClassInfoResponse classInfo, Map<UUID, String> names, Instant now) {
-        var elapsedSessions = ProgressRules.countElapsedSessions(classInfo.schedule(),
-                entry.enrolledAt(), endMarkOf(entry, now), ProgressRules.centerZone());
+        var elapsedSessions = ProgressRules.countAttendedSessions(classInfo.schedule(), entry.enrolledAt(),
+                endMarkOf(entry, now), classInfo.startedAt(), classInfo.endedAt(), ProgressRules.centerZone());
         return new StudentProgressRow(entry.enrollmentId(), entry.studentProfileId(),
                 names.get(entry.studentProfileId()), entry.status(), entry.enrolledAt(),
                 entry.withdrawnAt(), elapsedSessions, classInfo.standardSessionCount(),

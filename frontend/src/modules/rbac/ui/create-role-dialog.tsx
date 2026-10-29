@@ -84,7 +84,7 @@ export function CreateRoleDialog({ open, onClose }: CreateRoleDialogProps) {
                 <CheckableRow
                   key={group.id}
                   label={group.name}
-                  description={`ID: ${group.id.slice(0, 8)}`}
+                  description={group.description ?? `${group.items.length} quyền`}
                   checked={selectedGroupIds.includes(group.id)}
                   onToggle={() => toggleGroup(group.id)}
                 />

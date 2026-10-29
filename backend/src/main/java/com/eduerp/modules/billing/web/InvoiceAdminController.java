@@ -58,11 +58,12 @@ class InvoiceAdminController {
 
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_INVOICE)
-    PageResponse<InvoiceResponse> list(@PageableDefault(size = 20) Pageable pageable,
+    PageResponse<InvoiceResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID studentProfileId,
             @RequestParam(required = false) UUID enrollmentId,
             @RequestParam(required = false) BillingConstants.InvoiceStatus status) {
-        return listInvoices.execute(pageable, studentProfileId, enrollmentId, status);
+        return listInvoices.execute(principal.accountId(), pageable, studentProfileId, enrollmentId, status);
     }
 
     @PostMapping
@@ -74,8 +75,8 @@ class InvoiceAdminController {
 
     @GetMapping("/{invoiceId}")
     @PreAuthorize(AccessConstants.AccessRules.READ_INVOICE)
-    InvoiceDetailResponse get(@PathVariable UUID invoiceId) {
-        return getInvoiceDetail.execute(invoiceId);
+    InvoiceDetailResponse get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID invoiceId) {
+        return getInvoiceDetail.execute(principal.accountId(), invoiceId);
     }
 
     @PostMapping("/{invoiceId}/online-payment")

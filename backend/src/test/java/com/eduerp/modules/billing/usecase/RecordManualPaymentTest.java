@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,7 +30,7 @@ class RecordManualPaymentTest {
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final PaymentRepository payments = mock(PaymentRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final RecordManualPayment useCase = new RecordManualPayment(invoices, payments, events);
+    private final RecordManualPayment useCase = new RecordManualPayment(invoices, payments, events, mock(BillingBranchGuard.class));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

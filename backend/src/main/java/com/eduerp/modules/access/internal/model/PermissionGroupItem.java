@@ -43,4 +43,8 @@ public class PermissionGroupItem {
         this.permission = permission;
         this.scope = scope;
     }
+
+    public void changeScope(AccessConstants.PermissionScope scope) {
+        this.scope = scope;
+    }
 }

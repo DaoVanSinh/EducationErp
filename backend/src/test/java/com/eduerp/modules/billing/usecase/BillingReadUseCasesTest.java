@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -25,8 +26,8 @@ class BillingReadUseCasesTest {
 
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final PaymentRepository payments = mock(PaymentRepository.class);
-    private final ListInvoices listInvoices = new ListInvoices(invoices);
-    private final GetInvoiceDetail getInvoiceDetail = new GetInvoiceDetail(invoices, payments);
+    private final ListInvoices listInvoices = new ListInvoices(invoices, mock(BillingBranchGuard.class));
+    private final GetInvoiceDetail getInvoiceDetail = new GetInvoiceDetail(invoices, payments, mock(BillingBranchGuard.class));
     private final GetPaymentStatus getPaymentStatus = new GetPaymentStatus(payments);
 
     private Invoice invoiceOf(String amount) {
@@ -39,10 +40,10 @@ class BillingReadUseCasesTest {
         var invoice = invoiceOf("6000000");
         var pageable = PageRequest.of(0, 20);
         when(invoices.search(invoice.getStudentProfileId(), invoice.getEnrollmentId(),
-                BillingConstants.InvoiceStatus.UNPAID, pageable))
+                BillingConstants.InvoiceStatus.UNPAID, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(invoice), pageable, 1));
 
-        var page = listInvoices.execute(pageable, invoice.getStudentProfileId(), invoice.getEnrollmentId(),
+        var page = listInvoices.execute(null, pageable, invoice.getStudentProfileId(), invoice.getEnrollmentId(),
                 BillingConstants.InvoiceStatus.UNPAID);
 
         assertThat(page.totalItems()).isEqualTo(1);
@@ -53,9 +54,9 @@ class BillingReadUseCasesTest {
     @Test
     void listAcceptsAllNullFilters() {
         var pageable = PageRequest.of(0, 20);
-        when(invoices.search(null, null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(invoices.search(null, null, null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(listInvoices.execute(pageable, null, null, null).items()).isEmpty();
+        assertThat(listInvoices.execute(null, pageable, null, null, null).items()).isEmpty();
     }
 
     @Test
@@ -69,7 +70,7 @@ class BillingReadUseCasesTest {
         when(payments.findAllByInvoice_IdOrderByCreatedAtDesc(invoice.getId()))
                 .thenReturn(List.of(pending, manual));
 
-        var detail = getInvoiceDetail.execute(invoice.getId());
+        var detail = getInvoiceDetail.execute(null, invoice.getId());
 
         assertThat(detail.invoice().id()).isEqualTo(invoice.getId());
         assertThat(detail.payments()).hasSize(2);
@@ -86,7 +87,7 @@ class BillingReadUseCasesTest {
         var invoiceId = UUID.randomUUID();
         when(invoices.findById(invoiceId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> getInvoiceDetail.execute(invoiceId)).isInstanceOf(InvoiceNotFoundException.class);
+        assertThatThrownBy(() -> getInvoiceDetail.execute(null, invoiceId)).isInstanceOf(InvoiceNotFoundException.class);
     }
 
     @Test

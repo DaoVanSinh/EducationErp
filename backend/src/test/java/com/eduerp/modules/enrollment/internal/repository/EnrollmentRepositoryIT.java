@@ -1,5 +1,6 @@
 package com.eduerp.modules.enrollment.internal.repository;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -70,7 +71,7 @@ class EnrollmentRepositoryIT {
                 new BigDecimal("9000000")));
         courseId = course.getId();
         var teacherId = accounts.save(new Account("enr-gv-" + shortId() + "@eduerp.local", "hash", "GV", null)).getId();
-        classId = classes.save(new Class(course, "ENR-K-" + shortId(), branchId, teacherId, 2)).getId();
+        classId = classes.save(ClassFixtures.inProgress(course, "ENR-K-" + shortId(), branchId, teacherId, 2)).getId();
     }
 
     private static String shortId() {
@@ -165,11 +166,11 @@ class EnrollmentRepositoryIT {
         enrollments.saveAndFlush(newEnrollment(newStudentProfileId()));
         var pageable = PageRequest.of(0, 20);
 
-        assertThat(enrollments.search(null, null, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(enrollments.search(studentProfileId, null, null, pageable).getTotalElements()).isEqualTo(1);
-        assertThat(enrollments.search(null, classId, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(enrollments.search(studentProfileId, classId, null, pageable).getTotalElements()).isEqualTo(1);
-        assertThat(enrollments.search(studentProfileId, UUID.randomUUID(), null, pageable).getTotalElements())
+        assertThat(enrollments.search(null, null, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(enrollments.search(studentProfileId, null, null, null, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(enrollments.search(null, classId, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(enrollments.search(studentProfileId, classId, null, null, pageable).getTotalElements()).isEqualTo(1);
+        assertThat(enrollments.search(studentProfileId, UUID.randomUUID(), null, null, pageable).getTotalElements())
                 .isZero();
     }
 
@@ -184,14 +185,14 @@ class EnrollmentRepositoryIT {
         enrollments.saveAndFlush(withdrawn);
         var pageable = PageRequest.of(0, 20);
 
-        assertThat(enrollments.search(null, null, null, pageable).getTotalElements()).isEqualTo(2);
-        assertThat(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE, pageable)
+        assertThat(enrollments.search(null, null, null, null, pageable).getTotalElements()).isEqualTo(2);
+        assertThat(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE, null, pageable)
                 .getContent()).extracting(Enrollment::getId).containsExactly(active.getId());
-        assertThat(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.WITHDRAWN, pageable)
+        assertThat(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.WITHDRAWN, null, pageable)
                 .getTotalElements()).isEqualTo(1);
         assertThat(enrollments.search(studentProfileId, classId,
-                EnrollmentConstants.EnrollmentStatus.ACTIVE, pageable).getTotalElements()).isEqualTo(1);
+                EnrollmentConstants.EnrollmentStatus.ACTIVE, null, pageable).getTotalElements()).isEqualTo(1);
         assertThat(enrollments.search(studentProfileId, classId,
-                EnrollmentConstants.EnrollmentStatus.COMPLETED, pageable).getTotalElements()).isZero();
+                EnrollmentConstants.EnrollmentStatus.COMPLETED, null, pageable).getTotalElements()).isZero();
     }
 }

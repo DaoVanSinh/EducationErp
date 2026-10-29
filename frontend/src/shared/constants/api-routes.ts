@@ -17,11 +17,17 @@ export const API_ROUTE = {
     accounts: "/api/rbac/accounts",
     catalog: "/api/rbac/catalog",
     roles: "/api/rbac/roles",
+    role: (roleId: string) => `/api/rbac/roles/${roleId}`,
     permissionGroups: "/api/rbac/permission-groups",
+    permissionGroup: (permissionGroupId: string) => `/api/rbac/permission-groups/${permissionGroupId}`,
     accountGroups: (accountId: string) => `/api/rbac/accounts/${accountId}/groups`,
     accountBranch: (accountId: string) => `/api/rbac/accounts/${accountId}/transfer-branch`,
     accountResendInvite: (accountId: string) => `/api/rbac/accounts/${accountId}/resend-invite`,
     accountRevokeInvite: (accountId: string) => `/api/rbac/accounts/${accountId}/revoke-invite`,
+    accountRole: (accountId: string) => `/api/rbac/accounts/${accountId}/role`,
+    accountDisable: (accountId: string) => `/api/rbac/accounts/${accountId}/disable`,
+    accountEnable: (accountId: string) => `/api/rbac/accounts/${accountId}/enable`,
+    accountSignOutEverywhere: (accountId: string) => `/api/rbac/accounts/${accountId}/sign-out-everywhere`,
   },
   dashboard: {
     stats: "/api/dashboard/stats",
@@ -35,6 +41,9 @@ export const API_ROUTE = {
     course: (courseId: string) => `/api/courses/courses/${courseId}`,
     classes: "/api/courses/classes",
     class: (classId: string) => `/api/courses/classes/${classId}`,
+    classStart: (classId: string) => `/api/courses/classes/${classId}/start`,
+    classComplete: (classId: string) => `/api/courses/classes/${classId}/complete`,
+    classCancel: (classId: string) => `/api/courses/classes/${classId}/cancel`,
     /** Cổng giảng dạy: lớp của CHÍNH giáo viên đang đăng nhập (READ_TEACHING). */
     myClasses: "/api/courses/me/classes",
   },
@@ -97,6 +106,26 @@ export const API_ROUTE = {
     studentSummary: (studentProfileId: string) => `/api/academic/students/${studentProfileId}/summary`,
     /** Cổng học tập: lớp, lịch, điểm, tiến trình của CHÍNH học viên (READ_LEARNING). */
     myClasses: "/api/academic/me/classes",
+  },
+  attendance: {
+    /** POST upsert một buổi theo (classId, sessionDate) - classId nằm trong body. */
+    sessions: "/api/attendance/sessions",
+    classAttendance: (classId: string) => `/api/attendance/classes/${classId}`,
+    /** Cổng học tập: điểm danh của CHÍNH học viên (READ_LEARNING). */
+    myClasses: "/api/attendance/me/classes",
+  },
+  assessment: {
+    assignments: "/api/assessment/assignments",
+    assignment: (assignmentId: string) => `/api/assessment/assignments/${assignmentId}`,
+    assignmentResults: (assignmentId: string) => `/api/assessment/assignments/${assignmentId}/results`,
+    classAssignments: (classId: string) => `/api/assessment/classes/${classId}/assignments`,
+    miniTasks: "/api/assessment/mini-tasks",
+    miniTask: (miniTaskId: string) => `/api/assessment/mini-tasks/${miniTaskId}`,
+    classMiniTasks: (classId: string) => `/api/assessment/classes/${classId}/mini-tasks`,
+    /** Cổng học tập: bài tập + mini-task của CHÍNH học viên (READ_LEARNING). */
+    myClasses: "/api/assessment/me/classes",
+    myMiniTask: (miniTaskId: string) => `/api/assessment/me/mini-tasks/${miniTaskId}`,
+    myMiniTaskAttempts: (miniTaskId: string) => `/api/assessment/me/mini-tasks/${miniTaskId}/attempts`,
   },
 } as const;
 

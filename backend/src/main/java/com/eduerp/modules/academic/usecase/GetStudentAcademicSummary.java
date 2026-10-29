@@ -100,8 +100,8 @@ public class GetStudentAcademicSummary {
                 .collect(Collectors.toMap(GradeEntry::getCourseGradeColumnId, GradeEntry::getScore));
         var finalScore = GradeRules.finalScore(columns, scores);
 
-        var elapsedSessions = ProgressRules.countElapsedSessions(classInfo.schedule(), entry.enrolledAt(),
-                endMarkOf(entry, now), ProgressRules.centerZone());
+        var elapsedSessions = ProgressRules.countAttendedSessions(classInfo.schedule(), entry.enrolledAt(),
+                endMarkOf(entry, now), classInfo.startedAt(), classInfo.endedAt(), ProgressRules.centerZone());
         var progressPercent = ProgressRules.progressPercent(elapsedSessions, classInfo.standardSessionCount());
 
         var classSummary = classSummaries.get(entry.classId());

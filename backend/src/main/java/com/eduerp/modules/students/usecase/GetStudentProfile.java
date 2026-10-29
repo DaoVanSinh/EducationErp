@@ -2,7 +2,9 @@ package com.eduerp.modules.students.usecase;
 
 import com.eduerp.modules.identity.IdentityManagement;
 import com.eduerp.modules.students.StudentProfileNotFoundException;
+import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.students.dto.StudentProfileResponse;
+import com.eduerp.modules.students.internal.access.StudentBranchGuard;
 import com.eduerp.modules.students.internal.model.StudentProfile;
 import com.eduerp.modules.students.internal.repository.StudentProfileRepository;
 import java.util.List;
@@ -17,15 +19,18 @@ public class GetStudentProfile {
 
     private final StudentProfileRepository profiles;
     private final IdentityManagement identity;
+    private final StudentBranchGuard branchGuard;
 
-    GetStudentProfile(StudentProfileRepository profiles, IdentityManagement identity) {
+    GetStudentProfile(StudentProfileRepository profiles, IdentityManagement identity, StudentBranchGuard branchGuard) {
         this.profiles = profiles;
         this.identity = identity;
+        this.branchGuard = branchGuard;
     }
 
     @Transactional(readOnly = true)
-    public StudentProfileResponse execute(UUID profileId) {
+    public StudentProfileResponse execute(UUID actorAccountId, UUID profileId) {
         var profile = profiles.findById(profileId).orElseThrow(() -> new StudentProfileNotFoundException(profileId));
+        branchGuard.require(actorAccountId, profile, AccessConstants.Actions.READ);
         var account = identity.summariesOf(List.of(profile.getAccountId())).get(profile.getAccountId());
         return toResponse(profile, account);
     }

@@ -1,6 +1,6 @@
 import {
   studentProfileSummarySchema,
-  type CreateStudentProfilePayload,
+  type CreateStudentPayload,
   type UpdateStudentProfilePayload,
 } from "@/entities/student/model/student-schema";
 import { apiClient } from "@/shared/api/api-client";
@@ -24,7 +24,7 @@ export const studentApi = {
     );
   },
 
-  async createProfile(payload: CreateStudentProfilePayload): Promise<string> {
+  async createProfile(payload: CreateStudentPayload): Promise<string> {
     return createdStudentProfileIdSchema.parse(
       await apiClient.post<unknown>(API_ROUTE.students.profiles, payload),
     );

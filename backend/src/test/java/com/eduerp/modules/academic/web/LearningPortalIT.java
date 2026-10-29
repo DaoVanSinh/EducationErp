@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.web;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -135,7 +136,7 @@ class LearningPortalIT {
     /** Một học viên ghi danh vào lớp có hai cột điểm, đã có điểm giữa kỳ và một hoá đơn. */
     private String enroll(UUID accountId, Course course, UUID branchId, String midtermScore) {
         var code = "LP-K-" + shortId();
-        var cls = new Class(course, code, branchId, teacherId, 20);
+        var cls = ClassFixtures.inProgress(course, code, branchId, teacherId, 20);
         cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
         var savedClass = classes.save(cls);
         var profileId = profiles.save(new StudentProfile(accountId, null, null, null)).getId();

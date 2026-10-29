@@ -26,11 +26,11 @@ export function StudentsPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Học viên"
-          description="Hồ sơ nghiệp vụ của học viên."
+          description="Hồ sơ học viên kèm tài khoản đăng nhập cổng học tập."
           actions={
             <Can {...ACCESS_RULE.createStudent}>
               <GlassButton onClick={() => setCreateDialogOpen(true)} icon={<Plus size={16} aria-hidden />}>
-                Hồ sơ mới
+                Thêm học viên
               </GlassButton>
             </Can>
           }
@@ -52,7 +52,7 @@ export function StudentsPage() {
               <EmptyState
                 icon={<Users size={28} aria-hidden />}
                 title="Chưa có hồ sơ học viên nào"
-                description="Tạo tài khoản học viên ở trang Tài khoản trước, rồi tạo hồ sơ ở đây."
+                description="Thêm học viên mới - hệ thống tạo luôn tài khoản đăng nhập và gửi email mời."
               />
             ) : (
               <>

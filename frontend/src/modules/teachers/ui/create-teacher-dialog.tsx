@@ -1,8 +1,4 @@
-import { useAccounts } from "@/entities/account";
-import { useCreateTeacherProfile } from "@/modules/teachers/api/use-teachers-mutations";
-import { createTeacherFormSchema } from "@/modules/teachers/model/teachers-forms";
-import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
-import { useZodForm } from "@/shared/lib/use-zod-form";
+import { useCreateTeacherController } from "@/modules/teachers/hooks/use-create-teacher-controller";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -15,36 +11,52 @@ export interface CreateTeacherDialogProps {
   readonly onClose: () => void;
 }
 
+/** Tạo giáo viên MỘT bước: tài khoản đăng nhập (email mời + mật khẩu tạm) và hồ sơ giáo viên cùng lúc. */
 export function CreateTeacherDialog({ open, onClose }: CreateTeacherDialogProps) {
-  const createTeacher = useCreateTeacherProfile();
-  const accounts = useAccounts(0, DEFAULT_PAGE_SIZE, null);
-
-  const form = useZodForm({
-    schema: createTeacherFormSchema,
-    initialValues: { accountId: "", subjects: "", phone: "", bio: "" },
-    onSubmit: async (values) => {
-      await createTeacher.mutateAsync(values);
-      form.reset();
-      onClose();
-    },
-  });
+  const controller = useCreateTeacherController({ onClose });
+  const { values, fieldErrors, setValue } = controller;
 
   return (
-    <GlassModal open={open} onClose={onClose} title="Tạo hồ sơ giáo viên" description="Chọn một tài khoản đã có vai trò Giáo viên.">
-      <form id="create-teacher-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
-        {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+    <GlassModal
+      open={open}
+      onClose={onClose}
+      title="Thêm giáo viên"
+      description="Hệ thống tạo tài khoản và gửi email kèm mật khẩu tạm (hiệu lực 7 ngày) cho giáo viên."
+    >
+      <form id="create-teacher-form" onSubmit={controller.handleSubmit} className="flex flex-col gap-4" noValidate>
+        {controller.submitError ? <ErrorNotice error={controller.submitError} /> : null}
 
-        <FormField label="Tài khoản" htmlFor="teacher-account" error={form.fieldErrors.accountId}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Họ tên" htmlFor="teacher-name" error={fieldErrors.fullName}>
+            <GlassInput
+              id="teacher-name"
+              autoFocus
+              value={values.fullName}
+              invalid={fieldErrors.fullName !== undefined}
+              onChange={(event) => setValue("fullName", event.target.value)}
+            />
+          </FormField>
+          <FormField label="Email đăng nhập" htmlFor="teacher-email" error={fieldErrors.email}>
+            <GlassInput
+              id="teacher-email"
+              type="email"
+              value={values.email}
+              invalid={fieldErrors.email !== undefined}
+              onChange={(event) => setValue("email", event.target.value)}
+            />
+          </FormField>
+        </div>
+
+        <FormField label="Chi nhánh chủ quản" htmlFor="teacher-branch" hint="Giáo viên vẫn dạy được lớp ở chi nhánh khác.">
           <GlassSelect
-            id="teacher-account"
-            value={form.values.accountId}
-            invalid={form.fieldErrors.accountId !== undefined}
-            onChange={(event) => form.setValue("accountId", event.target.value)}
+            id="teacher-branch"
+            value={values.homeBranchId}
+            onChange={(event) => setValue("homeBranchId", event.target.value)}
           >
-            <option value="">-- Chọn tài khoản --</option>
-            {(accounts.data?.items ?? []).map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.fullName} · {account.email}
+            <option value="">-- Cấp tổ chức --</option>
+            {controller.branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
               </option>
             ))}
           </GlassSelect>
@@ -53,34 +65,31 @@ export function CreateTeacherDialog({ open, onClose }: CreateTeacherDialogProps)
         <FormField label="Môn/chuyên môn dạy" htmlFor="teacher-subjects" hint="Cách nhau bởi dấu phẩy, ví dụ: Tiếng Anh, IELTS">
           <GlassInput
             id="teacher-subjects"
-            value={form.values.subjects}
-            onChange={(event) => form.setValue("subjects", event.target.value)}
+            value={values.subjects}
+            onChange={(event) => setValue("subjects", event.target.value)}
           />
         </FormField>
 
-        <FormField label="Số điện thoại" htmlFor="teacher-phone" hint="Không bắt buộc.">
-          <GlassInput
-            id="teacher-phone"
-            value={form.values.phone}
-            onChange={(event) => form.setValue("phone", event.target.value)}
-          />
-        </FormField>
-
-        <FormField label="Giới thiệu ngắn" htmlFor="teacher-bio" hint="Không bắt buộc.">
-          <GlassInput
-            id="teacher-bio"
-            value={form.values.bio}
-            onChange={(event) => form.setValue("bio", event.target.value)}
-          />
-        </FormField>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Số điện thoại" htmlFor="teacher-phone" hint="Không bắt buộc.">
+            <GlassInput
+              id="teacher-phone"
+              value={values.phone}
+              onChange={(event) => setValue("phone", event.target.value)}
+            />
+          </FormField>
+          <FormField label="Giới thiệu ngắn" htmlFor="teacher-bio" hint="Không bắt buộc.">
+            <GlassInput id="teacher-bio" value={values.bio} onChange={(event) => setValue("bio", event.target.value)} />
+          </FormField>
+        </div>
       </form>
 
       <footer className="flex justify-end gap-2">
         <GlassButton variant="ghost" onClick={onClose}>
           Huỷ
         </GlassButton>
-        <GlassButton type="submit" form="create-teacher-form" loading={form.isSubmitting}>
-          Tạo hồ sơ
+        <GlassButton type="submit" form="create-teacher-form" loading={controller.isSubmitting}>
+          Thêm giáo viên
         </GlassButton>
       </footer>
     </GlassModal>

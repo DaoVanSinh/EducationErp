@@ -46,4 +46,23 @@ export const accountApi = {
   async revokeInvite(accountId: string): Promise<void> {
     await apiClient.post<void>(API_ROUTE.rbac.accountRevokeInvite(accountId));
   },
+
+  /** Đổi vai trò của tài khoản đã có - backend chặn khi còn dạy lớp đang mở / còn đang học. */
+  async changeRole(accountId: string, roleId: string): Promise<void> {
+    await apiClient.patch<void>(API_ROUTE.rbac.accountRole(accountId), { roleId });
+  },
+
+  /** Khoá: không đăng nhập được nữa, mọi phiên đang mở bị thu hồi ngay. */
+  async disable(accountId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.rbac.accountDisable(accountId));
+  },
+
+  async enable(accountId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.rbac.accountEnable(accountId));
+  },
+
+  /** Đăng xuất khỏi mọi thiết bị, tài khoản vẫn hoạt động. */
+  async signOutEverywhere(accountId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.rbac.accountSignOutEverywhere(accountId));
+  },
 } as const;

@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.usecase;
 
+import com.eduerp.modules.courses.TestClassInfos;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -45,7 +46,7 @@ class GetClassGradebookTest {
 
     private void stubAccessGranted() {
         when(guard.requireAccessToClass(actorAccountId, classId, AccessConstants.Actions.READ))
-                .thenReturn(new CoursesManagement.ClassInfoResponse(classId, courseId, UUID.randomUUID(),
+                .thenReturn(TestClassInfos.of(classId, courseId, UUID.randomUUID(),
                         actorAccountId, 20, true, 24, List.of()));
     }
 

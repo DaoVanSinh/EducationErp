@@ -5,6 +5,7 @@ import { CreateRoleDialog } from "@/modules/rbac/ui/create-role-dialog";
 import { GroupItemCard } from "@/modules/rbac/ui/groups/group-item-card";
 import { ResourcePermissionGroupCard } from "@/modules/rbac/ui/permissions/resource-permission-group-card";
 import { RbacTabBar } from "@/modules/rbac/ui/roles/rbac-tab-bar";
+import { EditRoleDialog } from "@/modules/rbac/ui/roles/edit-role-dialog";
 import { RoleDetailInspector } from "@/modules/rbac/ui/roles/role-detail-inspector";
 import { RoleItemCard } from "@/modules/rbac/ui/roles/role-item-card";
 import { RoleKpiBanner } from "@/modules/rbac/ui/roles/role-kpi-banner";
@@ -26,6 +27,7 @@ export function RolesPage() {
     filteredRoles,
     activeRoleId,
     selectedRole,
+    selectedRoleGroups,
     setSelectedRoleId,
     filteredGroups,
     permissionsByResource,
@@ -35,6 +37,14 @@ export function RolesPage() {
     closeRoleDialog,
     openGroupDialog,
     closeGroupDialog,
+    canEditRole,
+    canEditGroup,
+    editingRole,
+    startEditingRole,
+    stopEditingRole,
+    editingGroup,
+    startEditingGroup,
+    stopEditingGroup,
   } = useRolesPageController();
 
   return (
@@ -42,7 +52,7 @@ export function RolesPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Vai trò & Phân quyền"
-          description="Cơ chế phân quyền linh hoạt theo vai trò, nhóm quyền và tài khoản."
+          description="Mỗi vai trò gồm các nhóm quyền; mỗi nhóm quyền là danh sách thao tác kèm phạm vi Cá nhân / Chi nhánh / Toàn tổ chức."
           actions={
             <>
               <Can {...ACCESS_RULE.createPermissionGroup}>
@@ -121,7 +131,9 @@ export function RolesPage() {
                 <div className="xl:col-span-7 min-w-0 w-full">
                   <RoleDetailInspector
                     role={selectedRole}
-                    allGroups={catalog.data.permissionGroups}
+                    roleGroups={selectedRoleGroups}
+                    canEdit={canEditRole}
+                    onEdit={startEditingRole}
                   />
                 </div>
               </div>
@@ -140,7 +152,7 @@ export function RolesPage() {
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredGroups.map((group) => (
-                      <GroupItemCard key={group.id} group={group} />
+                      <GroupItemCard key={group.id} group={group} canEdit={canEditGroup} onEdit={startEditingGroup} />
                     ))}
                   </div>
                 )}
@@ -175,6 +187,13 @@ export function RolesPage() {
 
         <CreateRoleDialog open={roleDialogOpen} onClose={closeRoleDialog} />
         <CreatePermissionGroupDialog open={groupDialogOpen} onClose={closeGroupDialog} />
+
+        {editingRole === null ? null : (
+          <EditRoleDialog key={editingRole.id} role={editingRole} open onClose={stopEditingRole} />
+        )}
+        {editingGroup === null ? null : (
+          <CreatePermissionGroupDialog key={editingGroup.id} group={editingGroup} open onClose={stopEditingGroup} />
+        )}
       </div>
     </RequirePermission>
   );

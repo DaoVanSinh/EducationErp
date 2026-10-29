@@ -1,5 +1,6 @@
 package com.eduerp.modules.enrollment;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.eduerp.modules.courses.internal.model.Class;
@@ -79,7 +80,7 @@ class EnrollmentManagementIT {
         courseId = course.getId();
         var teacherId = accounts.save(new Account("ros-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        classId = classes.save(new Class(course, "ROS-K-" + shortId(), branchId, teacherId, 20)).getId();
+        classId = classes.save(ClassFixtures.inProgress(course, "ROS-K-" + shortId(), branchId, teacherId, 20)).getId();
     }
 
     private UUID newStudentProfileId() {

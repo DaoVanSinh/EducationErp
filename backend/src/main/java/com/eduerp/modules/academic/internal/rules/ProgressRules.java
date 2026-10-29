@@ -69,6 +69,24 @@ public final class ProgressRules {
     }
 
     /**
+     * Số buổi một học viên đã học, có tính vòng đời lớp (V31): đếm từ {@code max(ghi danh, khai giảng)}
+     * tới {@code min(mốc của học viên, lúc lớp kết thúc)}. Lớp chưa khai giảng ({@code classStartedAt}
+     * null) thì chưa có buổi nào - kể cả khi lịch tuần đã "trôi qua" vài lần từ ngày ghi danh.
+     *
+     * @param studentEnd mốc của riêng học viên: lúc rút (đã rút) hoặc "bây giờ"
+     * @param classEndedAt lúc lớp kết thúc/huỷ, {@code null} nếu lớp chưa đóng
+     */
+    public static int countAttendedSessions(List<WeeklyScheduleSlot> schedule, Instant enrolledAt,
+            Instant studentEnd, Instant classStartedAt, Instant classEndedAt, ZoneId zone) {
+        if (classStartedAt == null) {
+            return 0;
+        }
+        var from = enrolledAt.isAfter(classStartedAt) ? enrolledAt : classStartedAt;
+        var to = classEndedAt != null && classEndedAt.isBefore(studentEnd) ? classEndedAt : studentEnd;
+        return countElapsedSessions(schedule, from, to, zone);
+    }
+
+    /**
      * {@code round(min(đã học, chuẩn) / chuẩn * 100)} (spec mục 5). Trả {@code null} khi
      * {@code standardSessionCount} chưa cấu hình (null, 0 hoặc âm): "không tính được, trả null kèm
      * lý do "chưa cấu hình tổng số buổi chuẩn" — không suy đoán" (spec mục 5, Review Focus #8).

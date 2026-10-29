@@ -11,7 +11,7 @@ export type AccountStatus = (typeof ACCOUNT_STATUS)[keyof typeof ACCOUNT_STATUS]
 
 export const ACCOUNT_STATUS_LABEL: Record<AccountStatus, string> = {
   [ACCOUNT_STATUS.active]: "Đang hoạt động",
-  [ACCOUNT_STATUS.disabled]: "Đã vô hiệu hoá",
+  [ACCOUNT_STATUS.disabled]: "Đã khoá",
 };
 
 export const accountStatusSchema = z.enum([ACCOUNT_STATUS.active, ACCOUNT_STATUS.disabled]);

@@ -4,7 +4,7 @@ export { useTeacher } from "@/entities/teacher/api/use-teacher";
 export { useTeachers } from "@/entities/teacher/api/use-teachers";
 export {
   teacherProfileSummarySchema,
-  type CreateTeacherProfilePayload,
+  type CreateTeacherPayload,
   type TeacherProfileSummary,
   type UpdateTeacherProfilePayload,
 } from "@/entities/teacher/model/teacher-schema";

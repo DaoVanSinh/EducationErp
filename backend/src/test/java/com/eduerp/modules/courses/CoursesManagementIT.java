@@ -1,5 +1,6 @@
 package com.eduerp.modules.courses;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.eduerp.modules.courses.internal.model.Class;
@@ -58,7 +59,7 @@ class CoursesManagementIT {
         var course = courses.save(new Course("FACADE-C1", "Khoá facade 1", null, 24, new BigDecimal("9000000")));
         var branch = branches.save(new Branch("FCD-B1", "Chi nhánh facade 1", null));
         var teacher = accounts.save(new Account("facade-teacher1@eduerp.local", "hash", "GV Facade", null));
-        var cls = classes.save(new Class(course, "FACADE-K1", branch.getId(), teacher.getId(), 12));
+        var cls = classes.save(ClassFixtures.inProgress(course, "FACADE-K1", branch.getId(), teacher.getId(), 12));
 
         var info = coursesManagement.getClassInfo(cls.getId()).orElseThrow();
 
@@ -66,7 +67,8 @@ class CoursesManagementIT {
         assertThat(info.courseId()).isEqualTo(course.getId());
         assertThat(info.branchId()).isEqualTo(branch.getId());
         assertThat(info.maxSeats()).isEqualTo(12);
-        assertThat(info.active()).isTrue();
+        assertThat(info.status()).isEqualTo(com.eduerp.modules.courses.CoursesConstants.ClassStatus.IN_PROGRESS);
+        assertThat(info.acceptsEnrollment()).isTrue();
     }
 
     @Test
@@ -109,7 +111,7 @@ class CoursesManagementIT {
         var course = courses.save(new Course("FACADE-C4", "Khoá facade 4", null, 24, null));
         var branch = branches.save(new Branch("FCD-B4", "Chi nhánh facade 4", null));
         var teacher = accounts.save(new Account("facade-teacher4@eduerp.local", "hash", "GV 4", null));
-        var cls = new Class(course, "FACADE-K4", branch.getId(), teacher.getId(), 12);
+        var cls = ClassFixtures.inProgress(course, "FACADE-K4", branch.getId(), teacher.getId(), 12);
         cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
         cls.addSchedule(CoursesConstants.DayOfWeek.WED, LocalTime.of(18, 0), LocalTime.of(20, 0));
         var saved = classes.save(cls);
@@ -130,7 +132,7 @@ class CoursesManagementIT {
         var course = courses.save(new Course("FACADE-C5", "Khoá facade 5", null, null, null));
         var branch = branches.save(new Branch("FCD-B5", "Chi nhánh facade 5", null));
         var teacher = accounts.save(new Account("facade-teacher5@eduerp.local", "hash", "GV 5", null));
-        var cls = classes.save(new Class(course, "FACADE-K5", branch.getId(), teacher.getId(), 12));
+        var cls = classes.save(ClassFixtures.inProgress(course, "FACADE-K5", branch.getId(), teacher.getId(), 12));
 
         var info = coursesManagement.getClassInfo(cls.getId()).orElseThrow();
 
@@ -166,7 +168,7 @@ class CoursesManagementIT {
         var course = courses.save(new Course("FACADE-C7", "Khoá facade 7", null, 24, null));
         var branch = branches.save(new Branch("FCD-B7", "Chi nhánh facade 7", null));
         var teacher = accounts.save(new Account("facade-teacher7@eduerp.local", "hash", "GV 7", null));
-        var cls = classes.save(new Class(course, "FACADE-K7", branch.getId(), teacher.getId(), 12));
+        var cls = classes.save(ClassFixtures.inProgress(course, "FACADE-K7", branch.getId(), teacher.getId(), 12));
 
         var summaries = coursesManagement.classSummariesOf(List.of(cls.getId()));
 

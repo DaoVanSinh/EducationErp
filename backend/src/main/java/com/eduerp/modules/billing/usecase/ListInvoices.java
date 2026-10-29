@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.dto.InvoiceResponse;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
@@ -15,14 +16,18 @@ public class ListInvoices {
 
     private final InvoiceRepository invoices;
 
-    ListInvoices(InvoiceRepository invoices) {
+    private final BillingBranchGuard branchGuard;
+
+    ListInvoices(InvoiceRepository invoices, BillingBranchGuard branchGuard) {
         this.invoices = invoices;
+        this.branchGuard = branchGuard;
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<InvoiceResponse> execute(Pageable pageable, UUID studentProfileId, UUID enrollmentId,
+    public PageResponse<InvoiceResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId, UUID enrollmentId,
             BillingConstants.InvoiceStatus status) {
-        return PageResponse.of(invoices.search(studentProfileId, enrollmentId, status, pageable)
+        return PageResponse.of(invoices.search(studentProfileId, enrollmentId, status,
+                branchGuard.listFilter(actorAccountId), pageable)
                 .map(CreateInvoice::toResponse));
     }
 }

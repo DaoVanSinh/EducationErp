@@ -75,7 +75,7 @@ export function EnrollmentsPage() {
           open={controller.createDialogOpen}
           onClose={controller.closeCreateDialog}
           students={controller.students.data?.items ?? []}
-          classes={controller.classes.data?.items ?? []}
+          classes={controller.openClasses.data?.items ?? []}
         />
       </div>
     </RequirePermission>

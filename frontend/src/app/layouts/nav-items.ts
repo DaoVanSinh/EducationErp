@@ -36,6 +36,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     title: "Học tập",
     items: [
       { path: APP_ROUTE.myLearning, label: "Học tập của tôi", requirement: ACCESS_RULE.readLearning },
+      { path: APP_ROUTE.myAttendance, label: "Điểm danh của tôi", requirement: ACCESS_RULE.readLearning },
+      { path: APP_ROUTE.myAssessments, label: "Bài tập & luyện tập", requirement: ACCESS_RULE.readLearning },
       { path: APP_ROUTE.myInvoices, label: "Học phí của tôi", requirement: ACCESS_RULE.readLearning },
     ],
   },

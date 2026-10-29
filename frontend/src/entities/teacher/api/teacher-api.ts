@@ -1,6 +1,6 @@
 import {
   teacherProfileSummarySchema,
-  type CreateTeacherProfilePayload,
+  type CreateTeacherPayload,
   type UpdateTeacherProfilePayload,
 } from "@/entities/teacher/model/teacher-schema";
 import { apiClient } from "@/shared/api/api-client";
@@ -24,7 +24,7 @@ export const teacherApi = {
     );
   },
 
-  async createProfile(payload: CreateTeacherProfilePayload): Promise<string> {
+  async createProfile(payload: CreateTeacherPayload): Promise<string> {
     return createdTeacherProfileIdSchema.parse(
       await apiClient.post<unknown>(API_ROUTE.teachers.profiles, payload),
     );

@@ -119,8 +119,9 @@ public class GetMyLearning {
                         column.maxScore(), scores.get(column.id())))
                 .toList();
 
-        var elapsed = ProgressRules.countElapsedSessions(classInfo.schedule(), entry.enrolledAt(),
-                endMarkOf(entry, context.now()), ProgressRules.centerZone());
+        var elapsed = ProgressRules.countAttendedSessions(classInfo.schedule(), entry.enrolledAt(),
+                endMarkOf(entry, context.now()), classInfo.startedAt(), classInfo.endedAt(),
+                ProgressRules.centerZone());
         var summary = context.classSummaries().get(entry.classId());
         var teacher = context.teachers().get(classInfo.teacherId());
 
@@ -130,7 +131,8 @@ public class GetMyLearning {
                 teacher == null ? null : teacher.fullName(),
                 entry.status(), entry.enrolledAt(), classInfo.schedule(), grades,
                 GradeRules.finalScore(columns, scores), elapsed, classInfo.standardSessionCount(),
-                ProgressRules.progressPercent(elapsed, classInfo.standardSessionCount()));
+                ProgressRules.progressPercent(elapsed, classInfo.standardSessionCount()), classInfo.status(),
+                classInfo.startDate(), classInfo.endDate());
     }
 
     /** Mirror {@code GetStudentAcademicSummary.endMarkOf}: rút khỏi lớp thì tiến trình đóng băng. */

@@ -2,7 +2,7 @@ package com.eduerp.modules.courses.web;
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.courses.dto.ClassResponse;
-import com.eduerp.modules.courses.usecase.ListClasses;
+import com.eduerp.modules.courses.usecase.ListMyTeachingClasses;
 import com.eduerp.shared.AccountPrincipal;
 import com.eduerp.shared.PageResponse;
 import org.springframework.data.domain.Pageable;
@@ -23,9 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/courses/me")
 class TeachingSelfServiceController {
 
-    private final ListClasses listClasses;
+    private final ListMyTeachingClasses listClasses;
 
-    TeachingSelfServiceController(ListClasses listClasses) {
+    TeachingSelfServiceController(ListMyTeachingClasses listClasses) {
         this.listClasses = listClasses;
     }
 
@@ -33,6 +33,6 @@ class TeachingSelfServiceController {
     @PreAuthorize(AccessConstants.AccessRules.READ_TEACHING)
     PageResponse<ClassResponse> myClasses(@AuthenticationPrincipal AccountPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        return listClasses.execute(pageable, principal.accountId());
+        return listClasses.execute(principal.accountId(), pageable);
     }
 }

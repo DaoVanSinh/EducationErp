@@ -1,14 +1,10 @@
-import { useTeacherOptions } from "@/modules/courses/hooks/use-teacher-options";
 import type { ClassSummary } from "@/entities/class";
-import { useUpdateClass } from "@/modules/courses/api/use-courses-mutations";
-import { updateClassFormSchema } from "@/modules/courses/model/courses-forms";
+import { useEditClassController } from "@/modules/courses/hooks/use-edit-class-controller";
+import { ClassPlanFields } from "@/modules/courses/ui/class-plan-fields";
 import { ScheduleSlotEditor } from "@/modules/courses/ui/schedule-slot-editor";
-import { useZodForm } from "@/shared/lib/use-zod-form";
-import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
-import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
 import { GlassSelect } from "@/shared/ui/glass-select";
 
@@ -19,36 +15,28 @@ export interface EditClassDialogProps {
 }
 
 export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
-  const updateClass = useUpdateClass(cls.id);
-  const teacherOptions = useTeacherOptions();
-
-  const form = useZodForm({
-    schema: updateClassFormSchema,
-    initialValues: {
-      teacherId: cls.teacherId,
-      maxSeats: cls.maxSeats.toString(),
-      active: cls.active,
-      schedule: cls.schedule,
-    },
-    onSubmit: async (values) => {
-      await updateClass.mutateAsync(values);
-      onClose();
-    },
-  });
+  const controller = useEditClassController({ cls, onClose });
+  const { values, fieldErrors, setValue } = controller;
 
   return (
-    <GlassModal open={open} onClose={onClose} title={`Sửa lớp ${cls.code}`} description="Khóa học và chi nhánh bất biến, chỉ sửa giáo viên/sĩ số/lịch học/trạng thái.">
-      <form id="edit-class-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
-        {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+    <GlassModal
+      open={open}
+      onClose={onClose}
+      title={`Sửa lớp ${cls.code}`}
+      description="Khóa học và chi nhánh bất biến. Trạng thái lớp đổi bằng các nút Khai giảng / Kết thúc / Huỷ lớp."
+      className="max-w-2xl"
+    >
+      <form id="edit-class-form" onSubmit={controller.handleSubmit} className="flex flex-col gap-4" noValidate>
+        {controller.submitError ? <ErrorNotice error={controller.submitError} /> : null}
 
-        <FormField label="Giáo viên" htmlFor="edit-class-teacher" error={form.fieldErrors.teacherId}>
+        <FormField label="Giáo viên" htmlFor="edit-class-teacher" error={fieldErrors.teacherId}>
           <GlassSelect
             id="edit-class-teacher"
-            value={form.values.teacherId}
-            invalid={form.fieldErrors.teacherId !== undefined}
-            onChange={(event) => form.setValue("teacherId", event.target.value)}
+            value={values.teacherId}
+            invalid={fieldErrors.teacherId !== undefined}
+            onChange={(event) => setValue("teacherId", event.target.value)}
           >
-            {teacherOptions.map((teacher) => (
+            {controller.teacherOptions.map((teacher) => (
               <option key={teacher.accountId} value={teacher.accountId}>
                 {teacher.label}
               </option>
@@ -56,34 +44,25 @@ export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
           </GlassSelect>
         </FormField>
 
-        <FormField label="Sĩ số tối đa" htmlFor="edit-class-max-seats" error={form.fieldErrors.maxSeats}>
-          <GlassInput
-            id="edit-class-max-seats"
-            type="number"
-            min={1}
-            value={form.values.maxSeats}
-            invalid={form.fieldErrors.maxSeats !== undefined}
-            onChange={(event) => form.setValue("maxSeats", event.target.value)}
-          />
-        </FormField>
+        <ClassPlanFields
+          idPrefix="edit-class"
+          values={values}
+          fieldErrors={fieldErrors}
+          enrollmentTermsLocked={controller.enrollmentTermsLocked}
+          minMaxSeats={controller.minMaxSeats}
+          onChange={(field, value) => setValue(field, value)}
+        />
 
         <FormField label="Lịch học hàng tuần" htmlFor="edit-class-schedule">
-          <ScheduleSlotEditor slots={form.values.schedule} onChange={(slots) => form.setValue("schedule", slots)} />
+          <ScheduleSlotEditor slots={values.schedule} onChange={(slots) => setValue("schedule", slots)} />
         </FormField>
-
-        <CheckableRow
-          label="Đang hoạt động"
-          description="Bỏ chọn để vô hiệu hoá lớp mà không xoá dữ liệu."
-          checked={form.values.active}
-          onToggle={() => form.setValue("active", !form.values.active)}
-        />
       </form>
 
       <footer className="flex justify-end gap-2">
         <GlassButton variant="ghost" onClick={onClose}>
           Huỷ
         </GlassButton>
-        <GlassButton type="submit" form="edit-class-form" loading={form.isSubmitting}>
+        <GlassButton type="submit" form="edit-class-form" loading={controller.isSubmitting}>
           Lưu thay đổi
         </GlassButton>
       </footer>

@@ -1,27 +1,20 @@
 import { AccountStatusBadge, type AccountSummary, UserAvatar } from "@/entities/account";
-import { Can } from "@/entities/permission";
-import { ACCESS_RULE } from "@/shared/constants/permissions";
+import type { AccountCommand } from "@/modules/rbac/api/use-rbac-mutations";
+import type { AccountsDialogKind } from "@/modules/rbac/hooks/use-accounts-page-controller";
+import { availableCommands } from "@/modules/rbac/model/account-rules";
+import { AccountActionsMenu } from "@/modules/rbac/ui/account-actions-menu";
 import { staggerDelay } from "@/shared/lib/motion";
 import { Badge } from "@/shared/ui/badge";
-import { GlassButton } from "@/shared/ui/glass-button";
 import { m } from "framer-motion";
-import { Building2, UserPlus } from "lucide-react";
 
 export interface AccountsTableProps {
   readonly rows: readonly AccountSummary[];
-  readonly onAssignGroup: (account: AccountSummary) => void;
-  readonly onTransferBranch: (account: AccountSummary) => void;
-  readonly onResendInvite: (account: AccountSummary) => void;
-  readonly onRevokeInvite: (account: AccountSummary) => void;
+  readonly currentAccountId: string | undefined;
+  readonly onOpenDialog: (kind: AccountsDialogKind, account: AccountSummary) => void;
+  readonly onCommand: (account: AccountSummary, command: AccountCommand) => void;
 }
 
-export function AccountsTable({
-  rows,
-  onAssignGroup,
-  onTransferBranch,
-  onResendInvite,
-  onRevokeInvite,
-}: AccountsTableProps) {
+export function AccountsTable({ rows, currentAccountId, onOpenDialog, onCommand }: AccountsTableProps) {
   return (
     <ul className="flex flex-col gap-2.5 min-w-0 w-full">
       {rows.map((account, index) => (
@@ -30,12 +23,15 @@ export function AccountsTable({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={staggerDelay(index)}
-          className="glass grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto_auto] min-w-0 w-full"
+          className="glass grid grid-cols-1 items-center gap-3.5 rounded-2xl p-4 shadow-xs transition-all hover:border-orange-200/90 hover:shadow-sm lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto] min-w-0 w-full"
         >
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar fullName={account.fullName} size="sm" />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-800">{account.fullName}</p>
+              <p className="truncate text-sm font-semibold text-slate-800">
+                {account.fullName}
+                {account.id === currentAccountId ? <span className="ml-1.5 text-xs text-orange-600">(bạn)</span> : null}
+              </p>
               <p className="truncate text-xs text-slate-500">{account.email}</p>
             </div>
           </div>
@@ -43,6 +39,7 @@ export function AccountsTable({
           <div className="flex flex-wrap items-center gap-2">
             <AccountStatusBadge status={account.status} />
             <Badge tone="accent">{account.roleCode}</Badge>
+            {account.lastLogin === null ? <Badge tone="warning">Chưa kích hoạt</Badge> : null}
           </div>
 
           <div className="flex min-w-0 flex-col gap-0.5">
@@ -51,48 +48,18 @@ export function AccountsTable({
             </p>
             <p className="truncate text-xs text-slate-400">
               {account.groups.length === 0
-                ? "Chưa vào nhóm nào"
+                ? "Chưa vào nhóm người dùng nào"
                 : account.groups.map((group) => group.name).join(", ")}
             </p>
           </div>
 
-          {/* Hai hộp thoại đều nạp danh mục nhóm quyền/chi nhánh, mà endpoint danh mục đòi ROLE:READ.
-              Thiếu quyền đó thì nút vẫn bấm được nhưng ô chọn sẽ 403, nên cổng phải hỏi đủ cả hai. */}
-          <Can {...ACCESS_RULE.updateAccount}>
-            <Can {...ACCESS_RULE.readRole}>
-              <div className="flex items-center gap-2 justify-self-start lg:justify-self-end">
-                <GlassButton
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onAssignGroup(account)}
-                  icon={<UserPlus size={14} aria-hidden />}
-                >
-                  Nhóm
-                </GlassButton>
-                <GlassButton
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onTransferBranch(account)}
-                  icon={<Building2 size={14} aria-hidden />}
-                >
-                  Chi nhánh
-                </GlassButton>
-              </div>
-            </Can>
-          </Can>
-
-          <Can {...ACCESS_RULE.updateAccount}>
-            {account.lastLogin === null ? (
-              <div className="flex items-center gap-2 justify-self-start lg:justify-self-end">
-                <GlassButton variant="secondary" size="sm" onClick={() => onResendInvite(account)}>
-                  Gửi lại mời
-                </GlassButton>
-                <GlassButton variant="ghost" size="sm" onClick={() => onRevokeInvite(account)}>
-                  Thu hồi
-                </GlassButton>
-              </div>
-            ) : null}
-          </Can>
+          <AccountActionsMenu
+            account={account}
+            isSelf={account.id === currentAccountId}
+            commands={availableCommands(account, currentAccountId)}
+            onOpenDialog={onOpenDialog}
+            onCommand={onCommand}
+          />
         </m.li>
       ))}
     </ul>

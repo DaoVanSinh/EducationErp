@@ -28,6 +28,30 @@ class ProgressRulesTest {
         return LocalDateTime.of(year, month, day, hour, minute).atZone(ZONE).toInstant();
     }
 
+    /** V31: lớp chưa khai giảng thì chưa có buổi nào, dù lịch tuần đã "trôi qua" từ ngày ghi danh. */
+    @Test
+    void countsNothingForAClassThatHasNotStarted() {
+        assertThat(ProgressRules.countAttendedSessions(MON_WED_EVENING, at(2026, 1, 1, 8, 0),
+                at(2026, 1, 31, 23, 0), null, null, ZONE)).isZero();
+    }
+
+    /** Ghi danh sớm (01/01) nhưng lớp khai giảng 07/01 08:00: chỉ đếm từ khai giảng - buổi 05/01 không tính. */
+    @Test
+    void countsFromTheClassStartWhenTheStudentEnrolledEarlier() {
+        assertThat(ProgressRules.countAttendedSessions(MON_WED_EVENING, at(2026, 1, 1, 8, 0),
+                at(2026, 1, 12, 23, 0), at(2026, 1, 7, 8, 0), null, ZONE))
+                .as("07/01 (T4) và 12/01 (T2)")
+                .isEqualTo(2);
+    }
+
+    /** Lớp kết thúc 07/01 23:00: các buổi sau đó không tính dù "bây giờ" là cuối tháng. */
+    @Test
+    void stopsCountingWhenTheClassEnds() {
+        assertThat(ProgressRules.countAttendedSessions(MON_WED_EVENING, at(2026, 1, 5, 8, 0),
+                at(2026, 1, 31, 23, 0), at(2026, 1, 5, 8, 0), at(2026, 1, 7, 23, 0), ZONE))
+                .isEqualTo(2);
+    }
+
     /** 2026-01-05 là Thứ Hai; tuần đó có buổi 05/01 (T2) và 07/01 (T4). */
     @Test
     void countsOneSessionPerScheduledSlotThatHasAlreadyStarted() {

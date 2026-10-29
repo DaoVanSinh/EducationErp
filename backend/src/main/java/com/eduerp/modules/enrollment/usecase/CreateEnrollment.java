@@ -1,5 +1,7 @@
 package com.eduerp.modules.enrollment.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.ClassFullException;
 import com.eduerp.modules.enrollment.ClassNotActiveException;
@@ -26,13 +28,15 @@ public class CreateEnrollment {
     private final EnrollmentRepository enrollments;
     private final StudentsManagement students;
     private final CoursesManagement courses;
+    private final AccessManagement access;
     private final ApplicationEventPublisher events;
 
     CreateEnrollment(EnrollmentRepository enrollments, StudentsManagement students, CoursesManagement courses,
-            ApplicationEventPublisher events) {
+            AccessManagement access, ApplicationEventPublisher events) {
         this.enrollments = enrollments;
         this.students = students;
         this.courses = courses;
+        this.access = access;
         this.events = events;
     }
 
@@ -46,7 +50,11 @@ public class CreateEnrollment {
 
         var classInfo = courses.getClassInfo(request.classId())
                 .orElseThrow(() -> new ClassNotFoundException(request.classId()));
-        if (!classInfo.active()) {
+        // Lớp 2 (spec 6.4): người chỉ có quyền theo chi nhánh chỉ ghi danh vào lớp của chi nhánh mình.
+        access.dataScopeOf(actorAccountId, AccessConstants.Resources.ENROLLMENT, AccessConstants.Actions.CREATE)
+                .requireCovers(classInfo.branchId());
+        // Nhận ghi danh khi lớp đang tuyển sinh hoặc đang học (vào học muộn); đã kết thúc/huỷ thì không.
+        if (!classInfo.acceptsEnrollment()) {
             throw new ClassNotActiveException(request.classId());
         }
 

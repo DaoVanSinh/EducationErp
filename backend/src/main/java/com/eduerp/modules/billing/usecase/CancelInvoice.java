@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.InvoiceHasPendingPaymentException;
@@ -25,7 +27,10 @@ public class CancelInvoice {
     private final PaymentRepository payments;
     private final ApplicationEventPublisher events;
 
-    CancelInvoice(InvoiceRepository invoices, PaymentRepository payments, ApplicationEventPublisher events) {
+    private final BillingBranchGuard branchGuard;
+
+    CancelInvoice(InvoiceRepository invoices, PaymentRepository payments, ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.payments = payments;
         this.events = events;
@@ -34,6 +39,7 @@ public class CancelInvoice {
     @Transactional
     public void execute(UUID invoiceId, UUID actorAccountId, UUID actorBranchId) {
         var invoice = invoices.findById(invoiceId).orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+        branchGuard.require(actorAccountId, AccessConstants.Actions.UPDATE, invoice.getBranchId());
         if (invoice.getStatus() != BillingConstants.InvoiceStatus.UNPAID) {
             throw new InvoiceNotPayableException(invoiceId, invoice.getStatus());
         }

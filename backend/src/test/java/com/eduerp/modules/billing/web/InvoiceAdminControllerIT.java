@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.web;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -112,7 +113,7 @@ class InvoiceAdminControllerIT {
         var course = courses.save(new Course("BILW-C-" + shortId(), "Khoá", null, 24, tuitionFee));
         var teacherId = accounts.save(new Account("bil-web-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        var classId = classes.save(new Class(course, "BILW-K-" + shortId(), branchId, teacherId, 20)).getId();
+        var classId = classes.save(ClassFixtures.inProgress(course, "BILW-K-" + shortId(), branchId, teacherId, 20)).getId();
         var studentAccountId = accounts
                 .save(new Account("bil-web-hv-" + shortId() + "@eduerp.local", "hash", "HV", null)).getId();
         var studentProfileId = profiles.save(new StudentProfile(studentAccountId, null, null, null)).getId();

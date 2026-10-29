@@ -1,5 +1,6 @@
 package com.eduerp.modules.courses.web;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -135,7 +136,7 @@ class CourseGradeColumnIntegrityIT {
         var teacherId = accounts.save(
                 new Account("cgc-gv-" + shortId() + "@eduerp.local", "hash", "GV", null)).getId();
         var classId = classes.save(
-                new Class(savedCourse, "CGC-K-" + shortId(), branchId, teacherId, 20)).getId();
+                ClassFixtures.inProgress(savedCourse, "CGC-K-" + shortId(), branchId, teacherId, 20)).getId();
         var studentProfileId = profiles.save(new StudentProfile(
                 accounts.save(new Account("cgc-hv-" + shortId() + "@eduerp.local", "hash", "HV", null)).getId(),
                 null, null, null)).getId();

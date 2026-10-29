@@ -1,6 +1,7 @@
 package com.eduerp.modules.academic.usecase;
 
 import com.eduerp.modules.academic.AcademicEvents;
+import com.eduerp.modules.academic.ClassNotStartedException;
 import com.eduerp.modules.academic.EnrollmentNotFoundException;
 import com.eduerp.modules.academic.GradeColumnNotInCourseException;
 import com.eduerp.modules.academic.InvalidScoreException;
@@ -10,6 +11,7 @@ import com.eduerp.modules.academic.internal.model.GradeEntry;
 import com.eduerp.modules.academic.internal.repository.GradeEntryRepository;
 import com.eduerp.modules.academic.internal.rules.GradeRules;
 import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.courses.CoursesConstants;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.courses.dto.GradeColumnResponse;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
@@ -48,7 +50,12 @@ public class RecordGrade {
 
     @Transactional
     public void execute(UUID actorAccountId, UUID actorBranchId, RecordGradeRequest request) {
-        guard.requireAccessToClass(actorAccountId, request.classId(), AccessConstants.Actions.UPDATE);
+        var classInfo = guard.requireAccessToClass(actorAccountId, request.classId(), AccessConstants.Actions.UPDATE);
+        // Điểm có từ khi lớp khai giảng; lớp đã kết thúc vẫn nhập/sửa được (điểm cuối khoá thường vào sau buổi cuối).
+        if (classInfo.status() == CoursesConstants.ClassStatus.ENROLLING
+                || classInfo.status() == CoursesConstants.ClassStatus.CANCELLED) {
+            throw new ClassNotStartedException(request.classId());
+        }
         var rosterEntry = enrollments.listEnrollmentsByClass(request.classId()).stream()
                 .filter(entry -> entry.enrollmentId().equals(request.enrollmentId()))
                 .findFirst()

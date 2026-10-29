@@ -2,7 +2,9 @@ package com.eduerp.modules.identity.web;
 
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
+import com.eduerp.modules.identity.internal.rules.IdentityRules;
 import com.eduerp.modules.identity.internal.token.JwtTokenService;
+import com.eduerp.modules.identity.internal.token.SessionRevocationService;
 import com.eduerp.modules.identity.internal.token.TokenBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
@@ -30,7 +32,8 @@ class IdentitySecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtTokenService jwtTokenService, TokenBlacklistService blacklist,
-            AccessManagement access, AccountRepository accounts, ObjectMapper objectMapper) throws Exception {
+            SessionRevocationService revocations, IdentityRules rules, AccessManagement access,
+            AccountRepository accounts, ObjectMapper objectMapper) throws Exception {
         http
                 // Token nằm trong cookie nên CSRF là rủi ro thật: chỉ miễn đúng các endpoint chưa có
                 // phiên (chưa thể có CSRF token trong trang). Mọi hành động trên phiên đã đăng nhập -
@@ -54,7 +57,8 @@ class IdentitySecurityConfig {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(ProblemDetailSecurityHandlers.unauthenticated(objectMapper))
                         .accessDeniedHandler(ProblemDetailSecurityHandlers.accessDenied(objectMapper)))
-                .addFilterBefore(new CookieAuthenticationFilter(jwtTokenService, blacklist, access, accounts),
+                .addFilterBefore(new CookieAuthenticationFilter(jwtTokenService, blacklist, revocations, rules, access,
+                        accounts),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

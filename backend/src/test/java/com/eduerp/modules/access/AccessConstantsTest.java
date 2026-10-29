@@ -22,19 +22,19 @@ class AccessConstantsTest {
     }
 
     @Test
-    void courseAndClassRulesRequireOrganizationScope() {
+    void courseCatalogWritesRequireOrganizationAndClassOperationsBranchScope() {
         assertThat(AccessConstants.AccessRules.CREATE_COURSE)
                 .contains("COURSE", "CREATE", "@ORGANIZATION");
         assertThat(AccessConstants.AccessRules.READ_COURSE)
-                .contains("COURSE", "READ", "@ORGANIZATION");
+                .contains("COURSE", "READ", "@BRANCH");
         assertThat(AccessConstants.AccessRules.UPDATE_COURSE)
                 .contains("COURSE", "UPDATE", "@ORGANIZATION");
         assertThat(AccessConstants.AccessRules.CREATE_CLASS)
-                .contains("CLASS", "CREATE", "@ORGANIZATION");
+                .contains("CLASS", "CREATE", "@BRANCH");
         assertThat(AccessConstants.AccessRules.READ_CLASS)
-                .contains("CLASS", "READ", "@ORGANIZATION");
+                .contains("CLASS", "READ", "@BRANCH");
         assertThat(AccessConstants.AccessRules.UPDATE_CLASS)
-                .contains("CLASS", "UPDATE", "@ORGANIZATION");
+                .contains("CLASS", "UPDATE", "@BRANCH");
     }
 
     @Test
@@ -50,18 +50,22 @@ class AccessConstantsTest {
     }
 
     @Test
-    void enrollmentAndInvoiceRulesRequireOrganizationScope() {
+    void enrollmentAndInvoiceRulesAreBranchScopedButComboTiersStayOrganizationWide() {
         assertThat(AccessConstants.AccessRules.CREATE_ENROLLMENT)
-                .contains("ENROLLMENT", "CREATE", "@ORGANIZATION");
+                .contains("ENROLLMENT", "CREATE", "@BRANCH");
         assertThat(AccessConstants.AccessRules.READ_ENROLLMENT)
-                .contains("ENROLLMENT", "READ", "@ORGANIZATION");
+                .contains("ENROLLMENT", "READ", "@BRANCH");
         assertThat(AccessConstants.AccessRules.UPDATE_ENROLLMENT)
-                .contains("ENROLLMENT", "UPDATE", "@ORGANIZATION");
+                .contains("ENROLLMENT", "UPDATE", "@BRANCH");
         assertThat(AccessConstants.AccessRules.CREATE_INVOICE)
-                .contains("INVOICE", "CREATE", "@ORGANIZATION");
+                .contains("INVOICE", "CREATE", "@BRANCH");
         assertThat(AccessConstants.AccessRules.READ_INVOICE)
-                .contains("INVOICE", "READ", "@ORGANIZATION");
+                .contains("INVOICE", "READ", "@BRANCH");
         assertThat(AccessConstants.AccessRules.UPDATE_INVOICE)
+                .contains("INVOICE", "UPDATE", "@BRANCH");
+        assertThat(AccessConstants.AccessRules.CREATE_COMBO_DISCOUNT_TIER)
+                .contains("INVOICE", "CREATE", "@ORGANIZATION");
+        assertThat(AccessConstants.AccessRules.UPDATE_COMBO_DISCOUNT_TIER)
                 .contains("INVOICE", "UPDATE", "@ORGANIZATION");
     }
 

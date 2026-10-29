@@ -1,4 +1,4 @@
-import type { ClassSummary } from "@/entities/class";
+import { CLASS_STATUS_LABEL, type ClassSummary } from "@/entities/class";
 import type { StudentProfileSummary } from "@/entities/student";
 import { useCreateEnrollment } from "@/modules/enrollment/api/use-enrollment-mutations";
 import { createEnrollmentFormSchema } from "@/modules/enrollment/model/enrollment-forms";
@@ -74,13 +74,12 @@ export function CreateEnrollmentDialog({ open, onClose, students, classes }: Cre
             onChange={(event) => form.setValue("classId", event.target.value)}
           >
             <option value="">Chọn lớp</option>
-            {classes
-              .filter((item) => item.active)
-              .map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.code} — {item.courseName} ({item.maxSeats} chỗ)
-                </option>
-              ))}
+            {classes.map((item) => (
+              <option key={item.id} value={item.id} disabled={item.activeEnrollments >= item.maxSeats}>
+                {item.code} — {item.courseName} · {CLASS_STATUS_LABEL[item.status]} · {item.activeEnrollments}/
+                {item.maxSeats} chỗ
+              </option>
+            ))}
           </GlassSelect>
         </FormField>
       </form>

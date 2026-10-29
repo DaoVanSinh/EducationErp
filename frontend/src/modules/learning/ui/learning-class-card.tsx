@@ -1,4 +1,5 @@
-import { formatScheduleSlot } from "@/entities/class";
+import { CLASS_STATUS, ClassStatusBadge, formatScheduleSlot } from "@/entities/class";
+import { formatter } from "@/shared/lib/format";
 import type { MyLearningClass } from "@/modules/learning/model/learning-schema";
 import { enrollmentTone } from "@/modules/learning/model/learning-rules";
 import { GradeList } from "@/modules/learning/ui/grade-list";
@@ -20,8 +21,13 @@ export function LearningClassCard({ item }: LearningClassCardProps) {
           <h2 className="truncate text-base font-semibold text-mist-100">{item.courseName ?? "(đã xoá)"}</h2>
           <p className="text-xs text-mist-400">Lớp {item.classCode ?? "(đã xoá)"}</p>
         </div>
-        <Badge tone={enrollmentTone(item.status)}>{ENROLLMENT_STATUS_LABEL[item.status]}</Badge>
+        <div className="flex flex-wrap gap-1.5">
+          <ClassStatusBadge status={item.classStatus} />
+          <Badge tone={enrollmentTone(item.status)}>{ENROLLMENT_STATUS_LABEL[item.status]}</Badge>
+        </div>
       </header>
+
+      <ClassTimeline item={item} />
 
       <div className="flex flex-col gap-2 text-sm text-mist-100">
         <p className="flex items-center gap-2">
@@ -36,6 +42,23 @@ export function LearningClassCard({ item }: LearningClassCardProps) {
       <ProgressBar item={item} />
       <GradeList grades={item.grades} finalScore={item.finalScore} />
     </GlassPanel>
+  );
+}
+
+/** Lớp chưa khai giảng: nói rõ ngày bắt đầu học, để học viên không tưởng đã lỡ buổi. */
+function ClassTimeline({ item }: LearningClassCardProps) {
+  if (item.classStatus === CLASS_STATUS.enrolling) {
+    return (
+      <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+        Lớp đang tuyển sinh, dự kiến khai giảng ngày {formatter.date(item.classStartDate)}.
+      </p>
+    );
+  }
+  return (
+    <p className="text-xs text-mist-400">
+      Khai giảng {formatter.date(item.classStartDate)}
+      {item.classEndDate ? ` · kết thúc ${formatter.date(item.classEndDate)}` : ""}
+    </p>
   );
 }
 

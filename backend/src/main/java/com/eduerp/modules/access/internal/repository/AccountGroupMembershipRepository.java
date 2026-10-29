@@ -15,4 +15,7 @@ public interface AccountGroupMembershipRepository extends JpaRepository<AccountG
 
     @Query("SELECT m FROM AccountGroupMembership m WHERE m.id.accountId IN :accountIds")
     List<AccountGroupMembership> findByAccountIdIn(Collection<UUID> accountIds);
+
+    @Query("SELECT m.id.accountId FROM AccountGroupMembership m WHERE m.group.id IN :groupIds")
+    List<UUID> findAccountIdsByGroupIds(Collection<UUID> groupIds);
 }

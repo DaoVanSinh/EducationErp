@@ -1,4 +1,4 @@
-import { weeklyScheduleSlotSchema } from "@/entities/class";
+import { classStatusSchema, weeklyScheduleSlotSchema } from "@/entities/class";
 import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
 import { z } from "zod";
 
@@ -32,6 +32,10 @@ export const myLearningClassSchema = z.object({
   elapsedSessions: z.number().int(),
   standardSessionCount: z.number().int().nullable(),
   progressPercent: z.number().int().nullable(),
+  /** Trạng thái lớp: đang tuyển sinh thì học viên thấy "khai giảng ngày ..." thay vì một lịch chưa bắt đầu. */
+  classStatus: classStatusSchema,
+  classStartDate: z.string(),
+  classEndDate: z.string().nullable(),
 });
 
 export type MyLearningClass = z.infer<typeof myLearningClassSchema>;

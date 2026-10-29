@@ -2,6 +2,8 @@ package com.eduerp.modules.audit.internal.listener;
 
 import com.eduerp.modules.academic.AcademicEvents;
 import com.eduerp.modules.access.AccessEvents;
+import com.eduerp.modules.assessment.AssessmentEvents;
+import com.eduerp.modules.attendance.AttendanceEvents;
 import com.eduerp.modules.audit.AuditConstants;
 import com.eduerp.modules.audit.internal.model.AuditLog;
 import com.eduerp.modules.audit.internal.repository.AuditLogRepository;
@@ -64,6 +66,62 @@ class AuditEventListeners {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PERMISSION_GROUP_CREATE,
                 AuditConstants.EntityTypes.PERMISSION_GROUP, event.permissionGroupId().toString(),
                 event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(AccessEvents.RoleUpdated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ROLE_UPDATE,
+                AuditConstants.EntityTypes.ROLE, event.roleId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(AccessEvents.PermissionGroupUpdated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PERMISSION_GROUP_UPDATE,
+                AuditConstants.EntityTypes.PERMISSION_GROUP, event.permissionGroupId().toString(),
+                event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(AccessEvents.AccountRoleChanged event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_ROLE_CHANGE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(IdentityEvents.AccountDisabled event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_DISABLE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(IdentityEvents.AccountEnabled event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_ENABLE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(IdentityEvents.AccountSignedOutEverywhere event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_SIGN_OUT_EVERYWHERE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    /** {@code actorAccountId} null = tác vụ tự khai giảng của hệ thống (mirror {@code InvoiceOverdue}). */
+    @ApplicationModuleListener
+    void on(CoursesEvents.ClassStarted event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CLASS_START,
+                AuditConstants.EntityTypes.CLASS, event.classId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(CoursesEvents.ClassCompleted event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CLASS_COMPLETE,
+                AuditConstants.EntityTypes.CLASS, event.classId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(CoursesEvents.ClassCancelled event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CLASS_CANCEL,
+                AuditConstants.EntityTypes.CLASS, event.classId().toString(), event.actorBranchId()));
     }
 
     @ApplicationModuleListener
@@ -199,5 +257,31 @@ class AuditEventListeners {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.GRADE_RECORD,
                 AuditConstants.EntityTypes.GRADE_ENTRY, event.enrollmentId().toString(),
                 event.actorBranchId()));
+    }
+
+    /** Điểm danh có hệ quả với học viên (tỷ lệ chuyên cần) nên mọi lần ghi/sửa một buổi đều có dấu vết. */
+    @ApplicationModuleListener
+    void on(AttendanceEvents.AttendanceRecorded event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ATTENDANCE_RECORD,
+                AuditConstants.EntityTypes.ATTENDANCE_SESSION, event.sessionId().toString(),
+                event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(AssessmentEvents.AssignmentCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ASSIGNMENT_CREATE,
+                AuditConstants.EntityTypes.ASSIGNMENT, event.assignmentId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(AssessmentEvents.AssignmentResultsRecorded event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ASSIGNMENT_RESULTS_RECORD,
+                AuditConstants.EntityTypes.ASSIGNMENT, event.assignmentId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(AssessmentEvents.MiniTaskCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.MINI_TASK_CREATE,
+                AuditConstants.EntityTypes.MINI_TASK, event.miniTaskId().toString(), event.actorBranchId()));
     }
 }

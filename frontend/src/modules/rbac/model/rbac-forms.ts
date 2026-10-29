@@ -19,6 +19,15 @@ export const createRoleFormSchema = z.object({
   permissionGroupIds: z.array(z.string().uuid()),
 });
 
+export const updateRoleFormSchema = z.object({
+  name: z.string().trim().min(1, "Nhập tên vai trò"),
+  permissionGroupIds: z.array(z.string().uuid()),
+});
+
+export const changeRoleFormSchema = z.object({
+  roleId: z.string().uuid("Chọn vai trò mới"),
+});
+
 export const createPermissionGroupFormSchema = z.object({
   name: z.string().min(1, "Nhập tên nhóm quyền"),
   description: z

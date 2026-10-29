@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.ComboHasInvoicesException;
 import com.eduerp.modules.billing.ComboNotFoundException;
@@ -29,7 +31,10 @@ public class CancelCombo {
     private final InvoiceRepository invoices;
     private final ApplicationEventPublisher events;
 
-    CancelCombo(ComboRepository combos, InvoiceRepository invoices, ApplicationEventPublisher events) {
+    private final BillingBranchGuard branchGuard;
+
+    CancelCombo(ComboRepository combos, InvoiceRepository invoices, ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.combos = combos;
         this.invoices = invoices;
         this.events = events;
@@ -38,6 +43,7 @@ public class CancelCombo {
     @Transactional
     public void execute(UUID comboId, UUID actorAccountId, UUID actorBranchId) {
         var combo = combos.findById(comboId).orElseThrow(() -> new ComboNotFoundException(comboId));
+        branchGuard.require(actorAccountId, AccessConstants.Actions.UPDATE, combo.getBranchId());
         if (invoices.countByComboId(comboId) > 0) {
             throw new ComboHasInvoicesException(comboId);
         }

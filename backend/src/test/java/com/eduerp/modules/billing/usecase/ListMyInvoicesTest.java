@@ -59,7 +59,7 @@ class ListMyInvoicesTest {
                 .thenReturn(Optional.of(new StudentsManagement.StudentSummaryResponse(profileId, accountId, true)));
         var older = invoice(Instant.parse("2026-09-01T00:00:00Z"));
         var newer = invoice(Instant.parse("2026-10-01T00:00:00Z"));
-        when(invoices.search(eq(profileId), isNull(), isNull(), any(Pageable.class)))
+        when(invoices.search(eq(profileId), isNull(), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(older, newer)));
         var payment = new Payment(older, new BigDecimal("400000"), BillingConstants.PaymentMethod.MANUAL, null,
                 BillingConstants.PaymentStatus.SUCCESS);

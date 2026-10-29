@@ -47,8 +47,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             WHERE (:studentProfileId IS NULL OR i.studentProfileId = :studentProfileId)
               AND (:enrollmentId IS NULL OR i.enrollmentId = :enrollmentId)
               AND (:status IS NULL OR i.status = :status)
+              AND (:branchId IS NULL OR i.branchId = :branchId)
             """)
     Page<Invoice> search(@Param("studentProfileId") UUID studentProfileId,
             @Param("enrollmentId") UUID enrollmentId,
-            @Param("status") BillingConstants.InvoiceStatus status, Pageable pageable);
+            @Param("status") BillingConstants.InvoiceStatus status, @Param("branchId") UUID branchId,
+            Pageable pageable);
 }

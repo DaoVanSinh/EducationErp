@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.ComboDiscountTierNotConfiguredException;
@@ -48,9 +50,12 @@ public class CreateCombo {
     private final CoursesManagement coursesManagement;
     private final ApplicationEventPublisher events;
 
+    private final BillingBranchGuard branchGuard;
+
     CreateCombo(ComboRepository combos, ComboDiscountTierRepository tiers,
             EnrollmentManagement enrollmentManagement, CoursesManagement coursesManagement,
-            ApplicationEventPublisher events) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.combos = combos;
         this.tiers = tiers;
         this.enrollmentManagement = enrollmentManagement;
@@ -71,6 +76,7 @@ public class CreateCombo {
         // branchId lấy từ ghi danh ĐẦU TIÊN, không phải actorBranchId: kế toán cấp tổ chức tạo được
         // combo cho bất kỳ chi nhánh nào - mirror cách CreateInvoice lấy branchId từ enrollment.
         var comboBranchId = members.get(0).branchId();
+        branchGuard.require(actorAccountId, AccessConstants.Actions.CREATE, comboBranchId);
         members.forEach(member -> requireSameStudentAndBranch(member, request.studentProfileId(), comboBranchId));
 
         var priced = members.stream().map(this::price).toList();

@@ -121,29 +121,58 @@ export const updateCourseFormSchema = z.object({
   gradeColumns: gradeColumnsFormSchema,
 });
 
-export const createClassFormSchema = z.object({
-  courseId: z.string().uuid("Chọn khóa học"),
-  code: z
+const seatCount = (message: string) =>
+  z
     .string()
-    .min(1, "Nhập mã lớp")
-    .regex(CLASS_CODE_PATTERN, "Mã chỉ gồm chữ in hoa, số và dấu gạch ngang, ví dụ TA-GT-K15"),
-  branchId: z.string().uuid("Chọn chi nhánh"),
-  teacherId: z.string().uuid("Chọn giáo viên"),
-  maxSeats: z
-    .string()
-    .min(1, "Nhập sĩ số tối đa")
+    .min(1, message)
     .transform((value) => Number(value))
-    .refine((value) => value > 0, "Sĩ số phải lớn hơn 0"),
-  schedule: z.array(scheduleSlotFormSchema),
-});
+    .refine((value) => Number.isInteger(value) && value > 0, "Sĩ số phải là số nguyên lớn hơn 0");
 
-export const updateClassFormSchema = z.object({
-  teacherId: z.string().uuid("Chọn giáo viên"),
-  maxSeats: z
-    .string()
-    .min(1, "Nhập sĩ số tối đa")
-    .transform((value) => Number(value))
-    .refine((value) => value > 0, "Sĩ số phải lớn hơn 0"),
-  active: z.boolean(),
-  schedule: z.array(scheduleSlotFormSchema),
-});
+const optionalDate = z
+  .string()
+  .trim()
+  .transform((value) => (value.length === 0 ? null : value));
+
+/**
+ * Kế hoạch tuyển sinh của lớp: sĩ số tối thiểu để khai giảng không vượt sĩ số tối đa, ngày kết thúc dự kiến
+ * không trước ngày khai giảng. Backend chặn lại lần nữa - đây chỉ để người dùng thấy lỗi trước khi gửi.
+ */
+function refinePlan<T extends { minSeats: number; maxSeats: number; startDate: string; endDate: string | null }>(
+  values: T,
+  ctx: z.RefinementCtx,
+): void {
+  if (values.minSeats > values.maxSeats) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["minSeats"], message: "Tối thiểu không được lớn hơn tối đa" });
+  }
+  if (values.endDate !== null && values.endDate < values.startDate) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endDate"], message: "Không được trước ngày khai giảng" });
+  }
+}
+
+export const createClassFormSchema = z
+  .object({
+    courseId: z.string().uuid("Chọn khóa học"),
+    code: z
+      .string()
+      .min(1, "Nhập mã lớp")
+      .regex(CLASS_CODE_PATTERN, "Mã chỉ gồm chữ in hoa, số và dấu gạch ngang, ví dụ TA-GT-K15"),
+    branchId: z.string().uuid("Chọn chi nhánh"),
+    teacherId: z.string().uuid("Chọn giáo viên"),
+    maxSeats: seatCount("Nhập sĩ số tối đa"),
+    minSeats: seatCount("Nhập sĩ số tối thiểu để khai giảng"),
+    startDate: z.string().min(1, "Chọn ngày khai giảng"),
+    endDate: optionalDate,
+    schedule: z.array(scheduleSlotFormSchema),
+  })
+  .superRefine(refinePlan);
+
+export const updateClassFormSchema = z
+  .object({
+    teacherId: z.string().uuid("Chọn giáo viên"),
+    maxSeats: seatCount("Nhập sĩ số tối đa"),
+    minSeats: seatCount("Nhập sĩ số tối thiểu để khai giảng"),
+    startDate: z.string().min(1, "Chọn ngày khai giảng"),
+    endDate: optionalDate,
+    schedule: z.array(scheduleSlotFormSchema),
+  })
+  .superRefine(refinePlan);

@@ -38,6 +38,19 @@ public final class AuditConstants {
         public static final String COMBO_CREATE = "COMBO_CREATE";
         public static final String COMBO_CANCEL = "COMBO_CANCEL";
         public static final String GRADE_RECORD = "GRADE_RECORD";
+        public static final String ATTENDANCE_RECORD = "ATTENDANCE_RECORD";
+        public static final String ASSIGNMENT_CREATE = "ASSIGNMENT_CREATE";
+        public static final String ASSIGNMENT_RESULTS_RECORD = "ASSIGNMENT_RESULTS_RECORD";
+        public static final String MINI_TASK_CREATE = "MINI_TASK_CREATE";
+        public static final String ROLE_UPDATE = "ROLE_UPDATE";
+        public static final String PERMISSION_GROUP_UPDATE = "PERMISSION_GROUP_UPDATE";
+        public static final String ACCOUNT_ROLE_CHANGE = "ACCOUNT_ROLE_CHANGE";
+        public static final String ACCOUNT_DISABLE = "ACCOUNT_DISABLE";
+        public static final String ACCOUNT_ENABLE = "ACCOUNT_ENABLE";
+        public static final String ACCOUNT_SIGN_OUT_EVERYWHERE = "ACCOUNT_SIGN_OUT_EVERYWHERE";
+        public static final String CLASS_START = "CLASS_START";
+        public static final String CLASS_COMPLETE = "CLASS_COMPLETE";
+        public static final String CLASS_CANCEL = "CLASS_CANCEL";
     }
 
     public static final class EntityTypes {
@@ -56,5 +69,8 @@ public final class AuditConstants {
         public static final String INVOICE = "INVOICE";
         public static final String COMBO = "COMBO";
         public static final String GRADE_ENTRY = "GRADE_ENTRY";
+        public static final String ATTENDANCE_SESSION = "ATTENDANCE_SESSION";
+        public static final String ASSIGNMENT = "ASSIGNMENT";
+        public static final String MINI_TASK = "MINI_TASK";
     }
 }

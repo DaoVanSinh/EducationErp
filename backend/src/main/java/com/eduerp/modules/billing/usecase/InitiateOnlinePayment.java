@@ -1,5 +1,7 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.integrations.payment.PaymentGatewayClient;
 import com.eduerp.integrations.payment.PaymentGatewayException;
 import com.eduerp.integrations.payment.PaymentRequest;
@@ -33,8 +35,11 @@ public class InitiateOnlinePayment {
     private final PaymentGatewayClientResolver gateways;
     private final ApplicationEventPublisher events;
 
+    private final BillingBranchGuard branchGuard;
+
     InitiateOnlinePayment(InvoiceRepository invoices, PaymentRepository payments,
-            PaymentGatewayClientResolver gateways, ApplicationEventPublisher events) {
+            PaymentGatewayClientResolver gateways, ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+        this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.payments = payments;
         this.gateways = gateways;
@@ -45,6 +50,7 @@ public class InitiateOnlinePayment {
     public InitiateOnlinePaymentResponse execute(UUID invoiceId, BillingConstants.PaymentMethod gateway,
             UUID actorAccountId, UUID actorBranchId) {
         var invoice = invoices.findById(invoiceId).orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+        branchGuard.require(actorAccountId, AccessConstants.Actions.UPDATE, invoice.getBranchId());
         if (!BillingRules.isPayable(invoice.getStatus())) {
             throw new InvoiceNotPayableException(invoiceId, invoice.getStatus());
         }

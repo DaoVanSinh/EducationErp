@@ -49,11 +49,12 @@ class EnrollmentAdminController {
 
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_ENROLLMENT)
-    PageResponse<EnrollmentResponse> list(@PageableDefault(size = 20) Pageable pageable,
+    PageResponse<EnrollmentResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID studentProfileId,
             @RequestParam(required = false) UUID classId,
             @RequestParam(required = false) EnrollmentConstants.EnrollmentStatus status) {
-        return listEnrollments.execute(pageable, studentProfileId, classId, status);
+        return listEnrollments.execute(principal.accountId(), pageable, studentProfileId, classId, status);
     }
 
     @PostMapping
@@ -65,8 +66,8 @@ class EnrollmentAdminController {
 
     @GetMapping("/{enrollmentId}")
     @PreAuthorize(AccessConstants.AccessRules.READ_ENROLLMENT)
-    EnrollmentResponse get(@PathVariable UUID enrollmentId) {
-        return getEnrollment.execute(enrollmentId);
+    EnrollmentResponse get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID enrollmentId) {
+        return getEnrollment.execute(principal.accountId(), enrollmentId);
     }
 
     @PostMapping("/{enrollmentId}/withdraw")

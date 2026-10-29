@@ -1,5 +1,6 @@
 package com.eduerp.modules.identity.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.dto.AccountSummaryResponse;
 import com.eduerp.modules.identity.internal.model.Account;
@@ -34,7 +35,10 @@ public class ListAccounts {
      * được nạp theo lô cho cả trang thay vì từng account một — tránh N+1 khi ghép ba module lại.
      */
     @Transactional(readOnly = true)
-    public PageResponse<AccountSummaryResponse> execute(Pageable pageable, UUID branchId) {
+    public PageResponse<AccountSummaryResponse> execute(UUID actorAccountId, Pageable pageable,
+            UUID requestedBranchId) {
+        var branchId = access.dataScopeOf(actorAccountId, AccessConstants.Resources.ACCOUNT,
+                AccessConstants.Actions.READ).branchFilter(requestedBranchId);
         Page<Account> page = branchId == null ? accounts.findAll(pageable)
                 : accounts.findAllByHomeBranchId(branchId, pageable);
         var accountIds = page.getContent().stream().map(Account::getId).toList();

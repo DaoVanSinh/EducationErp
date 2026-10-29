@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
  * Chốt "người được phân công dạy lớp phải là giáo viên" cho cả mở lớp lẫn sửa lớp - một chỗ duy
  * nhất thay vì lặp hai lần trong {@code CreateClass}/{@code UpdateClass}.
  *
- * <p>Spec Phân hệ 2 mục 3 để ngỏ kiểm tra role ("out of scope ở phase này") vì khi đó chưa có hồ sơ
- * giáo viên. Từ Phân hệ 2.5 role TEACHER đã có nghĩa nghiệp vụ rõ ràng và cổng giảng dạy (TEACHING)
- * chỉ cấp cho role đó - giao lớp cho một tài khoản ADMIN/STUDENT sẽ tạo ra một lớp không ai nhập điểm
- * được, nên chặn ngay tại đây.
+ * <p>"Là giáo viên" = có NĂNG LỰC giảng dạy (cổng giảng dạy {@code TEACHING:READ}), không phải mang đúng
+ * mã vai trò {@code TEACHER}: vai trò tự tạo như "Giáo viên bán thời gian" cũng được phân công dạy nếu admin
+ * cấp cho nó cổng giảng dạy (rbac.md: permissions over roles). Giao lớp cho người không có cổng giảng dạy
+ * sẽ tạo ra một lớp không ai điểm danh/nhập điểm được, nên chặn ngay tại đây.
  */
 @Component
 public class TeacherAssignmentGuard {
@@ -34,11 +34,8 @@ public class TeacherAssignmentGuard {
         if (!identity.summariesOf(List.of(teacherId)).containsKey(teacherId)) {
             throw new AppValidationException(FIELD, "Giáo viên không tồn tại");
         }
-        var isTeacher = access.roleOf(teacherId)
-                .map(role -> AccessConstants.RoleCodes.TEACHER.equals(role.code()))
-                .orElse(false);
-        if (!isTeacher) {
-            throw new AppValidationException(FIELD, "Tài khoản được chọn không có vai trò Giáo viên");
+        if (!access.grants(teacherId, AccessConstants.Resources.TEACHING, AccessConstants.Actions.READ)) {
+            throw new AppValidationException(FIELD, "Tài khoản được chọn không có năng lực giảng dạy");
         }
     }
 }

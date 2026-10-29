@@ -1,33 +1,35 @@
 import { z } from "zod";
 
+const optionalText = z
+  .string()
+  .trim()
+  .transform((value) => (value.length === 0 ? null : value));
+
+const subjectList = z
+  .string()
+  .trim()
+  .transform((value) =>
+    value.length === 0
+      ? []
+      : value
+          .split(",")
+          .map((subject) => subject.trim())
+          .filter((subject) => subject.length > 0),
+  );
+
+/** Tạo giáo viên một bước: tài khoản đăng nhập + hồ sơ giáo viên. */
 export const createTeacherFormSchema = z.object({
-  accountId: z.string().uuid("Chọn tài khoản"),
-  subjects: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? [] : value.split(",").map((s) => s.trim()))),
-  phone: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? null : value)),
-  bio: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? null : value)),
+  email: z.string().trim().email("Email không hợp lệ"),
+  fullName: z.string().trim().min(1, "Nhập họ tên giáo viên"),
+  homeBranchId: optionalText,
+  subjects: subjectList,
+  phone: optionalText,
+  bio: optionalText,
 });
 
 export const updateTeacherFormSchema = z.object({
-  subjects: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? [] : value.split(",").map((s) => s.trim()))),
-  phone: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? null : value)),
-  bio: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? null : value)),
+  subjects: subjectList,
+  phone: optionalText,
+  bio: optionalText,
   active: z.boolean(),
 });

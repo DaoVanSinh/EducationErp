@@ -1,10 +1,10 @@
 package com.eduerp.modules.students.web;
 
 import com.eduerp.modules.access.AccessConstants;
-import com.eduerp.modules.students.dto.CreateStudentProfileRequest;
+import com.eduerp.modules.students.dto.CreateStudentRequest;
 import com.eduerp.modules.students.dto.StudentProfileResponse;
 import com.eduerp.modules.students.dto.UpdateStudentProfileRequest;
-import com.eduerp.modules.students.usecase.CreateStudentProfile;
+import com.eduerp.modules.students.usecase.CreateStudent;
 import com.eduerp.modules.students.usecase.GetStudentProfile;
 import com.eduerp.modules.students.usecase.ListStudentProfiles;
 import com.eduerp.modules.students.usecase.UpdateStudentProfile;
@@ -30,34 +30,35 @@ class StudentAdminController {
 
     private final ListStudentProfiles listStudentProfiles;
     private final GetStudentProfile getStudentProfile;
-    private final CreateStudentProfile createStudentProfile;
+    private final CreateStudent createStudent;
     private final UpdateStudentProfile updateStudentProfile;
 
     StudentAdminController(ListStudentProfiles listStudentProfiles, GetStudentProfile getStudentProfile,
-            CreateStudentProfile createStudentProfile, UpdateStudentProfile updateStudentProfile) {
+            CreateStudent createStudent, UpdateStudentProfile updateStudentProfile) {
         this.listStudentProfiles = listStudentProfiles;
         this.getStudentProfile = getStudentProfile;
-        this.createStudentProfile = createStudentProfile;
+        this.createStudent = createStudent;
         this.updateStudentProfile = updateStudentProfile;
     }
 
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_STUDENT)
-    PageResponse<StudentProfileResponse> list(@PageableDefault(size = 20) Pageable pageable) {
-        return listStudentProfiles.execute(pageable);
+    PageResponse<StudentProfileResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return listStudentProfiles.execute(principal.accountId(), pageable);
     }
 
     @GetMapping("/{profileId}")
     @PreAuthorize(AccessConstants.AccessRules.READ_STUDENT)
-    StudentProfileResponse get(@PathVariable UUID profileId) {
-        return getStudentProfile.execute(profileId);
+    StudentProfileResponse get(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID profileId) {
+        return getStudentProfile.execute(principal.accountId(), profileId);
     }
 
+    /** Tạo tài khoản + hồ sơ học viên trong một lần gọi; trả về id HỒ SƠ (khoá dùng để ghi danh). */
     @PostMapping
     @PreAuthorize(AccessConstants.AccessRules.CREATE_STUDENT)
-    UUID create(@AuthenticationPrincipal AccountPrincipal principal,
-            @Valid @RequestBody CreateStudentProfileRequest request) {
-        return createStudentProfile.execute(principal.accountId(), principal.homeBranchId(), request);
+    UUID create(@AuthenticationPrincipal AccountPrincipal principal, @Valid @RequestBody CreateStudentRequest request) {
+        return createStudent.execute(principal.accountId(), principal.homeBranchId(), request);
     }
 
     @PatchMapping("/{profileId}")

@@ -3,6 +3,7 @@ package com.eduerp.modules.access;
 import com.eduerp.modules.access.internal.model.AccountGroupMembership;
 import com.eduerp.modules.access.internal.model.AccountRoleAssignment;
 import com.eduerp.modules.access.internal.permission.PermissionCacheService;
+import com.eduerp.modules.access.internal.permission.RoleAssignmentService;
 import com.eduerp.modules.access.internal.repository.AccountGroupMembershipRepository;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
 import com.eduerp.modules.access.internal.repository.RoleRepository;
@@ -28,17 +29,47 @@ public class AccessManagement {
     private final AccountRoleAssignmentRepository accountRoles;
     private final AccountGroupMembershipRepository accountGroups;
     private final RoleRepository roles;
+    private final RoleAssignmentService roleAssignment;
+    private final AccountBranchLookup branchLookup;
 
     AccessManagement(PermissionCacheService permissionCache, AccountRoleAssignmentRepository accountRoles,
-            AccountGroupMembershipRepository accountGroups, RoleRepository roles) {
+            AccountGroupMembershipRepository accountGroups, RoleRepository roles,
+            RoleAssignmentService roleAssignment, AccountBranchLookup branchLookup) {
         this.permissionCache = permissionCache;
         this.accountRoles = accountRoles;
         this.accountGroups = accountGroups;
         this.roles = roles;
+        this.roleAssignment = roleAssignment;
+        this.branchLookup = branchLookup;
     }
 
     public Set<EffectivePermission> effectivePermissions(UUID accountId) {
         return permissionCache.getEffectivePermissions(accountId);
+    }
+
+    /**
+     * Tài khoản có năng lực {@code resource:action} ở bất kỳ scope nào - vd "là giáo viên" = có cổng
+     * giảng dạy ({@code TEACHING:READ}). Thay cho so mã vai trò, để vai trò tự tạo dùng được như vai trò
+     * hệ thống (rbac.md: permissions over roles).
+     */
+    public boolean grants(UUID accountId, String resource, String action) {
+        return EffectivePermission.grants(effectivePermissions(accountId), resource, action);
+    }
+
+    /**
+     * Phạm vi dữ liệu của người gọi cho {@code resource:action} - lớp 2 của RBAC (spec mục 6.4). Chỉ tra
+     * chi nhánh chủ quản khi thật sự cần (scope BRANCH), để admin ORGANIZATION không tốn thêm câu truy vấn.
+     */
+    public DataScope dataScopeOf(UUID accountId, String resource, String action) {
+        var scope = effectivePermissions(accountId).stream()
+                .filter(permission -> permission.resource().equals(resource) && permission.action().equals(action))
+                .map(EffectivePermission::scope)
+                .max(java.util.Comparator.comparingInt(AccessConstants.PermissionScope::rank))
+                .orElse(null);
+        var homeBranchId = scope == AccessConstants.PermissionScope.BRANCH
+                ? branchLookup.homeBranchOf(accountId).orElse(null)
+                : null;
+        return new DataScope(resource, action, scope, homeBranchId);
     }
 
     /** Gọi sau khi role/group của tài khoản đổi để UI nhận quyền mới ngay lần gọi API kế tiếp. */
@@ -66,12 +97,13 @@ public class AccessManagement {
     }
 
     private void assignRole(UUID accountId, com.eduerp.modules.access.internal.model.Role role) {
-        accountRoles.findById(accountId)
-                .ifPresentOrElse(existing -> existing.changeRole(role),
-                        () -> accountRoles.save(new AccountRoleAssignment(accountId, role)));
+        roleAssignment.assign(accountId, role);
     }
 
-    /** Chỉ dùng trong test - sản phẩm thật luôn có id sẵn từ catalog, không bao giờ tra ngược từ code. */
+    /**
+     * Id của một vai trò HỆ THỐNG theo mã - cho luồng tạo một bước (màn Học viên/Giáo viên gán sẵn vai trò
+     * mặc định Học viên/Giáo viên). Màn Tài khoản không dùng hàm này: admin chọn id từ danh mục.
+     */
     @Transactional(readOnly = true)
     public UUID roleIdOf(String code) {
         return roles.findByCode(code)

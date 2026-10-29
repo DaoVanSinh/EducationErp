@@ -1,5 +1,6 @@
 package com.eduerp.modules.dashboard.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.audit.AuditConstants;
 import com.eduerp.modules.audit.AuditManagement;
@@ -36,7 +37,9 @@ public class GetDashboardStats {
      * ({@code organization.count()}) không bao giờ bị lọc theo branchId — đó là một con số toàn cục,
      * không phụ thuộc đang xem chi nhánh nào.
      */
-    public DashboardStatsResponse execute(UUID branchId) {
+    public DashboardStatsResponse execute(UUID actorAccountId, UUID requestedBranchId) {
+        var branchId = access.dataScopeOf(actorAccountId, AccessConstants.Resources.DASHBOARD,
+                AccessConstants.Actions.READ).branchFilter(requestedBranchId);
         var accountCounts = branchId == null ? identity.accountCounts() : identity.accountCounts(branchId);
         var roleHeadcountSource = branchId == null
                 ? access.roleHeadcounts()

@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 public sealed class CoursesException extends AppException
         permits CourseNotFoundException, ClassNotFoundException, CourseCodeAlreadyExistsException,
         ClassCodeAlreadyExistsException, CourseGradeColumnWeightsInvalidException,
-        CourseGradeColumnInUseException {
+        CourseGradeColumnInUseException, ClassLifecycleException {
 
     protected CoursesException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);

@@ -13,8 +13,11 @@ export const teacherProfileSummarySchema = z.object({
 
 export type TeacherProfileSummary = z.infer<typeof teacherProfileSummarySchema>;
 
-export interface CreateTeacherProfilePayload {
-  readonly accountId: string;
+/** Tạo giáo viên MỘT bước: tài khoản đăng nhập (email mời + mật khẩu tạm) và hồ sơ giáo viên cùng lúc. */
+export interface CreateTeacherPayload {
+  readonly email: string;
+  readonly fullName: string;
+  readonly homeBranchId: string | null;
   readonly subjects: readonly string[];
   readonly phone: string | null;
   readonly bio: string | null;

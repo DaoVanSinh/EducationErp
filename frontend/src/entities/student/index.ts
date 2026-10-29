@@ -4,7 +4,7 @@ export { useStudent } from "@/entities/student/api/use-student";
 export { useStudents } from "@/entities/student/api/use-students";
 export {
   studentProfileSummarySchema,
-  type CreateStudentProfilePayload,
+  type CreateStudentPayload,
   type StudentProfileSummary,
   type UpdateStudentProfilePayload,
 } from "@/entities/student/model/student-schema";

@@ -2,7 +2,7 @@ package com.eduerp.modules.academic.internal.access;
 
 import com.eduerp.modules.academic.ClassNotFoundException;
 import com.eduerp.modules.academic.NotAssignedToClassException;
-import com.eduerp.modules.academic.internal.rules.GradeAccessRules;
+import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.courses.CoursesManagement;
 import java.util.UUID;
@@ -64,7 +64,9 @@ public class ClassGradeAccessGuard {
      * lớp lần hai khi đã cần nó cho việc khác (lịch học, số buổi chuẩn).
      */
     public boolean canAccess(UUID actorAccountId, CoursesManagement.ClassInfoResponse classInfo, String action) {
-        if (GradeAccessRules.allowsEveryClass(access.effectivePermissions(actorAccountId), action)) {
+        // ORGANIZATION: mọi lớp; BRANCH: lớp thuộc chi nhánh chủ quản (spec 6.4 lớp 2); còn lại phải là
+        // chính giáo viên được phân công (spec mục 6 bước 4).
+        if (access.dataScopeOf(actorAccountId, AccessConstants.Resources.GRADE, action).covers(classInfo.branchId())) {
             return true;
         }
         return actorAccountId.equals(classInfo.teacherId());

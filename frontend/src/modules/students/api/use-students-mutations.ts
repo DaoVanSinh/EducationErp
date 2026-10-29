@@ -1,4 +1,4 @@
-import { studentApi, studentKeys, type CreateStudentProfilePayload, type UpdateStudentProfilePayload } from "@/entities/student";
+import { studentApi, studentKeys, type CreateStudentPayload, type UpdateStudentProfilePayload } from "@/entities/student";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useStudentsInvalidation(): () => Promise<void> {
@@ -8,10 +8,10 @@ function useStudentsInvalidation(): () => Promise<void> {
   };
 }
 
-export function useCreateStudentProfile() {
+export function useCreateStudent() {
   const invalidate = useStudentsInvalidation();
   return useMutation({
-    mutationFn: (payload: CreateStudentProfilePayload) => studentApi.createProfile(payload),
+    mutationFn: (payload: CreateStudentPayload) => studentApi.createProfile(payload),
     onSuccess: invalidate,
   });
 }

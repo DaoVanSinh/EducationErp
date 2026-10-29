@@ -9,6 +9,12 @@ export interface CreateRolePayload {
   readonly permissionGroupIds: readonly string[];
 }
 
+/** Mã vai trò bất biến - chỉ đổi tên và bộ nhóm quyền. */
+export interface UpdateRolePayload {
+  readonly name: string;
+  readonly permissionGroupIds: readonly string[];
+}
+
 export interface CreatePermissionGroupPayload {
   readonly name: string;
   readonly description: string | null;
@@ -25,6 +31,15 @@ export const rbacApi = {
     return createdIdSchema.parse(
       await apiClient.post<unknown>(API_ROUTE.rbac.permissionGroups, payload),
     );
+  },
+
+  async updateRole(roleId: string, payload: UpdateRolePayload): Promise<void> {
+    await apiClient.put<void>(API_ROUTE.rbac.role(roleId), payload);
+  },
+
+  /** Cùng hình dạng với tạo mới - gửi lại TOÀN BỘ danh sách (quyền, phạm vi). */
+  async updatePermissionGroup(permissionGroupId: string, payload: CreatePermissionGroupPayload): Promise<void> {
+    await apiClient.put<void>(API_ROUTE.rbac.permissionGroup(permissionGroupId), payload);
   },
 
   async assignGroup(accountId: string, groupId: string): Promise<void> {

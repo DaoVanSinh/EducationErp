@@ -1,6 +1,7 @@
 package com.eduerp.modules.teachers.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -10,19 +11,25 @@ import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
-import com.eduerp.modules.teachers.dto.CreateTeacherProfileRequest;
+import com.eduerp.modules.teachers.TeachersManagement;
+import com.eduerp.modules.teachers.dto.CreateTeacherRequest;
 import com.eduerp.modules.teachers.dto.UpdateTeacherProfileRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -33,6 +40,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
+@org.springframework.test.context.TestPropertySource(properties = "management.health.mail.enabled=false")
 class TeacherAdminControllerIT {
 
     private static final String PASSWORD = "Password123!";
@@ -58,7 +66,18 @@ class TeacherAdminControllerIT {
     AccessManagement access;
 
     @Autowired
+    TeachersManagement teachers;
+
+    @Autowired
     PasswordEncoder passwordEncoder;
+
+    @MockBean
+    JavaMailSender mailSender;
+
+    @BeforeEach
+    void mockMailSenderCreatesARealMimeMessage() {
+        given(mailSender.createMimeMessage()).willReturn(new MimeMessage((Session) null));
+    }
 
     private Cookie signIn(String email, String roleCode) throws Exception {
         var account = new Account(email, passwordEncoder.encode(PASSWORD), email, null);
@@ -71,59 +90,37 @@ class TeacherAdminControllerIT {
         return result.getResponse().getCookie("access_token");
     }
 
-    private UUID teacherAccount(String email) {
-        var account = new Account(email, passwordEncoder.encode(PASSWORD), email, null);
-        account.recordFirstLogin();
-        var saved = accounts.save(account);
-        access.assignRole(saved.getId(), AccessConstants.RoleCodes.TEACHER);
-        return saved.getId();
-    }
-
-    @Test
-    void createsThenListsATeacherProfile() throws Exception {
-        var admin = signIn("teacher-profile-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var teacherAccountId = teacherAccount("teacher-profile-1@eduerp.local");
-
-        var request = new CreateTeacherProfileRequest(teacherAccountId, List.of("Tiếng Anh", "IELTS"),
-                "0900000000", "Giáo viên IELTS 8.0");
-        var createResult = mockMvc.perform(post("/api/teachers/profiles").cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andReturn();
-        assertThat(createResult.getResponse().getStatus()).isEqualTo(200);
-
-        var listResult = mockMvc.perform(get("/api/teachers/profiles").cookie(admin)).andReturn();
-        assertThat(listResult.getResponse().getStatus()).isEqualTo(200);
-        assertThat(listResult.getResponse().getContentAsString()).contains("teacher-profile-1@eduerp.local");
-    }
-
-    @Test
-    void rejectsCreatingAProfileForAnAccountWithoutTeacherRole() throws Exception {
-        var admin = signIn("teacher-profile-admin-2@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var studentAccount = new Account("wrong-role@eduerp.local", passwordEncoder.encode(PASSWORD), "Sai vai trò", null);
-        studentAccount.recordFirstLogin();
-        var saved = accounts.save(studentAccount);
-        access.assignRole(saved.getId(), AccessConstants.RoleCodes.STUDENT);
-
-        var request = new CreateTeacherProfileRequest(saved.getId(), List.of("Toán"), null, null);
+    private UUID createTeacher(Cookie admin, CreateTeacherRequest request) throws Exception {
         var result = mockMvc.perform(post("/api/teachers/profiles").cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        return objectMapper.readValue(result.getResponse().getContentAsString(), UUID.class);
+    }
 
-        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+    @Test
+    void createsAccountAndProfileInOneStep() throws Exception {
+        var admin = signIn("teacher-profile-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+
+        createTeacher(admin, new CreateTeacherRequest("teacher-one-step@eduerp.local", "Cô Lan", null,
+                List.of("Tiếng Anh", "IELTS"), "0900000000", "Giáo viên IELTS 8.0"));
+
+        var account = accounts.findByTypedEmail("teacher-one-step@eduerp.local").orElseThrow();
+        assertThat(access.grants(account.getId(), AccessConstants.Resources.TEACHING, AccessConstants.Actions.READ))
+                .isTrue();
+        assertThat(teachers.teacherProfileExists(account.getId())).isTrue();
+
+        var listResult = mockMvc.perform(get("/api/teachers/profiles").cookie(admin)).andReturn();
+        assertThat(listResult.getResponse().getContentAsString())
+                .contains("teacher-one-step@eduerp.local", "IELTS");
     }
 
     @Test
     void updatesATeacherProfile() throws Exception {
         var admin = signIn("teacher-profile-admin-3@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var teacherAccountId = teacherAccount("teacher-profile-2@eduerp.local");
-        var createResult = mockMvc.perform(post("/api/teachers/profiles").cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateTeacherProfileRequest(teacherAccountId, List.of("Toán"), null, null))))
-                .andReturn();
-        var profileId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
+        var profileId = createTeacher(admin, new CreateTeacherRequest("teacher-profile-2@eduerp.local", "Thầy Nam",
+                null, List.of("Toán"), null, null));
 
         var updateResult = mockMvc.perform(patch("/api/teachers/profiles/" + profileId).cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,20 +129,15 @@ class TeacherAdminControllerIT {
                 .andReturn();
         assertThat(updateResult.getResponse().getStatus()).isEqualTo(200);
 
-        var listResult = mockMvc.perform(get("/api/teachers/profiles").cookie(admin)).andReturn();
-        assertThat(listResult.getResponse().getContentAsString()).contains("\"active\":false");
+        var getResult = mockMvc.perform(get("/api/teachers/profiles/" + profileId).cookie(admin)).andReturn();
+        assertThat(getResult.getResponse().getContentAsString()).contains("\"active\":false", "Lý");
     }
 
     @Test
     void getsASingleTeacherProfileById() throws Exception {
         var admin = signIn("teacher-profile-admin-4@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var teacherAccountId = teacherAccount("teacher-profile-3@eduerp.local");
-        var createResult = mockMvc.perform(post("/api/teachers/profiles").cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateTeacherProfileRequest(teacherAccountId, List.of("Hoá"), "0922222222", "Mô tả"))))
-                .andReturn();
-        var profileId = objectMapper.readValue(createResult.getResponse().getContentAsString(), UUID.class);
+        var profileId = createTeacher(admin, new CreateTeacherRequest("teacher-profile-3@eduerp.local", "Cô Hoa",
+                null, List.of("Hoá"), "0922222222", "Mô tả"));
 
         var result = mockMvc.perform(get("/api/teachers/profiles/" + profileId).cookie(admin)).andReturn();
 

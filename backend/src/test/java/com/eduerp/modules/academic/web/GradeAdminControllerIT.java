@@ -1,5 +1,6 @@
 package com.eduerp.modules.academic.web;
 
+import com.eduerp.modules.courses.internal.model.ClassFixtures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -135,7 +136,7 @@ class GradeAdminControllerIT {
         var savedCourse = courses.saveAndFlush(course);
         midtermColumnId = savedCourse.getGradeColumns().get(0).getId();
         finalColumnId = savedCourse.getGradeColumns().get(1).getId();
-        var cls = new Class(savedCourse, "GB-K-" + shortId(), branchId, assignedTeacherId, 20);
+        var cls = ClassFixtures.inProgress(savedCourse, "GB-K-" + shortId(), branchId, assignedTeacherId, 20);
         cls.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
         classId = classes.save(cls).getId();
         studentProfileId = profiles.save(

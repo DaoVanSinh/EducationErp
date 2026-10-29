@@ -1,10 +1,19 @@
+import { FullScreenLoader } from "@/app/ui/full-screen-loader";
 import { MOTION_SPRING, RISE_IN } from "@/shared/lib/motion";
 import { GlassPanel } from "@/shared/ui/glass-panel";
 import { m } from "framer-motion";
 import { GraduationCap } from "lucide-react";
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 
-/** Khung cho các trang chưa đăng nhập: một tấm kính giữa màn hình, không thanh điều hướng. */
+/**
+ * Khung cho các trang chưa đăng nhập: một tấm kính giữa màn hình, không thanh điều hướng.
+ *
+ * Suspense phải nằm BÊN TRONG khung này, không được để trang lười (LoginPage...) treo lên tới Suspense
+ * gốc của AppRouter. Nếu không: khung đã hiện (đang chờ kiểm tra phiên) bị React ẩn đi lúc chờ tải
+ * chunk rồi hiện lại, và framer-motion không chạy lại animation - khung kẹt ở opacity 0, người dùng
+ * thấy trang trắng sau khi đăng xuất hoặc khi mở thẳng /login.
+ */
 export function AuthLayout() {
   return (
     <div className="flex min-h-dvh items-center justify-center p-4">
@@ -23,7 +32,9 @@ export function AuthLayout() {
           <span className="text-xs font-medium text-slate-500">Hệ thống quản lý đào tạo trực tuyến</span>
         </div>
         <GlassPanel animate={false} className="glass-sheen p-7 shadow-lg">
-          <Outlet />
+          <Suspense fallback={<FullScreenLoader />}>
+            <Outlet />
+          </Suspense>
         </GlassPanel>
         <p className="mt-6 text-center text-xs text-slate-400">
           Hệ thống quản lý đào tạo

@@ -1,5 +1,6 @@
 package com.eduerp.modules.billing.usecase;
 
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.dto.ComboResponse;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.shared.PageResponse;
@@ -20,12 +21,15 @@ public class ListCombos {
 
     private final ComboRepository combos;
 
-    ListCombos(ComboRepository combos) {
+    private final BillingBranchGuard branchGuard;
+
+    ListCombos(ComboRepository combos, BillingBranchGuard branchGuard) {
         this.combos = combos;
+        this.branchGuard = branchGuard;
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ComboResponse> execute(Pageable pageable, UUID studentProfileId) {
-        return PageResponse.of(combos.search(studentProfileId, pageable).map(CreateCombo::toResponse));
+    public PageResponse<ComboResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId) {
+        return PageResponse.of(combos.search(studentProfileId, branchGuard.listFilter(actorAccountId), pageable).map(CreateCombo::toResponse));
     }
 }
