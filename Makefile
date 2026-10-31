@@ -7,6 +7,9 @@
 #   make logs                    # tail logs of the stg stack
 #   make logs ENV=prod           # tail logs of the prod stack
 #   make ps                      # list containers of the stg stack
+#   make ci-backend              # mvn clean verify (unit + integration tests)
+#   make ci-frontend             # npm lint + typecheck + build
+#   make verify                  # ci-backend + ci-frontend
 
 ENV ?= stg
 
@@ -34,7 +37,7 @@ define SEPARATOR
 endef
 
 .DEFAULT_GOAL := help
-.PHONY: help logo compose-up compose-down compose-restart logs ps
+.PHONY: help logo compose-up compose-down compose-restart logs ps ci-backend ci-frontend verify
 
 logo:
 	@echo.
@@ -50,12 +53,16 @@ help: logo
 	@echo   compose-restart  Recreate the app+nginx containers after a code change
 	@echo   logs             Tail logs of the running stack
 	@echo   ps               List containers of the stack
+	@echo   ci-backend       Run backend checks (mvn clean verify)
+	@echo   ci-frontend      Run frontend checks (lint + typecheck + build)
+	@echo   verify           Run ci-backend then ci-frontend
 	@echo.
 	@echo Examples:
 	@echo   make compose-up
 	@echo   make compose-up ENV=prod
 	@echo   make compose-down ENV=prod
 	@echo   make logs ENV=prod
+	@echo   make verify
 
 compose-up: logo
 	docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d --build
@@ -71,3 +78,11 @@ logs:
 
 ps:
 	docker compose -f $(COMPOSE_FILE) ps
+
+ci-backend:
+	bash scripts/cicd/backend-checks.sh
+
+ci-frontend:
+	bash scripts/cicd/frontend-checks.sh
+
+verify: ci-backend ci-frontend
