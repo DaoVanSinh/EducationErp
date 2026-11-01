@@ -31,13 +31,13 @@ export function ComboDiscountTierDialog({ open, onClose }: ComboDiscountTierDial
       open={open}
       onClose={onClose}
       title="Thêm bậc giảm giá"
-      description="Combo được áp bậc có mốc số khoá cao nhất mà nó đạt được. Mỗi mốc chỉ có một bậc."
+      description="Combo (số khoá) và nhóm (số người) được áp bậc có mốc cao nhất mà chúng đạt được. Mỗi mốc chỉ có một bậc."
     >
       <form id="combo-tier-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
 
         <FormField
-          label="Số khoá tối thiểu"
+          label="Số suất tối thiểu (khoá hoặc người)"
           htmlFor="tier-min-course-count"
           hint={`Combo tối thiểu ${MIN_COMBO_ENROLLMENTS} khoá, nên mốc nhỏ nhất có nghĩa là ${MIN_COMBO_ENROLLMENTS}.`}
           error={form.fieldErrors.minCourseCount}

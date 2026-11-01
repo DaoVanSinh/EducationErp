@@ -51,7 +51,6 @@ export type PermissionGroupOption = z.infer<typeof permissionGroupOptionSchema>;
 /** Toàn bộ dữ liệu tham chiếu của màn hình RBAC, lấy trong một lần gọi GET /api/rbac/catalog. */
 export const rbacCatalogSchema = z.object({
   roles: z.array(roleOptionSchema),
-  groups: z.array(namedReferenceSchema),
   permissionGroups: z.array(permissionGroupOptionSchema),
   branches: z.array(namedReferenceSchema),
   permissions: z.array(permissionOptionSchema),

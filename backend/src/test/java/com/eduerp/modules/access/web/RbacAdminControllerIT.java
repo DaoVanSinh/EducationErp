@@ -3,15 +3,14 @@ package com.eduerp.modules.access.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
-import com.eduerp.modules.access.dto.AssignGroupRequest;
+import com.eduerp.modules.access.dto.ChangeAccountRoleRequest;
 import com.eduerp.modules.access.dto.CreatePermissionGroupRequest;
 import com.eduerp.modules.access.dto.CreateRoleRequest;
-import com.eduerp.modules.access.internal.model.Group;
-import com.eduerp.modules.access.internal.repository.GroupRepository;
 import com.eduerp.modules.access.internal.repository.PermissionGroupRepository;
 import com.eduerp.modules.access.internal.repository.PermissionRepository;
 import com.eduerp.modules.access.internal.repository.RoleRepository;
@@ -68,8 +67,6 @@ class RbacAdminControllerIT {
     @Autowired
     AccountRepository accounts;
 
-    @Autowired
-    GroupRepository groups;
 
     @Autowired
     PermissionRepository permissions;
@@ -100,57 +97,6 @@ class RbacAdminControllerIT {
                 .andReturn();
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         return result.getResponse().getCookie(IdentityConstants.Cookies.ACCESS_TOKEN);
-    }
-
-    @Test
-    void assigningGroupWidensTheAccountsPermissionsImmediately() throws Exception {
-        var admin = signIn("rbac-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var teacherAccount = accounts.save(new Account("rbac-teacher@eduerp.local",
-                passwordEncoder.encode(PASSWORD), "Rbac Teacher", null));
-        access.assignRole(teacherAccount.getId(), AccessConstants.RoleCodes.TEACHER);
-        var group = new Group("Phòng Kế toán", null);
-        group.addPermissionGroup(permissionGroups.findById(FULL_RIGHTS_PERMISSION_GROUP).orElseThrow());
-        groups.save(group);
-        // Nạp cache trước khi gán: nếu use case quên evict, phép so sánh cuối cùng sẽ vẫn thấy bộ quyền cũ.
-        assertThat(access.effectivePermissions(teacherAccount.getId()))
-                .noneMatch(p -> AccessConstants.Resources.BRANCH.equals(p.resource()));
-
-        var result = mockMvc.perform(post("/api/rbac/accounts/" + teacherAccount.getId() + "/groups")
-                        .cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AssignGroupRequest(group.getId()))))
-                .andReturn();
-
-        assertThat(result.getResponse().getStatus()).isEqualTo(200);
-        assertThat(access.effectivePermissions(teacherAccount.getId()))
-                .anyMatch(p -> AccessConstants.Resources.BRANCH.equals(p.resource())
-                        && AccessConstants.Actions.CREATE.equals(p.action())
-                        && p.scope() == AccessConstants.PermissionScope.ORGANIZATION);
-        awaitAuditEntityId(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.ACCOUNT_JOIN_GROUP,
-                teacherAccount.getId().toString(), true);
-    }
-
-    @Test
-    void accountJoiningAGroupPushesPermissionChangedToThatAccount() throws Exception {
-        var admin = signIn("rbac-sse-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var teacherCookie = signIn("rbac-sse-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
-        var teacherAccountId = accounts.findByTypedEmail("rbac-sse-teacher@eduerp.local").orElseThrow().getId();
-
-        var group = new Group("Phòng SSE", null);
-        group.addPermissionGroup(permissionGroups.findById(FULL_RIGHTS_PERMISSION_GROUP).orElseThrow());
-        groups.save(group);
-
-        var stream = mockMvc.perform(get("/api/notifications/stream").cookie(teacherCookie)).andReturn();
-
-        var result = mockMvc.perform(post("/api/rbac/accounts/" + teacherAccountId + "/groups")
-                        .cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AssignGroupRequest(group.getId()))))
-                .andReturn();
-        assertThat(result.getResponse().getStatus()).isEqualTo(200);
-
-        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
-                assertThat(stream.getResponse().getContentAsString()).contains("PERMISSION_CHANGED"));
     }
 
     @Test
@@ -193,21 +139,21 @@ class RbacAdminControllerIT {
     @Test
     void refusesAnAccountWhosePermissionIsOnlyPersonal() throws Exception {
         var teacher = signIn("rbac-outsider@eduerp.local", AccessConstants.RoleCodes.TEACHER);
-        var group = groups.save(new Group("Phòng Hành chính", null));
         var targetAccount = accounts.save(new Account("rbac-target@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Rbac Target", null));
         access.assignRole(targetAccount.getId(), AccessConstants.RoleCodes.STUDENT);
+        var adminRoleId = roles.findByCode(AccessConstants.RoleCodes.ADMIN).orElseThrow().getId();
 
-        var result = mockMvc.perform(post("/api/rbac/accounts/" + targetAccount.getId() + "/groups")
+        var result = mockMvc.perform(patch("/api/rbac/accounts/" + targetAccount.getId() + "/role")
                         .cookie(teacher).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AssignGroupRequest(group.getId()))))
+                        .content(objectMapper.writeValueAsString(new ChangeAccountRoleRequest(adminRoleId))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(403);
         // Không có gì bất đồng bộ để đợi ở đây (request bị 403 chặn trước khi use case chạy), nên
         // đọc thẳng — chỉ cần chắc chắn KHÔNG có dòng nào lọt qua.
-        assertThat(audit.recentActions(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.ACCOUNT_JOIN_GROUP, 20))
+        assertThat(audit.recentActions(AuditConstants.EntityTypes.ACCOUNT, AuditConstants.Actions.ACCOUNT_ROLE_CHANGE, 20))
                 .extracting(a -> a.entityId()).doesNotContain(targetAccount.getId().toString());
     }
 
@@ -233,22 +179,8 @@ class RbacAdminControllerIT {
         assertThat(reference.get("roles")).isNotEmpty();
         assertThat(reference.get("permissions")).isNotEmpty();
         assertThat(reference.get("branches")).isNotNull();
-    }
-
-    @Test
-    void rejectsAGroupIdThatDoesNotExist() throws Exception {
-        var admin = signIn("rbac-missing@eduerp.local", AccessConstants.RoleCodes.ADMIN);
-        var targetAccount = accounts.save(new Account("rbac-missing-target@eduerp.local",
-                passwordEncoder.encode(PASSWORD), "Rbac Missing", null));
-        access.assignRole(targetAccount.getId(), AccessConstants.RoleCodes.STUDENT);
-
-        var result = mockMvc.perform(post("/api/rbac/accounts/" + targetAccount.getId() + "/groups")
-                        .cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AssignGroupRequest(UUID.randomUUID()))))
-                .andReturn();
-
-        assertThat(result.getResponse().getStatus()).isEqualTo(404);
-        assertThat(result.getResponse().getContentAsString()).contains("ACCESS_GROUP_NOT_FOUND");
+        // Tính năng nhóm người dùng đã gỡ (V37): không còn danh sách nhóm, không còn quyền trên tài nguyên GROUP.
+        assertThat(reference.has("groups")).isFalse();
+        assertThat(reference.get("permissions").findValuesAsText("resource")).doesNotContain("GROUP");
     }
 }

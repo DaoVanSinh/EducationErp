@@ -31,7 +31,6 @@ public final class AccessConstants {
 
         public static final String ACCOUNT = "ACCOUNT";
         public static final String ROLE = "ROLE";
-        public static final String GROUP = "GROUP";
         public static final String PERMISSION = "PERMISSION";
         public static final String PERMISSION_GROUP = "PERMISSION_GROUP";
         public static final String BRANCH = "BRANCH";

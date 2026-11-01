@@ -7,6 +7,7 @@ import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.ComboDiscountTierNotConfiguredException;
 import com.eduerp.modules.billing.CourseNotFoundException;
 import com.eduerp.modules.billing.CourseTuitionNotConfiguredException;
+import com.eduerp.modules.billing.EnrollmentAlreadyDiscountedException;
 import com.eduerp.modules.billing.EnrollmentAlreadyInComboException;
 import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
@@ -17,6 +18,7 @@ import com.eduerp.modules.billing.dto.ComboResponse;
 import com.eduerp.modules.billing.dto.CreateComboRequest;
 import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.model.ComboEnrollment;
+import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboDiscountTierRepository;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.courses.CoursesManagement;
@@ -51,11 +53,13 @@ public class CreateCombo {
     private final ApplicationEventPublisher events;
 
     private final BillingBranchGuard branchGuard;
+    private final EnrollmentDiscounts discounts;
 
     CreateCombo(ComboRepository combos, ComboDiscountTierRepository tiers,
             EnrollmentManagement enrollmentManagement, CoursesManagement coursesManagement,
-            ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard, EnrollmentDiscounts discounts) {
         this.branchGuard = branchGuard;
+        this.discounts = discounts;
         this.combos = combos;
         this.tiers = tiers;
         this.enrollmentManagement = enrollmentManagement;
@@ -78,6 +82,10 @@ public class CreateCombo {
         var comboBranchId = members.get(0).branchId();
         branchGuard.require(actorAccountId, AccessConstants.Actions.CREATE, comboBranchId);
         members.forEach(member -> requireSameStudentAndBranch(member, request.studentProfileId(), comboBranchId));
+        // Combo và đăng ký nhóm loại trừ nhau: ghi danh đã được giảm theo nhóm thì không giảm thêm theo combo.
+        if (enrollmentIds.stream().anyMatch(id -> discounts.groupTuitionOf(id).isPresent())) {
+            throw new EnrollmentAlreadyDiscountedException(enrollmentIds);
+        }
 
         var priced = members.stream().map(this::price).toList();
         var totalOriginalAmount = priced.stream().map(PricedEnrollment::tuitionFee)

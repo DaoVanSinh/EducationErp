@@ -1,4 +1,4 @@
-import { MAX_PAYMENT_NOTE_LENGTH, MIN_COMBO_ENROLLMENTS, PAYMENT_METHOD } from "@/entities/billing";
+import { MAX_PAYMENT_NOTE_LENGTH, MIN_COMBO_ENROLLMENTS, MIN_GROUP_MEMBERS, PAYMENT_METHOD } from "@/entities/billing";
 import { z } from "zod";
 
 export const createInvoiceFormSchema = z.object({
@@ -30,6 +30,14 @@ export const createComboFormSchema = z.object({
     .array(z.string().uuid())
     .min(MIN_COMBO_ENROLLMENTS, `Chọn ít nhất ${MIN_COMBO_ENROLLMENTS} khoá đang học`),
   dueDate: z.string().min(1, "Chọn hạn đóng của combo"),
+});
+
+/** Nhóm học chung: chọn một lớp, rồi tick ít nhất 2 học viên đang học lớp đó. */
+export const createGroupRegistrationFormSchema = z.object({
+  classId: z.string().uuid("Chọn lớp học chung"),
+  enrollmentIds: z
+    .array(z.string().uuid())
+    .min(MIN_GROUP_MEMBERS, `Chọn ít nhất ${MIN_GROUP_MEMBERS} học viên học chung`),
 });
 
 export const comboInvoiceFormSchema = z.object({

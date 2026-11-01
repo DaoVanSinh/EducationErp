@@ -16,7 +16,6 @@ import java.util.UUID;
  */
 public record RbacCatalogResponse(
         List<RoleOption> roles,
-        List<NamedReference> groups,
         List<PermissionGroupOption> permissionGroups,
         List<NamedReference> branches,
         List<PermissionOption> permissions) {

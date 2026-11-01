@@ -2,7 +2,6 @@ import { Can, RequirePermission } from "@/entities/permission";
 import { ACCOUNTS_DIALOG, useAccountsPageController } from "@/modules/rbac/hooks/use-accounts-page-controller";
 import { ACCOUNT_COMMAND_COPY } from "@/modules/rbac/model/account-rules";
 import { AccountsTable } from "@/modules/rbac/ui/accounts-table";
-import { AssignGroupDialog } from "@/modules/rbac/ui/assign-group-dialog";
 import { ChangeRoleDialog } from "@/modules/rbac/ui/change-role-dialog";
 import { CreateAccountDialog } from "@/modules/rbac/ui/create-account-dialog";
 import { TransferBranchDialog } from "@/modules/rbac/ui/transfer-branch-dialog";
@@ -76,12 +75,6 @@ export function AccountsPage() {
         {/* Hộp thoại được dựng lại theo từng tài khoản (key), để form bên trong không giữ lựa chọn cũ. */}
         {selected === null ? null : (
           <>
-            <AssignGroupDialog
-              key={`assign-${selected.id}`}
-              account={selected}
-              open={controller.dialog === ACCOUNTS_DIALOG.assignGroup}
-              onClose={controller.closeDialog}
-            />
             <TransferBranchDialog
               key={`branch-${selected.id}`}
               account={selected}

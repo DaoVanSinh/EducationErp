@@ -40,6 +40,7 @@ const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.enrollments]: <ClipboardList size={18} aria-hidden />,
   [APP_ROUTE.invoices]: <Receipt size={18} aria-hidden />,
   [APP_ROUTE.combos]: <Package size={18} aria-hidden />,
+  [APP_ROUTE.groupRegistrations]: <Users size={18} aria-hidden />,
   [APP_ROUTE.comboDiscountTiers]: <BadgePercent size={18} aria-hidden />,
   [APP_ROUTE.roles]: <ShieldCheck size={18} aria-hidden />,
   [APP_ROUTE.profile]: <UserCircle size={18} aria-hidden />,

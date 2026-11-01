@@ -1,14 +1,12 @@
 package com.eduerp.modules.access.web;
 
 import com.eduerp.modules.access.AccessConstants;
-import com.eduerp.modules.access.dto.AssignGroupRequest;
 import com.eduerp.modules.access.dto.ChangeAccountRoleRequest;
 import com.eduerp.modules.access.dto.CreatePermissionGroupRequest;
 import com.eduerp.modules.access.dto.CreateRoleRequest;
 import com.eduerp.modules.access.dto.RbacCatalogResponse;
 import com.eduerp.modules.access.dto.UpdatePermissionGroupRequest;
 import com.eduerp.modules.access.dto.UpdateRoleRequest;
-import com.eduerp.modules.access.usecase.AssignGroupToAccount;
 import com.eduerp.modules.access.usecase.ChangeAccountRole;
 import com.eduerp.modules.access.usecase.CreatePermissionGroup;
 import com.eduerp.modules.access.usecase.CreateRole;
@@ -30,8 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Phần thuần RBAC của {@code /api/rbac/**} (danh mục, tạo/sửa role và permission group, gán group và đổi
- * role của account). Danh sách account, khoá/mở khoá và chuyển chi nhánh nằm ở
+ * Phần thuần RBAC của {@code /api/rbac/**} (danh mục, tạo/sửa role và permission group, đổi role của
+ * account). Danh sách account, khoá/mở khoá và chuyển chi nhánh nằm ở
  * {@code com.eduerp.modules.identity.web.AccountAdminController} — cùng tiền tố URL, khác module,
  * vì Account là chủ thể của các thao tác đó.
  */
@@ -43,18 +41,16 @@ class RbacAdminController {
     private final UpdateRole updateRole;
     private final CreatePermissionGroup createPermissionGroup;
     private final UpdatePermissionGroup updatePermissionGroup;
-    private final AssignGroupToAccount assignGroupToAccount;
     private final ChangeAccountRole changeAccountRole;
     private final GetRbacCatalog getRbacCatalog;
 
     RbacAdminController(CreateRole createRole, UpdateRole updateRole, CreatePermissionGroup createPermissionGroup,
-            UpdatePermissionGroup updatePermissionGroup, AssignGroupToAccount assignGroupToAccount,
+            UpdatePermissionGroup updatePermissionGroup,
             ChangeAccountRole changeAccountRole, GetRbacCatalog getRbacCatalog) {
         this.createRole = createRole;
         this.updateRole = updateRole;
         this.createPermissionGroup = createPermissionGroup;
         this.updatePermissionGroup = updatePermissionGroup;
-        this.assignGroupToAccount = assignGroupToAccount;
         this.changeAccountRole = changeAccountRole;
         this.getRbacCatalog = getRbacCatalog;
     }
@@ -92,12 +88,6 @@ class RbacAdminController {
         updateRole.execute(roleId, principal.accountId(), principal.homeBranchId(), request);
     }
 
-    @PostMapping("/accounts/{accountId}/groups")
-    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
-    void assignGroup(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId,
-            @Valid @RequestBody AssignGroupRequest request) {
-        assignGroupToAccount.execute(accountId, principal.accountId(), principal.homeBranchId(), request);
-    }
 
     @PatchMapping("/accounts/{accountId}/role")
     @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)

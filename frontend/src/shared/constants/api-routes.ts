@@ -21,7 +21,6 @@ export const API_ROUTE = {
     role: (roleId: string) => `/api/rbac/roles/${roleId}`,
     permissionGroups: "/api/rbac/permission-groups",
     permissionGroup: (permissionGroupId: string) => `/api/rbac/permission-groups/${permissionGroupId}`,
-    accountGroups: (accountId: string) => `/api/rbac/accounts/${accountId}/groups`,
     accountBranch: (accountId: string) => `/api/rbac/accounts/${accountId}/transfer-branch`,
     accountResendInvite: (accountId: string) => `/api/rbac/accounts/${accountId}/resend-invite`,
     accountRevokeInvite: (accountId: string) => `/api/rbac/accounts/${accountId}/revoke-invite`,
@@ -89,6 +88,8 @@ export const API_ROUTE = {
     comboCancel: (comboId: string) => `/api/billing/combos/${comboId}/cancel`,
     /** comboId nằm trong body, mirror POST /api/billing/invoices vốn nhận enrollmentId trong body. */
     comboInvoices: "/api/billing/combos/invoices",
+    groupRegistrations: "/api/billing/group-registrations",
+    groupRegistrationCancel: (groupId: string) => `/api/billing/group-registrations/${groupId}/cancel`,
     comboDiscountTiers: "/api/billing/combo-discount-tiers",
     comboDiscountTier: (tierId: string) => `/api/billing/combo-discount-tiers/${tierId}`,
     /** Public ở backend - trang Return URL gọi được khi phụ huynh chưa đăng nhập. */

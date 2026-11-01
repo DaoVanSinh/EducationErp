@@ -5,13 +5,11 @@ import com.eduerp.modules.access.dto.RbacCatalogResponse;
 import com.eduerp.modules.access.internal.model.PermissionGroup;
 import com.eduerp.modules.access.internal.model.Role;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
-import com.eduerp.modules.access.internal.repository.GroupRepository;
 import com.eduerp.modules.access.internal.repository.PermissionGroupRepository;
 import com.eduerp.modules.access.internal.repository.PermissionRepository;
 import com.eduerp.modules.access.internal.repository.RoleHeadcountRow;
 import com.eduerp.modules.access.internal.repository.RoleRepository;
 import com.eduerp.modules.access.internal.rules.AccessRules;
-import com.eduerp.shared.NamedReference;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,18 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class GetRbacCatalog {
 
     private final RoleRepository roles;
-    private final GroupRepository groups;
     private final PermissionGroupRepository permissionGroups;
     private final PermissionRepository permissions;
     private final AccountRoleAssignmentRepository accountRoles;
     private final BranchCatalog branches;
     private final AccessRules rules;
 
-    GetRbacCatalog(RoleRepository roles, GroupRepository groups, PermissionGroupRepository permissionGroups,
+    GetRbacCatalog(RoleRepository roles, PermissionGroupRepository permissionGroups,
             PermissionRepository permissions, AccountRoleAssignmentRepository accountRoles, BranchCatalog branches,
             AccessRules rules) {
         this.roles = roles;
-        this.groups = groups;
         this.permissionGroups = permissionGroups;
         this.permissions = permissions;
         this.accountRoles = accountRoles;
@@ -50,8 +46,6 @@ public class GetRbacCatalog {
                 roles.findAll(Sort.by("code")).stream()
                         .map(role -> toRoleOption(role, headcounts.getOrDefault(role.getCode(), 0L)))
                         .toList(),
-                groups.findAll(Sort.by("name")).stream()
-                        .map(group -> new NamedReference(group.getId(), group.getName())).toList(),
                 permissionGroups.findAll(Sort.by("name")).stream().map(this::toPermissionGroupOption).toList(),
                 branches.listAll(),
                 permissions.findAll().stream()

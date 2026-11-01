@@ -30,8 +30,6 @@ public final class AccessEvents {
     public record PermissionGroupUpdated(UUID permissionGroupId, UUID actorAccountId, UUID actorBranchId) {
     }
 
-    public record AccountJoinedGroup(UUID accountId, UUID groupId, UUID actorAccountId, UUID actorBranchId) {
-    }
 
     /** Admin đổi vai trò của một tài khoản đã có vai trò (không phát khi gán vai trò lần đầu lúc tạo). */
     public record AccountRoleChanged(UUID accountId, UUID newRoleId, UUID actorAccountId, UUID actorBranchId) {

@@ -39,10 +39,6 @@ export const createPermissionGroupFormSchema = z.object({
     .min(1, "Chọn ít nhất một quyền cho nhóm"),
 });
 
-export const assignGroupFormSchema = z.object({
-  groupId: z.string().uuid("Chọn một nhóm người dùng"),
-});
-
 export const transferBranchFormSchema = z.object({
   branchId: z.string().uuid("Chọn một chi nhánh"),
 });

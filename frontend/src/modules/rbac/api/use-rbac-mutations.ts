@@ -23,14 +23,6 @@ function useRbacInvalidation(): () => Promise<void> {
   };
 }
 
-export function useAssignGroup(accountId: string) {
-  const invalidate = useRbacInvalidation();
-  return useMutation({
-    mutationFn: (groupId: string) => rbacApi.assignGroup(accountId, groupId),
-    onSuccess: invalidate,
-  });
-}
-
 export function useTransferBranch(accountId: string) {
   const invalidate = useRbacInvalidation();
   return useMutation({

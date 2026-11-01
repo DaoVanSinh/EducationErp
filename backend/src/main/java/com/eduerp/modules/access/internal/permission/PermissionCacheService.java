@@ -4,11 +4,9 @@ import com.eduerp.integrations.cache.CacheKeyBuilder;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.EffectivePermission;
 import com.eduerp.modules.access.internal.model.AccountRoleAssignment;
-import com.eduerp.modules.access.internal.repository.AccountGroupMembershipRepository;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Quyền nằm trong Redis chứ không trong JWT: token giữ gọn, và khi phân quyền đổi thì chỉ cần
  * evict key này là lần gọi API kế tiếp đã thấy quyền mới (frontend invalidate TanStack Query).
  *
- * <p>Tự đủ dữ liệu: role và group của một account đọc từ bảng do chính access sở hữu
- * ({@code account_roles}, {@code account_groups}), không đụng tới bảng {@code accounts} — access
+ * <p>Tự đủ dữ liệu: vai trò của một account đọc từ bảng do chính access sở hữu
+ * ({@code account_roles}), không đụng tới bảng {@code accounts} — access
  * không cần biết identity tồn tại để tính quyền.
  */
 @Service
@@ -30,16 +28,13 @@ public class PermissionCacheService {
 
     private final StringRedisTemplate redis;
     private final AccountRoleAssignmentRepository accountRoles;
-    private final AccountGroupMembershipRepository accountGroups;
     private final EffectivePermissionCalculator calculator;
     private final ObjectMapper mapper;
 
     PermissionCacheService(StringRedisTemplate redis, AccountRoleAssignmentRepository accountRoles,
-            AccountGroupMembershipRepository accountGroups, EffectivePermissionCalculator calculator,
-            ObjectMapper mapper) {
+            EffectivePermissionCalculator calculator, ObjectMapper mapper) {
         this.redis = redis;
         this.accountRoles = accountRoles;
-        this.accountGroups = accountGroups;
         this.calculator = calculator;
         this.mapper = mapper;
     }
@@ -57,8 +52,7 @@ public class PermissionCacheService {
         if (role == null) {
             return Set.of();
         }
-        var groups = new HashSet<>(accountGroups.findGroupsByAccountId(accountId));
-        var computed = calculator.calculate(role, groups);
+        var computed = calculator.calculate(role);
         redis.opsForValue().set(key, serialize(computed), TTL);
         return computed;
     }

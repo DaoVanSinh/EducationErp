@@ -3,6 +3,7 @@ import {
   billingKeys,
   type CreateComboInvoicePayload,
   type CreateComboPayload,
+  type CreateGroupRegistrationPayload,
   type CreateInvoicePayload,
   type InitiateOnlinePaymentPayload,
   type RecordManualPaymentPayload,
@@ -14,6 +15,22 @@ function useInvoicesInvalidation(): () => Promise<void> {
   return async () => {
     await queryClient.invalidateQueries({ queryKey: billingKeys.all });
   };
+}
+
+export function useCreateGroupRegistration() {
+  const invalidate = useInvoicesInvalidation();
+  return useMutation({
+    mutationFn: (payload: CreateGroupRegistrationPayload) => billingApi.createGroupRegistration(payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCancelGroupRegistration() {
+  const invalidate = useInvoicesInvalidation();
+  return useMutation({
+    mutationFn: (groupId: string) => billingApi.cancelGroupRegistration(groupId),
+    onSuccess: invalidate,
+  });
 }
 
 export function useCreateInvoice() {

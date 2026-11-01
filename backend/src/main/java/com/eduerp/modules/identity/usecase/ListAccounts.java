@@ -6,9 +6,7 @@ import com.eduerp.modules.identity.dto.AccountSummaryResponse;
 import com.eduerp.modules.identity.internal.model.Account;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.organization.OrganizationManagement;
-import com.eduerp.shared.NamedReference;
 import com.eduerp.shared.PageResponse;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -31,7 +29,7 @@ public class ListAccounts {
     }
 
     /**
-     * Role, group và tên chi nhánh không còn là quan hệ JPA trên {@code Account} (rule #3), nên
+     * Role và tên chi nhánh không còn là quan hệ JPA trên {@code Account} (rule #3), nên
      * được nạp theo lô cho cả trang thay vì từng account một — tránh N+1 khi ghép ba module lại.
      */
     @Transactional(readOnly = true)
@@ -45,21 +43,19 @@ public class ListAccounts {
         var branchIds = page.getContent().stream().map(Account::getHomeBranchId).filter(Objects::nonNull).toList();
 
         var roles = access.rolesFor(accountIds);
-        var groups = access.groupsFor(accountIds);
         var branchNames = organization.namesOf(branchIds);
 
-        return PageResponse.of(page.map(account -> toSummary(account, roles, groups, branchNames)));
+        return PageResponse.of(page.map(account -> toSummary(account, roles, branchNames)));
     }
 
     private static AccountSummaryResponse toSummary(Account account,
             Map<UUID, AccessManagement.RoleSummary> roles,
-            Map<UUID, List<NamedReference>> groups,
             Map<UUID, String> branchNames) {
         var role = roles.get(account.getId());
         var branchId = account.getHomeBranchId();
         return new AccountSummaryResponse(account.getId(), account.getEmail(), account.getFullName(),
                 account.getStatus(), role == null ? null : role.code(),
                 branchId, branchId == null ? null : branchNames.get(branchId),
-                groups.getOrDefault(account.getId(), List.of()), account.getLastLogin());
+                account.getLastLogin());
     }
 }

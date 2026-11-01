@@ -66,6 +66,10 @@ public final class BillingConstants {
         /** Spec mục 6 bước 1: dưới mốc này thì đó không phải combo, chỉ là một ghi danh. */
         public static final int MIN_ENROLLMENTS_PER_COMBO = 2;
 
+        /** Đăng ký nhóm: từ 2 học viên cùng học một khoá. Dùng chung bảng bậc giảm giá với combo, nên mốc
+         * thấp nhất trùng với combo, nhưng là một quyết định riêng. */
+        public static final int MIN_MEMBERS_PER_GROUP = 2;
+
         /** Khớp cột {@code payments.note VARCHAR(255)} (V35): số phiếu thu, nội dung chuyển khoản... */
         public static final int MAX_PAYMENT_NOTE_LENGTH = 255;
     }

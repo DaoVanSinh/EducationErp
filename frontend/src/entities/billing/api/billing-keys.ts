@@ -8,6 +8,9 @@ export const billingKeys = {
   comboList: (page: number, size: number, studentProfileId?: string) =>
     [...billingKeys.comboLists(), { page, size, studentProfileId }] as const,
   comboDetail: (comboId: string) => [...billingKeys.all, "combo", "detail", comboId] as const,
+  groupLists: () => [...billingKeys.all, "group", "list"] as const,
+  groupList: (page: number, size: number, courseId?: string) =>
+    [...billingKeys.groupLists(), { page, size, courseId }] as const,
   discountTiers: () => [...billingKeys.all, "combo", "discount-tier", "list"] as const,
   paymentStatus: (gatewayTransactionId: string) =>
     [...billingKeys.all, "payment", "status", gatewayTransactionId] as const,

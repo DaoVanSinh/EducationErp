@@ -12,12 +12,14 @@ import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.CourseNotFoundException;
 import com.eduerp.modules.billing.CourseTuitionNotConfiguredException;
+import com.eduerp.modules.billing.EnrollmentBilledByComboException;
 import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
 import com.eduerp.modules.billing.InstallmentLimitExceededException;
 import com.eduerp.modules.billing.InvoiceAmountExceedsTuitionException;
 import com.eduerp.modules.billing.dto.CreateInvoiceRequest;
 import com.eduerp.modules.billing.internal.model.Invoice;
+import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
@@ -41,8 +43,10 @@ class CreateInvoiceTest {
     private final EnrollmentManagement enrollmentManagement = mock(EnrollmentManagement.class);
     private final CoursesManagement coursesManagement = mock(CoursesManagement.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
     private final CreateInvoice useCase =
-            new CreateInvoice(invoices, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class));
+            new CreateInvoice(invoices, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class),
+                    discounts);
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();
@@ -182,6 +186,40 @@ class CreateInvoiceTest {
         var response = useCase.execute(actorAccountId, actorBranchId, request(HALF));
 
         assertThat(response.amount()).isEqualByComparingTo(HALF);
+    }
+
+    /** Ghi danh thuộc nhóm: trần là học phí đã giảm, không phải học phí niêm yết của khoá. */
+    @Test
+    void capsAGroupMemberAtTheDiscountedTuition() {
+        stubActiveEnrollment();
+        stubExistingInvoices(List.of());
+        when(discounts.groupTuitionOf(enrollmentId)).thenReturn(Optional.of(new BigDecimal("10800000")));
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(TUITION)))
+                .isInstanceOf(InvoiceAmountExceedsTuitionException.class);
+    }
+
+    @Test
+    void acceptsAGroupMemberInvoiceUpToTheDiscountedTuition() {
+        stubActiveEnrollment();
+        stubExistingInvoices(List.of());
+        stubSaveEchoesBack();
+        var discounted = new BigDecimal("10800000");
+        when(discounts.groupTuitionOf(enrollmentId)).thenReturn(Optional.of(discounted));
+
+        var response = useCase.execute(actorAccountId, actorBranchId, request(discounted));
+
+        assertThat(response.amount()).isEqualByComparingTo(discounted);
+    }
+
+    /** Ghi danh trong combo thu qua hoá đơn combo - hoá đơn lẻ nữa là thu hai lần. */
+    @Test
+    void rejectsAnEnrollmentThatIsBilledByACombo() {
+        stubActiveEnrollment();
+        when(discounts.isInCombo(enrollmentId)).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
+                .isInstanceOf(EnrollmentBilledByComboException.class);
     }
 
     /** Hạn mức 3 đợt là một lỗi RIÊNG, chỉ gặp khi tổng tiền còn chỗ mà số đợt đã hết (ví dụ 3 đợt

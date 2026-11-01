@@ -48,11 +48,6 @@ export function AccountsTable({ rows, currentAccountId, onOpenDialog, onCommand 
             <p className="truncate text-xs font-medium text-slate-700">
               {account.branchName ?? "Chưa thuộc chi nhánh nào"}
             </p>
-            <p className="truncate text-xs text-slate-400">
-              {account.groups.length === 0
-                ? "Chưa vào nhóm người dùng nào"
-                : account.groups.map((group) => group.name).join(", ")}
-            </p>
           </div>
 
           <AccountActionsMenu

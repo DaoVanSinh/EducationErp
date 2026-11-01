@@ -14,7 +14,6 @@ public final class AuditConstants {
         public static final String LOGIN = "LOGIN";
         public static final String ROLE_CREATE = "ROLE_CREATE";
         public static final String PERMISSION_GROUP_CREATE = "PERMISSION_GROUP_CREATE";
-        public static final String ACCOUNT_JOIN_GROUP = "ACCOUNT_JOIN_GROUP";
         public static final String ACCOUNT_TRANSFER_BRANCH = "ACCOUNT_TRANSFER_BRANCH";
         public static final String BRANCH_CREATE = "BRANCH_CREATE";
         public static final String BRANCH_UPDATE = "BRANCH_UPDATE";
@@ -37,6 +36,8 @@ public final class AuditConstants {
         public static final String INVOICE_CANCEL = "INVOICE_CANCEL";
         public static final String COMBO_CREATE = "COMBO_CREATE";
         public static final String COMBO_CANCEL = "COMBO_CANCEL";
+        public static final String GROUP_REGISTRATION_CREATE = "GROUP_REGISTRATION_CREATE";
+        public static final String GROUP_REGISTRATION_CANCEL = "GROUP_REGISTRATION_CANCEL";
         public static final String GRADE_RECORD = "GRADE_RECORD";
         public static final String ATTENDANCE_RECORD = "ATTENDANCE_RECORD";
         public static final String ASSIGNMENT_CREATE = "ASSIGNMENT_CREATE";
@@ -68,6 +69,7 @@ public final class AuditConstants {
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
         public static final String COMBO = "COMBO";
+        public static final String GROUP_REGISTRATION = "GROUP_REGISTRATION";
         public static final String GRADE_ENTRY = "GRADE_ENTRY";
         public static final String ATTENDANCE_SESSION = "ATTENDANCE_SESSION";
         public static final String ASSIGNMENT = "ASSIGNMENT";

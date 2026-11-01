@@ -1,17 +1,15 @@
 package com.eduerp.modules.access.internal.permission;
 
 import com.eduerp.modules.access.EffectivePermission;
-import com.eduerp.modules.access.internal.model.Group;
 import com.eduerp.modules.access.internal.model.Role;
 import com.eduerp.modules.access.internal.rules.AccessRules;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 
-/** Quyền hiệu lực = hợp của quyền từ role và từ các group, mỗi resource+action giữ scope rộng nhất. */
+/** Quyền hiệu lực = các quyền trong những nhóm quyền của vai trò, mỗi resource+action giữ scope rộng nhất. */
 @Component
 public class EffectivePermissionCalculator {
 
@@ -21,12 +19,10 @@ public class EffectivePermissionCalculator {
         this.rules = rules;
     }
 
-    public Set<EffectivePermission> calculate(Role role, Set<Group> groups) {
+    public Set<EffectivePermission> calculate(Role role) {
         Map<String, EffectivePermission> byKey = new HashMap<>();
 
-        Stream.concat(
-                role.getPermissionGroups().stream(),
-                groups.stream().flatMap(g -> g.getPermissionGroups().stream()))
+        role.getPermissionGroups().stream()
                 .flatMap(pg -> pg.getItems().stream())
                 .forEach(item -> {
                     var candidate = new EffectivePermission(

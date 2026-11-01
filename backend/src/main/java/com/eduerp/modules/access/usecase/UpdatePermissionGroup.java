@@ -8,9 +8,7 @@ import com.eduerp.modules.access.dto.CreatePermissionGroupRequest;
 import com.eduerp.modules.access.dto.UpdatePermissionGroupRequest;
 import com.eduerp.modules.access.internal.model.Permission;
 import com.eduerp.modules.access.internal.permission.PermissionChangeNotifier;
-import com.eduerp.modules.access.internal.repository.AccountGroupMembershipRepository;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
-import com.eduerp.modules.access.internal.repository.GroupRepository;
 import com.eduerp.modules.access.internal.repository.PermissionGroupRepository;
 import com.eduerp.modules.access.internal.repository.PermissionRepository;
 import com.eduerp.modules.access.internal.repository.RoleRepository;
@@ -27,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Sửa tên, mô tả và danh sách (quyền, phạm vi) của một nhóm quyền. Nhóm "Toàn quyền hệ thống" bị khoá.
- * Người bị ảnh hưởng = người giữ mọi vai trò chứa nhóm này + thành viên mọi nhóm người dùng chứa nhóm này.
+ * Người bị ảnh hưởng = người giữ mọi vai trò chứa nhóm này.
  */
 @Service
 public class UpdatePermissionGroup {
@@ -35,23 +33,18 @@ public class UpdatePermissionGroup {
     private final PermissionGroupRepository permissionGroups;
     private final PermissionRepository permissions;
     private final RoleRepository roles;
-    private final GroupRepository groups;
     private final AccountRoleAssignmentRepository accountRoles;
-    private final AccountGroupMembershipRepository memberships;
     private final AccessRules rules;
     private final PermissionChangeNotifier notifier;
     private final ApplicationEventPublisher events;
 
     UpdatePermissionGroup(PermissionGroupRepository permissionGroups, PermissionRepository permissions,
-            RoleRepository roles, GroupRepository groups, AccountRoleAssignmentRepository accountRoles,
-            AccountGroupMembershipRepository memberships, AccessRules rules, PermissionChangeNotifier notifier,
-            ApplicationEventPublisher events) {
+            RoleRepository roles, AccountRoleAssignmentRepository accountRoles, AccessRules rules,
+            PermissionChangeNotifier notifier, ApplicationEventPublisher events) {
         this.permissionGroups = permissionGroups;
         this.permissions = permissions;
         this.roles = roles;
-        this.groups = groups;
         this.accountRoles = accountRoles;
-        this.memberships = memberships;
         this.rules = rules;
         this.notifier = notifier;
         this.events = events;
@@ -89,10 +82,6 @@ public class UpdatePermissionGroup {
         var roleIds = roles.findIdsByPermissionGroupId(permissionGroupId);
         if (!roleIds.isEmpty()) {
             affected.addAll(accountRoles.findAccountIdsByRoleIds(roleIds));
-        }
-        var groupIds = groups.findIdsByPermissionGroupId(permissionGroupId);
-        if (!groupIds.isEmpty()) {
-            affected.addAll(memberships.findAccountIdsByGroupIds(groupIds));
         }
         return affected;
     }

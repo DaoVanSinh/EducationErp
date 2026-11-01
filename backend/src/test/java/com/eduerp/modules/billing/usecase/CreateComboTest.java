@@ -22,6 +22,7 @@ import com.eduerp.modules.billing.StudentMismatchInComboException;
 import com.eduerp.modules.billing.dto.CreateComboRequest;
 import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.model.ComboDiscountTier;
+import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboDiscountTierRepository;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.courses.CoursesManagement;
@@ -47,8 +48,10 @@ class CreateComboTest {
     private final EnrollmentManagement enrollmentManagement = mock(EnrollmentManagement.class);
     private final CoursesManagement coursesManagement = mock(CoursesManagement.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
     private final CreateCombo useCase =
-            new CreateCombo(combos, tiers, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class));
+            new CreateCombo(combos, tiers, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class),
+                    discounts);
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

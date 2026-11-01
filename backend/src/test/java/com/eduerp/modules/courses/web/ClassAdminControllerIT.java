@@ -348,8 +348,8 @@ class ClassAdminControllerIT {
      * <p>Dùng {@code getQueryExecutionCount()} (số lượt thực thi JPQL/Criteria qua tầng ORM), KHÔNG
      * dùng {@code getPrepareStatementCount()} (tổng số câu SQL JDBC thô): đã xác nhận bằng cách bật
      * {@code logging.level.org.hibernate.SQL=DEBUG} và soi log rằng trong 9 câu SQL thô của 1 request
-     * GET đã đăng nhập, 5 câu đầu (account theo id, account_roles join roles, account_groups join
-     * user_groups, role_permission_groups join permission_groups, permission_group_items join
+     * GET đã đăng nhập, các câu đầu (account theo id, account_roles join roles,
+     * role_permission_groups join permission_groups, permission_group_items join
      * permissions) là chi phí cố định của pipeline xác thực/phân quyền Spring Security cho MỌI request
      * có đăng nhập - không liên quan gì đến số lớp hay logic của ListClasses. Chỉ 4 câu còn lại mới
      * đúng là phần ListClasses tự kiểm soát: 1 câu trang (classes JOIN courses qua entity graph), 1

@@ -50,9 +50,6 @@ export function AccountActionsMenu({ account, isSelf, commands, onOpenDialog, on
             <MenuItem onSelect={run(() => onOpenDialog(ACCOUNTS_DIALOG.transferBranch, account))}>
               Chuyển chi nhánh
             </MenuItem>
-            <MenuItem onSelect={run(() => onOpenDialog(ACCOUNTS_DIALOG.assignGroup, account))}>
-              Thêm vào nhóm người dùng
-            </MenuItem>
           </Can>
           {commands.length > 0 ? <div className="my-1 h-px bg-slate-100" /> : null}
           {commands.map((command) => (

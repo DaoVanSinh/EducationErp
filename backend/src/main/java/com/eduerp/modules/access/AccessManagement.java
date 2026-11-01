@@ -1,15 +1,11 @@
 package com.eduerp.modules.access;
 
-import com.eduerp.modules.access.internal.model.AccountGroupMembership;
 import com.eduerp.modules.access.internal.model.AccountRoleAssignment;
 import com.eduerp.modules.access.internal.permission.PermissionCacheService;
 import com.eduerp.modules.access.internal.permission.RoleAssignmentService;
-import com.eduerp.modules.access.internal.repository.AccountGroupMembershipRepository;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
 import com.eduerp.modules.access.internal.repository.RoleRepository;
-import com.eduerp.shared.NamedReference;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,17 +23,14 @@ public class AccessManagement {
 
     private final PermissionCacheService permissionCache;
     private final AccountRoleAssignmentRepository accountRoles;
-    private final AccountGroupMembershipRepository accountGroups;
     private final RoleRepository roles;
     private final RoleAssignmentService roleAssignment;
     private final AccountBranchLookup branchLookup;
 
     AccessManagement(PermissionCacheService permissionCache, AccountRoleAssignmentRepository accountRoles,
-            AccountGroupMembershipRepository accountGroups, RoleRepository roles,
-            RoleAssignmentService roleAssignment, AccountBranchLookup branchLookup) {
+            RoleRepository roles, RoleAssignmentService roleAssignment, AccountBranchLookup branchLookup) {
         this.permissionCache = permissionCache;
         this.accountRoles = accountRoles;
-        this.accountGroups = accountGroups;
         this.roles = roles;
         this.roleAssignment = roleAssignment;
         this.branchLookup = branchLookup;
@@ -130,17 +123,6 @@ public class AccessManagement {
         return accountRoles.findAllById(accountIds).stream()
                 .collect(Collectors.toMap(AccountRoleAssignment::getAccountId,
                         a -> new RoleSummary(a.getRole().getCode(), a.getRole().getName())));
-    }
-
-    /** Group của một loạt account theo id — cùng lý do batch với {@link #rolesFor}. */
-    @Transactional(readOnly = true)
-    public Map<UUID, List<NamedReference>> groupsFor(Collection<UUID> accountIds) {
-        return accountGroups.findByAccountIdIn(accountIds).stream()
-                .collect(Collectors.groupingBy(AccountGroupMembership::getAccountId,
-                        Collectors.mapping(m -> new NamedReference(m.getGroup().getId(), m.getGroup().getName()),
-                                Collectors.collectingAndThen(Collectors.toList(),
-                                        list -> list.stream().sorted(Comparator.comparing(NamedReference::name))
-                                                .toList()))));
     }
 
     /** Số account theo từng role — role chưa ai giữ vẫn có mặt với 0, phục vụ dashboard. */

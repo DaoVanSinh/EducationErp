@@ -6,6 +6,7 @@ import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.CourseNotFoundException;
 import com.eduerp.modules.billing.CourseTuitionNotConfiguredException;
+import com.eduerp.modules.billing.EnrollmentBilledByComboException;
 import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
 import com.eduerp.modules.billing.InstallmentLimitExceededException;
@@ -13,6 +14,7 @@ import com.eduerp.modules.billing.InvoiceAmountExceedsTuitionException;
 import com.eduerp.modules.billing.dto.CreateInvoiceRequest;
 import com.eduerp.modules.billing.dto.InvoiceResponse;
 import com.eduerp.modules.billing.internal.model.Invoice;
+import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
@@ -38,10 +40,13 @@ public class CreateInvoice {
     private final ApplicationEventPublisher events;
 
     private final BillingBranchGuard branchGuard;
+    private final EnrollmentDiscounts discounts;
 
     CreateInvoice(InvoiceRepository invoices, EnrollmentManagement enrollmentManagement,
-            CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+            CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard,
+            EnrollmentDiscounts discounts) {
         this.branchGuard = branchGuard;
+        this.discounts = discounts;
         this.invoices = invoices;
         this.enrollmentManagement = enrollmentManagement;
         this.coursesManagement = coursesManagement;
@@ -56,12 +61,11 @@ public class CreateInvoice {
         if (enrollment.status() != EnrollmentConstants.EnrollmentStatus.ACTIVE) {
             throw new EnrollmentNotActiveForBillingException(request.enrollmentId());
         }
-
-        var tuition = coursesManagement.getCourseTuition(enrollment.courseId())
-                .orElseThrow(() -> new CourseNotFoundException(enrollment.courseId()));
-        if (tuition.tuitionFee() == null) {
-            throw new CourseTuitionNotConfiguredException(enrollment.courseId());
+        if (discounts.isInCombo(request.enrollmentId())) {
+            throw new EnrollmentBilledByComboException(request.enrollmentId());
         }
+
+        var tuitionCap = tuitionCapOf(request.enrollmentId(), enrollment.courseId());
 
         var liveInvoiceCount = invoices.countByEnrollmentIdAndStatusNot(request.enrollmentId(),
                 BillingConstants.InvoiceStatus.CANCELLED);
@@ -74,8 +78,8 @@ public class CreateInvoice {
                 .findAllByEnrollmentIdAndStatusNot(request.enrollmentId(), BillingConstants.InvoiceStatus.CANCELLED)
                 .stream().map(Invoice::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         var totalAfterThisInvoice = alreadyInvoiced.add(request.amount());
-        if (totalAfterThisInvoice.compareTo(tuition.tuitionFee()) > 0) {
-            throw new InvoiceAmountExceedsTuitionException(totalAfterThisInvoice, tuition.tuitionFee());
+        if (totalAfterThisInvoice.compareTo(tuitionCap) > 0) {
+            throw new InvoiceAmountExceedsTuitionException(totalAfterThisInvoice, tuitionCap);
         }
 
         var installmentNumber = Math.toIntExact(liveInvoiceCount) + 1;
@@ -84,6 +88,23 @@ public class CreateInvoice {
                 request.dueDate(), actorAccountId), request.enrollmentId());
         events.publishEvent(new BillingEvents.InvoiceCreated(saved.getId(), actorAccountId, actorBranchId));
         return toResponse(saved);
+    }
+
+    /**
+     * Trần tổng hoá đơn của một ghi danh: học phí đã giảm nếu ghi danh thuộc một nhóm, nếu không thì học phí niêm
+     * yết của khoá. Khoá chưa có học phí vẫn bị chặn như cũ - nhóm luôn snapshot từ một khoá đã có giá.
+     */
+    private BigDecimal tuitionCapOf(UUID enrollmentId, UUID courseId) {
+        var groupTuition = discounts.groupTuitionOf(enrollmentId);
+        if (groupTuition.isPresent()) {
+            return groupTuition.get();
+        }
+        var tuition = coursesManagement.getCourseTuition(courseId)
+                .orElseThrow(() -> new CourseNotFoundException(courseId));
+        if (tuition.tuitionFee() == null) {
+            throw new CourseTuitionNotConfiguredException(courseId);
+        }
+        return tuition.tuitionFee();
     }
 
     /**

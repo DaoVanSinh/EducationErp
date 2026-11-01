@@ -194,6 +194,36 @@ export const comboDiscountTierSchema = z.object({
 
 export type ComboDiscountTier = z.infer<typeof comboDiscountTierSchema>;
 
+/** Khớp BillingConstants.Limits.MIN_MEMBERS_PER_GROUP - dưới mốc này backend trả BILLING_GROUP_MINIMUM_SIZE. */
+export const MIN_GROUP_MEMBERS = 2;
+
+/** Khớp GroupRegistrationMemberResponse ở backend. */
+export const groupRegistrationMemberSchema = z.object({
+  enrollmentId: z.string().uuid(),
+  studentProfileId: z.string().uuid(),
+  originalTuitionFee: z.number(),
+  /** Trần tổng hoá đơn của ghi danh này sau giảm nhóm. */
+  discountedTuitionFee: z.number(),
+});
+
+export type GroupRegistrationMember = z.infer<typeof groupRegistrationMemberSchema>;
+
+/** Khớp GroupRegistrationResponse ở backend - đổi tên field là breaking. */
+export const groupRegistrationSchema = z.object({
+  id: z.string().uuid(),
+  courseId: z.string().uuid(),
+  branchId: z.string().uuid(),
+  discountPercent: z.number(),
+  createdAt: z.string(),
+  members: z.array(groupRegistrationMemberSchema),
+});
+
+export type GroupRegistration = z.infer<typeof groupRegistrationSchema>;
+
+export interface CreateGroupRegistrationPayload {
+  readonly enrollmentIds: readonly string[];
+}
+
 export interface CreateComboPayload {
   readonly studentProfileId: string;
   readonly enrollmentIds: readonly string[];

@@ -4,9 +4,7 @@ import com.eduerp.modules.access.EffectivePermission;
 import com.eduerp.modules.access.RoleAssignmentParticipant;
 import com.eduerp.modules.access.internal.model.AccountRoleAssignment;
 import com.eduerp.modules.access.internal.model.Role;
-import com.eduerp.modules.access.internal.repository.AccountGroupMembershipRepository;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -18,14 +16,13 @@ import org.springframework.stereotype.Component;
  * Dùng chung cho tạo tài khoản (gán lần đầu), seed admin, và admin đổi vai trò - nên mọi đường gán vai
  * trò đều đi qua cùng các kiểm tra "còn dạy lớp / còn đang học" và cùng việc tự tạo hồ sơ.
  *
- * <p>Quyền "trước" và "sau" được TÍNH LẠI từ DB (role + group hiện tại), không đọc từ cache Redis: cache
+ * <p>Quyền "trước" và "sau" được TÍNH LẠI từ DB (vai trò hiện tại), không đọc từ cache Redis: cache
  * có thể cũ tới 10 phút, mà quyết định chặn/cho phép phải dựa trên dữ liệu thật.
  */
 @Component
 public class RoleAssignmentService {
 
     private final AccountRoleAssignmentRepository accountRoles;
-    private final AccountGroupMembershipRepository accountGroups;
     private final EffectivePermissionCalculator calculator;
     private final PermissionChangeNotifier notifier;
     /**
@@ -35,11 +32,10 @@ public class RoleAssignmentService {
      */
     private final ObjectProvider<RoleAssignmentParticipant> participants;
 
-    RoleAssignmentService(AccountRoleAssignmentRepository accountRoles, AccountGroupMembershipRepository accountGroups,
+    RoleAssignmentService(AccountRoleAssignmentRepository accountRoles,
             EffectivePermissionCalculator calculator, PermissionChangeNotifier notifier,
             ObjectProvider<RoleAssignmentParticipant> participants) {
         this.accountRoles = accountRoles;
-        this.accountGroups = accountGroups;
         this.calculator = calculator;
         this.notifier = notifier;
         this.participants = participants;
@@ -50,8 +46,7 @@ public class RoleAssignmentService {
      *         vốn đã giữ đúng vai trò này - idempotent, không gọi lại participant
      */
     public boolean assign(UUID accountId, Role role) {
-        var groups = new HashSet<>(accountGroups.findGroupsByAccountId(accountId));
-        Set<EffectivePermission> after = calculator.calculate(role, groups);
+        Set<EffectivePermission> after = calculator.calculate(role);
         var existing = accountRoles.findById(accountId).orElse(null);
         if (existing == null) {
             accountRoles.save(new AccountRoleAssignment(accountId, role));
@@ -62,7 +57,7 @@ public class RoleAssignmentService {
         if (existing.getRole().getId().equals(role.getId())) {
             return false;
         }
-        Set<EffectivePermission> before = calculator.calculate(existing.getRole(), groups);
+        Set<EffectivePermission> before = calculator.calculate(existing.getRole());
         participants.orderedStream().forEach(participant -> participant.beforeRoleChange(accountId, before, after));
         existing.changeRole(role);
         participants.orderedStream().forEach(participant -> participant.afterRoleAssigned(accountId, after));

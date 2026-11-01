@@ -2,7 +2,6 @@
 export const RESOURCE = {
   account: "ACCOUNT",
   role: "ROLE",
-  group: "GROUP",
   permission: "PERMISSION",
   permissionGroup: "PERMISSION_GROUP",
   branch: "BRANCH",
@@ -59,7 +58,6 @@ export const PERMISSION_SCOPE_LABEL: Record<PermissionScope, string> = {
 export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.account]: "Tài khoản",
   [RESOURCE.role]: "Vai trò",
-  [RESOURCE.group]: "Nhóm người dùng",
   [RESOURCE.permission]: "Quyền",
   [RESOURCE.permissionGroup]: "Nhóm quyền",
   [RESOURCE.branch]: "Chi nhánh",

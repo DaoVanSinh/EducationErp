@@ -125,12 +125,6 @@ class AuditEventListeners {
     }
 
     @ApplicationModuleListener
-    void on(AccessEvents.AccountJoinedGroup event) {
-        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_JOIN_GROUP,
-                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
-    }
-
-    @ApplicationModuleListener
     void on(OrganizationEvents.BranchCreated event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.BRANCH_CREATE,
                 AuditConstants.EntityTypes.BRANCH, event.branchId().toString(), event.actorBranchId()));
@@ -244,6 +238,20 @@ class AuditEventListeners {
     void on(BillingEvents.ComboCancelled event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.COMBO_CANCEL,
                 AuditConstants.EntityTypes.COMBO, event.comboId().toString(), event.actorBranchId()));
+    }
+
+    /** Lập nhóm hạ trần học phí của nhiều ghi danh - mirror ComboCreated. */
+    @ApplicationModuleListener
+    void on(BillingEvents.GroupRegistrationCreated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.GROUP_REGISTRATION_CREATE,
+                AuditConstants.EntityTypes.GROUP_REGISTRATION, event.groupId().toString(), event.actorBranchId()));
+    }
+
+    /** Huỷ nhóm là xoá cứng - dòng log này là dấu vết duy nhất, mirror ComboCancelled. */
+    @ApplicationModuleListener
+    void on(BillingEvents.GroupRegistrationCancelled event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.GROUP_REGISTRATION_CANCEL,
+                AuditConstants.EntityTypes.GROUP_REGISTRATION, event.groupId().toString(), event.actorBranchId()));
     }
 
     /**

@@ -12,7 +12,10 @@ public sealed class BillingException extends AppException
         PaymentGatewayUnavailableException, InvoiceHasPendingPaymentException, MinimumComboSizeException,
         StudentMismatchInComboException, EnrollmentAlreadyInComboException,
         ComboDiscountTierNotConfiguredException, ComboDiscountTierNotFoundException,
-        ComboDiscountTierAlreadyExistsException, ComboNotFoundException, ComboHasInvoicesException {
+        ComboDiscountTierAlreadyExistsException, ComboNotFoundException, ComboHasInvoicesException,
+        MinimumGroupSizeException, GroupMemberMismatchException, EnrollmentAlreadyDiscountedException,
+        EnrollmentAlreadyInvoicedException, EnrollmentBilledByComboException, GroupRegistrationNotFoundException,
+        GroupRegistrationHasInvoicesException {
 
     protected BillingException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);

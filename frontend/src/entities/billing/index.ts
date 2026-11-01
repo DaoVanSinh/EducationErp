@@ -4,6 +4,7 @@ export { useComboDetail } from "@/entities/billing/api/use-combo-detail";
 export { useConfirmVnpayReturn } from "@/entities/billing/api/use-confirm-vnpay-return";
 export { useComboDiscountTiers } from "@/entities/billing/api/use-combo-discount-tiers";
 export { useCombos } from "@/entities/billing/api/use-combos";
+export { useGroupRegistrations } from "@/entities/billing/api/use-group-registrations";
 export { useInvoiceDetail } from "@/entities/billing/api/use-invoice-detail";
 export { useInvoices } from "@/entities/billing/api/use-invoices";
 export { usePaymentStatus } from "@/entities/billing/api/use-payment-status";
@@ -18,6 +19,7 @@ export {
   invoiceSummarySchema,
   MAX_PAYMENT_NOTE_LENGTH,
   MIN_COMBO_ENROLLMENTS,
+  MIN_GROUP_MEMBERS,
   OFFLINE_PAYMENT_METHODS,
   ONLINE_GATEWAYS,
   PAYMENT_METHOD,
@@ -33,6 +35,9 @@ export {
   type CreateComboDiscountTierPayload,
   type CreateComboInvoicePayload,
   type CreateComboPayload,
+  type CreateGroupRegistrationPayload,
+  type GroupRegistration,
+  type GroupRegistrationMember,
   type CreateInvoicePayload,
   type InitiateOnlinePaymentPayload,
   type InvoiceDetail,

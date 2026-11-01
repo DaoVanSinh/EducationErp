@@ -3,14 +3,13 @@ package com.eduerp.modules.identity.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
-import com.eduerp.modules.access.dto.AssignGroupRequest;
-import com.eduerp.modules.access.internal.model.Group;
-import com.eduerp.modules.access.internal.repository.GroupRepository;
-import com.eduerp.modules.access.internal.repository.PermissionGroupRepository;
+import com.eduerp.modules.access.dto.ChangeAccountRoleRequest;
+import com.eduerp.modules.access.internal.repository.RoleRepository;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.LoginRequest;
 import com.eduerp.modules.identity.dto.SessionResponse;
@@ -21,7 +20,6 @@ import com.eduerp.modules.organization.internal.repository.BranchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -41,8 +39,6 @@ import org.testcontainers.utility.DockerImageName;
 class CurrentSessionIT {
 
     private static final String PASSWORD = "Password123!";
-    private static final UUID FULL_RIGHTS_PERMISSION_GROUP =
-            UUID.fromString("11111111-0000-0000-0000-000000000001");
 
     @Container
     @ServiceConnection
@@ -65,13 +61,11 @@ class CurrentSessionIT {
     AccessManagement access;
 
     @Autowired
-    GroupRepository groups;
+    RoleRepository roles;
 
     @Autowired
     BranchRepository branches;
 
-    @Autowired
-    PermissionGroupRepository permissionGroups;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -118,18 +112,17 @@ class CurrentSessionIT {
         var admin = signIn("me-granter@eduerp.local", AccessConstants.RoleCodes.ADMIN, null);
         var studentCookie = signIn("me-student@eduerp.local", AccessConstants.RoleCodes.STUDENT, null);
         var studentId = accounts.findByTypedEmail("me-student@eduerp.local").orElseThrow().getId();
-        var group = new Group("Ban giám hiệu", null);
-        group.addPermissionGroup(permissionGroups.findById(FULL_RIGHTS_PERMISSION_GROUP).orElseThrow());
-        groups.save(group);
+        var adminRoleId = roles.findByCode(AccessConstants.RoleCodes.ADMIN).orElseThrow().getId();
 
         var before = objectMapper.readValue(
                 mockMvc.perform(get("/api/account/me").cookie(studentCookie)).andReturn()
                         .getResponse().getContentAsString(), SessionResponse.class);
-        mockMvc.perform(post("/api/rbac/accounts/" + studentId + "/groups")
+        var changed = mockMvc.perform(patch("/api/rbac/accounts/" + studentId + "/role")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new AssignGroupRequest(group.getId()))))
+                        .content(objectMapper.writeValueAsString(new ChangeAccountRoleRequest(adminRoleId))))
                 .andReturn();
+        assertThat(changed.getResponse().getStatus()).isEqualTo(200);
         var after = objectMapper.readValue(
                 mockMvc.perform(get("/api/account/me").cookie(studentCookie)).andReturn()
                         .getResponse().getContentAsString(), SessionResponse.class);

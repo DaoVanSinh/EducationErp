@@ -19,7 +19,7 @@ export function ComboDiscountTiersPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Bậc giảm giá combo"
-          description="Số khoá tối thiểu → % giảm. Chưa có bậc nào phù hợp thì hệ thống từ chối tạo combo, không tự giảm 0%."
+          description="Số suất học tối thiểu → % giảm. Một suất là một khoá (combo của một học viên) hoặc một người (nhóm học chung một lớp). Chưa có bậc phù hợp thì hệ thống từ chối, không tự giảm 0%."
           actions={
             <Can {...ACCESS_RULE.createComboDiscountTier}>
               <GlassButton onClick={controller.openCreateDialog} icon={<Plus size={16} aria-hidden />}>
@@ -58,7 +58,7 @@ function TiersListSection({
       <EmptyState
         icon={<Percent size={28} aria-hidden />}
         title="Chưa cấu hình bậc giảm giá nào"
-        description="Thêm bậc đầu tiên (ví dụ: từ 2 khoá giảm 10%) để kế toán tạo được combo."
+        description="Thêm bậc đầu tiên (ví dụ: từ 2 suất giảm 10%) để kế toán tạo được combo và nhóm."
       />
     );
   }

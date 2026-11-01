@@ -17,7 +17,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * {@code account_roles}/{@code account_groups} có FK mức DB tới {@code accounts.id} (V8), nên test
+ * {@code account_roles} có FK mức DB tới {@code accounts.id} (V8), nên test
  * này vẫn cần một dòng account thật để gán role — tạo qua {@code AccountRepository} của identity vì
  * đây là test tích hợp toàn context, không phải một import sản xuất xuyên module.
  */

@@ -42,10 +42,6 @@ export const rbacApi = {
     await apiClient.put<void>(API_ROUTE.rbac.permissionGroup(permissionGroupId), payload);
   },
 
-  async assignGroup(accountId: string, groupId: string): Promise<void> {
-    await apiClient.post<void>(API_ROUTE.rbac.accountGroups(accountId), { groupId });
-  },
-
   async transferBranch(accountId: string, branchId: string): Promise<void> {
     await apiClient.post<void>(API_ROUTE.rbac.accountBranch(accountId), { branchId });
   },

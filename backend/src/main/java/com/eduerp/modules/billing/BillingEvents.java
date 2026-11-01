@@ -35,4 +35,12 @@ public final class BillingEvents {
      * tồn tại. Phát trước khi xoá, trong cùng transaction (spec mục 6). */
     public record ComboCancelled(UUID comboId, UUID actorAccountId, UUID actorBranchId) {
     }
+
+    /** Lập nhóm là hạ trần học phí của nhiều ghi danh - quyết định về tiền, phải có dấu vết. */
+    public record GroupRegistrationCreated(UUID groupId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
+    /** Huỷ nhóm là xoá cứng, dòng audit là dấu vết duy nhất còn lại - mirror ComboCancelled. */
+    public record GroupRegistrationCancelled(UUID groupId, UUID actorAccountId, UUID actorBranchId) {
+    }
 }

@@ -4,7 +4,6 @@ import { cx } from "@/shared/lib/class-names";
 import { GlassPanel } from "@/shared/ui/glass-panel";
 import {
   Building2,
-  FolderLock,
   History,
   KeyRound,
   LayoutDashboard,
@@ -23,7 +22,6 @@ export interface ResourcePermissionGroupCardProps {
 const RESOURCE_ICONS: Record<string, LucideIcon> = {
   [RESOURCE.account]: Users,
   [RESOURCE.role]: ShieldCheck,
-  [RESOURCE.group]: FolderLock,
   [RESOURCE.permission]: Lock,
   [RESOURCE.permissionGroup]: KeyRound,
   [RESOURCE.branch]: Building2,

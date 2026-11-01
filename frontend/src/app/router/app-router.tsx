@@ -73,6 +73,9 @@ const InvoiceDetailPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.InvoiceDetailPage })),
 );
 const CombosPage = lazy(() => import("@/modules/billing").then((module) => ({ default: module.CombosPage })));
+const GroupRegistrationsPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.GroupRegistrationsPage })),
+);
 const ComboDetailPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.ComboDetailPage })),
 );
@@ -184,6 +187,7 @@ export function AppRouter() {
           <Route path={APP_ROUTE.invoices} element={<InvoicesPage />} />
           <Route path={APP_ROUTE.invoiceDetail} element={<InvoiceDetailPage />} />
           <Route path={APP_ROUTE.combos} element={<CombosPage />} />
+          <Route path={APP_ROUTE.groupRegistrations} element={<GroupRegistrationsPage />} />
           <Route path={APP_ROUTE.comboDetail} element={<ComboDetailPage />} />
           <Route path={APP_ROUTE.comboDiscountTiers} element={<ComboDiscountTiersPage />} />
           <Route path={APP_ROUTE.classGradebook} element={<GradebookPage />} />

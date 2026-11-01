@@ -25,6 +25,7 @@ export const APP_ROUTE = {
   invoiceDetail: "/admin/billing/invoices/:invoiceId",
   combos: "/admin/billing/combos",
   comboDetail: "/admin/billing/combos/:comboId",
+  groupRegistrations: "/admin/billing/group-registrations",
   comboDiscountTiers: "/admin/billing/combo-discount-tiers",
   classGradebook: "/admin/academic/classes/:classId/gradebook",
   classProgress: "/admin/academic/classes/:classId/progress",

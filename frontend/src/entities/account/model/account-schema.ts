@@ -1,4 +1,4 @@
-import { grantedPermissionSchema, namedReferenceSchema } from "@/shared/api/schemas";
+import { grantedPermissionSchema } from "@/shared/api/schemas";
 import { z } from "zod";
 
 /** Khớp IdentityConstants.AccountStatus ở backend. */
@@ -42,7 +42,6 @@ export const accountSummarySchema = z.object({
   roleCode: z.string(),
   branchId: z.string().uuid().nullable(),
   branchName: z.string().nullable(),
-  groups: z.array(namedReferenceSchema),
   lastLogin: z.string().nullable(),
 });
 

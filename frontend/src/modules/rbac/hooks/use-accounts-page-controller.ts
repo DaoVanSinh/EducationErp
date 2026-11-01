@@ -6,7 +6,6 @@ import { useCallback, useState } from "react";
 
 export const ACCOUNTS_DIALOG = {
   none: "NONE",
-  assignGroup: "ASSIGN_GROUP",
   transferBranch: "TRANSFER_BRANCH",
   changeRole: "CHANGE_ROLE",
 } as const;

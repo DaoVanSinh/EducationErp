@@ -2,6 +2,7 @@ import {
   comboDetailSchema,
   comboDiscountTierSchema,
   comboSchema,
+  groupRegistrationSchema,
   invoiceDetailSchema,
   invoiceSummarySchema,
   paymentSchema,
@@ -9,6 +10,7 @@ import {
   type CreateComboDiscountTierPayload,
   type CreateComboInvoicePayload,
   type CreateComboPayload,
+  type CreateGroupRegistrationPayload,
   type CreateInvoicePayload,
   type InitiateOnlinePaymentPayload,
   type RecordManualPaymentPayload,
@@ -22,8 +24,25 @@ import { z } from "zod";
 const invoicePageSchema = pageResponseSchema(invoiceSummarySchema);
 const comboPageSchema = pageResponseSchema(comboSchema);
 const comboDiscountTierListSchema = z.array(comboDiscountTierSchema);
+const groupRegistrationPageSchema = pageResponseSchema(groupRegistrationSchema);
 
 export const billingApi = {
+  async listGroupRegistrations(page: number, size: number, courseId?: string) {
+    return groupRegistrationPageSchema.parse(
+      await apiClient.get<unknown>(API_ROUTE.billing.groupRegistrations, { page, size, courseId }),
+    );
+  },
+
+  async createGroupRegistration(payload: CreateGroupRegistrationPayload) {
+    return groupRegistrationSchema.parse(
+      await apiClient.post<unknown>(API_ROUTE.billing.groupRegistrations, payload),
+    );
+  },
+
+  async cancelGroupRegistration(groupId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.billing.groupRegistrationCancel(groupId));
+  },
+
   async listInvoices(
     page: number,
     size: number,

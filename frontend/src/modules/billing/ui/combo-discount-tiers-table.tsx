@@ -20,7 +20,7 @@ export function ComboDiscountTiersTable({ rows, onToggleActive, isMutating }: Co
           key={tier.id}
           className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
         >
-          <p className="truncate text-sm text-mist-100">Từ {tier.minCourseCount} khoá trở lên</p>
+          <p className="truncate text-sm text-mist-100">Từ {tier.minCourseCount} khoá hoặc {tier.minCourseCount} người trở lên</p>
           <p className="text-sm text-mist-100">giảm {tier.discountPercent}%</p>
           <Badge tone={tier.active ? "positive" : "neutral"}>
             {tier.active ? "Đang áp dụng" : "Đã tắt"}
