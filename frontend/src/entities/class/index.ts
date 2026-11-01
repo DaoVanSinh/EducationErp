@@ -17,6 +17,7 @@ export {
   type UpdateClassPayload,
   type WeeklyScheduleSlot,
 } from "@/entities/class/model/class-schema";
+export { estimateEndDate, sessionsPerWeek } from "@/entities/class/model/class-end-date";
 export { hasEnoughStudents, isOpenClass, isOverdueUnderfilled } from "@/entities/class/model/class-lifecycle";
 export { formatScheduleSlot } from "@/entities/class/model/schedule-format";
 export { ClassStatusBadge } from "@/entities/class/ui/class-status-badge";

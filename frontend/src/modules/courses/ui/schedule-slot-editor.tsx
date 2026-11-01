@@ -30,30 +30,37 @@ export function ScheduleSlotEditor({ slots, onChange }: ScheduleSlotEditorProps)
     <div className="flex flex-col gap-2">
       {slots.map((slot, index) => (
         <div key={index} className="flex items-center gap-2">
-          <GlassSelect
-            value={slot.dayOfWeek}
-            onChange={(event) => updateSlot(index, { dayOfWeek: event.target.value as WeeklyScheduleSlot["dayOfWeek"] })}
-            className="w-32"
-          >
-            {DAY_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </GlassSelect>
-          <GlassInput
-            type="time"
-            value={slot.startTime}
-            onChange={(event) => updateSlot(index, { startTime: event.target.value })}
-            className="w-28"
-          />
+          {/* Ô nhập luôn w-full, nên độ rộng đặt ở khung bọc ngoài. */}
+          <div className="min-w-0 flex-1">
+            <GlassSelect
+              aria-label="Thứ"
+              value={slot.dayOfWeek}
+              onChange={(event) => updateSlot(index, { dayOfWeek: event.target.value as WeeklyScheduleSlot["dayOfWeek"] })}
+            >
+              {DAY_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </GlassSelect>
+          </div>
+          <div className="w-32 shrink-0">
+            <GlassInput
+              type="time"
+              aria-label="Giờ bắt đầu"
+              value={slot.startTime}
+              onChange={(event) => updateSlot(index, { startTime: event.target.value })}
+            />
+          </div>
           <span className="text-slate-400">–</span>
-          <GlassInput
-            type="time"
-            value={slot.endTime}
-            onChange={(event) => updateSlot(index, { endTime: event.target.value })}
-            className="w-28"
-          />
+          <div className="w-32 shrink-0">
+            <GlassInput
+              type="time"
+              aria-label="Giờ kết thúc"
+              value={slot.endTime}
+              onChange={(event) => updateSlot(index, { endTime: event.target.value })}
+            />
+          </div>
           <GlassButton
             type="button"
             variant="ghost"

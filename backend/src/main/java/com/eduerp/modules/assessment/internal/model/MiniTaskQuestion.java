@@ -51,15 +51,20 @@ public class MiniTaskQuestion {
     @Column(name = "correct_option_index", nullable = false)
     private int correctOptionIndex;
 
+    /** Giải thích vì sao đáp án đúng - chỉ trả cho học viên SAU khi nộp. */
+    @Column(length = AssessmentConstants.Limits.MAX_EXPLANATION_LENGTH)
+    private String explanation;
+
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
     MiniTaskQuestion(MiniTask miniTask, String content, List<String> options, int correctOptionIndex,
-            int displayOrder) {
+            String explanation, int displayOrder) {
         this.miniTask = miniTask;
         this.content = content;
         this.options = new ArrayList<>(options);
         this.correctOptionIndex = correctOptionIndex;
+        this.explanation = explanation;
         this.displayOrder = displayOrder;
     }
 }

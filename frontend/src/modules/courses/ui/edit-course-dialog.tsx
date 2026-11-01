@@ -2,7 +2,7 @@ import type { CourseSummary } from "@/entities/course";
 import { useUpdateCourse } from "@/modules/courses/api/use-courses-mutations";
 import { toGradeColumnPayload, updateCourseFormSchema } from "@/modules/courses/model/courses-forms";
 import { GradeColumnEditor } from "@/modules/courses/ui/grade-column-editor";
-import { useZodForm } from "@/shared/lib/use-zod-form";
+import { listFieldError, useZodForm } from "@/shared/lib/use-zod-form";
 import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
@@ -92,7 +92,7 @@ export function EditCourseDialog({ course, open, onClose }: EditCourseDialogProp
           label="Cột điểm"
           htmlFor="edit-course-grade-columns"
           hint="Không bắt buộc. Nếu có, tổng trọng số phải bằng 100%."
-          error={form.fieldErrors.gradeColumns}
+          error={listFieldError(form.fieldErrors, "gradeColumns", "Cột điểm")}
         >
           <div id="edit-course-grade-columns">
             <GradeColumnEditor

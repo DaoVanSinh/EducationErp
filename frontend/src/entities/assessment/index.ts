@@ -6,6 +6,7 @@ export {
   useMyAssessments,
   usePracticeMiniTask,
 } from "@/entities/assessment/api/use-assessment-queries";
+export { isMissingWork } from "@/entities/assessment/model/assessment-due";
 export {
   ASSESSMENT_LIMITS,
   ASSIGNMENT_TYPE,

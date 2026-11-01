@@ -50,6 +50,21 @@ public final class AssessmentRules {
                         RoundingMode.HALF_UP);
     }
 
+    /** "Đạt" mini-task khi đã có lượt làm và điểm (%) chạm ngưỡng của mini-task đó. */
+    public static boolean isPassed(Integer scorePercent, int passPercent) {
+        return scorePercent != null && scorePercent >= passPercent;
+    }
+
+    /** Ngưỡng do giáo viên đặt; bỏ trống thì dùng mặc định. */
+    public static int passPercentOrDefault(Integer passPercent) {
+        return passPercent == null ? AssessmentConstants.Limits.DEFAULT_PASS_PERCENT : passPercent;
+    }
+
+    /** Giải thích chỉ có nghĩa khi có chữ; chuỗi trắng lưu thành null. */
+    public static String blankToNull(String text) {
+        return text == null || text.isBlank() ? null : text.strip();
+    }
+
     /** Một câu hợp lệ khi có 2-6 phương án và đáp án đúng là chỉ số của một phương án trong đó. */
     public static boolean isValidQuestion(int optionCount, int correctOptionIndex) {
         return optionCount >= AssessmentConstants.Limits.MIN_OPTIONS

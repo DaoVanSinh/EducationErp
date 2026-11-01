@@ -40,6 +40,9 @@ export const ASSESSMENT_LIMITS = {
   minOptions: 2,
   maxOptions: 6,
   maxQuestions: 50,
+  minPassPercent: 1,
+  maxPassPercent: 100,
+  defaultPassPercent: 80,
 } as const;
 
 const assignmentTypeSchema = z.enum([ASSIGNMENT_TYPE.homework, ASSIGNMENT_TYPE.miniTest]);
@@ -100,12 +103,13 @@ export const classAssignmentsSchema = z.object({
 
 export type ClassAssignments = z.infer<typeof classAssignmentsSchema>;
 
-/** `correctOptionIndex` null khi trả cho học viên đang làm bài. */
+/** `correctOptionIndex` và `explanation` null khi trả cho học viên đang làm bài. */
 export const questionSchema = z.object({
   id: z.string().uuid(),
   content: z.string(),
   options: z.array(z.string()),
   correctOptionIndex: z.number().int().nullable(),
+  explanation: z.string().nullable(),
 });
 
 export type Question = z.infer<typeof questionSchema>;
@@ -116,10 +120,12 @@ export const miniTaskSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   active: z.boolean(),
+  passPercent: z.number().int(),
   createdAt: z.string(),
   questions: z.array(questionSchema),
   attemptCount: z.number().int(),
   studentsAttempted: z.number().int(),
+  studentsPassed: z.number().int(),
   averageBestScorePercent: z.number().int().nullable(),
 });
 
@@ -166,6 +172,8 @@ export const myMiniTaskItemSchema = z.object({
   attemptCount: z.number().int(),
   bestScorePercent: z.number().int().nullable(),
   lastScorePercent: z.number().int().nullable(),
+  passPercent: z.number().int(),
+  passed: z.boolean(),
 });
 
 export type MyMiniTaskItem = z.infer<typeof myMiniTaskItemSchema>;
@@ -191,6 +199,7 @@ export const practiceMiniTaskSchema = z.object({
   classId: z.string().uuid(),
   title: z.string(),
   description: z.string().nullable(),
+  passPercent: z.number().int(),
   questions: z.array(questionSchema),
 });
 
@@ -201,6 +210,8 @@ export const attemptResultSchema = z.object({
   correctCount: z.number().int(),
   totalQuestions: z.number().int(),
   scorePercent: z.number().int(),
+  passPercent: z.number().int(),
+  passed: z.boolean(),
   submittedAt: z.string(),
   results: z.array(
     z.object({
@@ -208,6 +219,7 @@ export const attemptResultSchema = z.object({
       selectedOptionIndex: z.number().int().nullable(),
       correctOptionIndex: z.number().int(),
       correct: z.boolean(),
+      explanation: z.string().nullable(),
     }),
   ),
 });
@@ -243,11 +255,13 @@ export interface QuestionPayload {
   readonly content: string;
   readonly options: readonly string[];
   readonly correctOptionIndex: number;
+  readonly explanation: string | null;
 }
 
 export interface MiniTaskPayload {
   readonly title: string;
   readonly description: string | null;
+  readonly passPercent: number;
   readonly questions: readonly QuestionPayload[];
 }
 

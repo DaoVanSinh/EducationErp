@@ -106,6 +106,7 @@ public class GetMyAssessments {
         var best = taskAttempts.stream().map(MiniTaskAttempt::getScorePercent).max(Integer::compareTo).orElse(null);
         var last = taskAttempts.isEmpty() ? null : taskAttempts.get(taskAttempts.size() - 1).getScorePercent();
         return new MyAssessmentResponses.MyMiniTaskItem(task.getId(), task.getTitle(), task.getDescription(),
-                task.getQuestions().size(), taskAttempts.size(), best, last);
+                task.getQuestions().size(), taskAttempts.size(), best, last, task.getPassPercent(),
+                AssessmentRules.isPassed(best, task.getPassPercent()));
     }
 }

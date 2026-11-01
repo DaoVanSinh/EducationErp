@@ -19,8 +19,9 @@ public final class MyAssessmentResponses {
             AssessmentConstants.SubmissionStatus status, BigDecimal score, String feedback) {
     }
 
+    /** {@code passed} = điểm cao nhất đã chạm {@code passPercent} của mini-task. */
     public record MyMiniTaskItem(UUID miniTaskId, String title, String description, int questionCount,
-            int attemptCount, Integer bestScorePercent, Integer lastScorePercent) {
+            int attemptCount, Integer bestScorePercent, Integer lastScorePercent, int passPercent, boolean passed) {
     }
 
     /** Một lớp đã ghi danh. Chỉ liệt kê bài/mini-task đang bật. {@code completionPercent} null khi lớp chưa

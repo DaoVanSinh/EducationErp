@@ -7,6 +7,7 @@ import com.eduerp.modules.assessment.internal.model.MiniTask;
 import com.eduerp.modules.assessment.internal.model.MiniTaskAttempt;
 import com.eduerp.modules.assessment.internal.repository.MiniTaskAttemptRepository;
 import com.eduerp.modules.assessment.internal.repository.MiniTaskRepository;
+import com.eduerp.modules.assessment.internal.rules.AssessmentRules;
 import com.eduerp.modules.assessment.internal.util.MiniTaskViews;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
 import com.eduerp.modules.students.StudentsManagement;
@@ -64,9 +65,13 @@ public class GetClassMiniTasks {
 
     private static MiniTaskResponses.MiniTaskResponse toResponse(MiniTask task, List<MiniTaskAttempt> taskAttempts) {
         var bestByEnrollment = bestScoreByEnrollment(taskAttempts);
+        var passed = (int) bestByEnrollment.values().stream()
+                .filter(best -> AssessmentRules.isPassed(best, task.getPassPercent()))
+                .count();
         return new MiniTaskResponses.MiniTaskResponse(task.getId(), task.getClassId(), task.getTitle(),
-                task.getDescription(), task.isActive(), task.getCreatedAt(), MiniTaskViews.questionsWithAnswers(task),
-                taskAttempts.size(), bestByEnrollment.size(), average(bestByEnrollment.values()));
+                task.getDescription(), task.isActive(), task.getPassPercent(), task.getCreatedAt(),
+                MiniTaskViews.questionsWithAnswers(task), taskAttempts.size(), bestByEnrollment.size(), passed,
+                average(bestByEnrollment.values()));
     }
 
     private static MiniTaskResponses.StudentMiniTaskRow toRow(EnrollmentManagement.ClassRosterEntry entry,

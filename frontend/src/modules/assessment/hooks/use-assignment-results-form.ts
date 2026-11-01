@@ -71,6 +71,18 @@ export function useAssignmentResultsForm(
     });
   }, []);
 
+  /** Thao tác nhanh: ai đang "Chưa nộp" chuyển thành "Đã nộp" - giữ nguyên người đã nhập (nộp muộn, điểm). */
+  const markAllSubmitted = useCallback(() => {
+    setDrafts((previous) =>
+      Object.fromEntries(
+        Object.entries(previous).map(([enrollmentId, draft]) => [
+          enrollmentId,
+          draft.status === SUBMISSION_STATUS.notSubmitted ? { ...draft, status: SUBMISSION_STATUS.submitted } : draft,
+        ]),
+      ),
+    );
+  }, []);
+
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -94,6 +106,7 @@ export function useAssignmentResultsForm(
     rows,
     drafts,
     update,
+    markAllSubmitted,
     handleSubmit,
     validationError,
     submitError: recordResults.error,

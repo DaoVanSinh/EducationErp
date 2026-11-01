@@ -1,5 +1,5 @@
 import type { MiniTask, StudentMiniTaskRow } from "@/entities/assessment";
-import { percentTone } from "@/modules/assessment/model/assessment-rules";
+import { masteryTone } from "@/modules/assessment/model/assessment-rules";
 import { ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Badge } from "@/shared/ui/badge";
 
@@ -8,7 +8,7 @@ export interface MiniTaskPracticeTableProps {
   readonly rows: readonly StudentMiniTaskRow[];
 }
 
-/** Tiến độ tự ôn luyện: học viên × mini-task (điểm cao nhất, số lượt làm). */
+/** Tiến độ tự ôn luyện: học viên × mini-task (điểm cao nhất so với ngưỡng đạt, số lượt làm). */
 export function MiniTaskPracticeTable({ miniTasks, rows }: MiniTaskPracticeTableProps) {
   return (
     <div className="overflow-x-auto">
@@ -17,7 +17,10 @@ export function MiniTaskPracticeTable({ miniTasks, rows }: MiniTaskPracticeTable
           <tr className="text-xs text-mist-500">
             <th scope="col" className="p-2 font-normal">Học viên</th>
             {miniTasks.map((task) => (
-              <th key={task.id} scope="col" className="p-2 font-normal">{task.title}</th>
+              <th key={task.id} scope="col" className="p-2 font-normal">
+                {task.title}
+                <span className="block text-[11px] text-mist-400">Đạt từ {task.passPercent}%</span>
+              </th>
             ))}
           </tr>
         </thead>
@@ -30,7 +33,8 @@ export function MiniTaskPracticeTable({ miniTasks, rows }: MiniTaskPracticeTable
               </td>
               {miniTasks.map((task) => (
                 <td key={task.id} className="p-2">
-                  <BestScoreCell best={row.bestScoreByMiniTaskId[task.id]} attempts={row.attemptsByMiniTaskId[task.id]} />
+                  <BestScoreCell best={row.bestScoreByMiniTaskId[task.id]} attempts={row.attemptsByMiniTaskId[task.id]}
+                    passPercent={task.passPercent} />
                 </td>
               ))}
             </tr>
@@ -41,13 +45,19 @@ export function MiniTaskPracticeTable({ miniTasks, rows }: MiniTaskPracticeTable
   );
 }
 
-function BestScoreCell({ best, attempts }: { readonly best: number | undefined; readonly attempts: number | undefined }) {
+interface BestScoreCellProps {
+  readonly best: number | undefined;
+  readonly attempts: number | undefined;
+  readonly passPercent: number;
+}
+
+function BestScoreCell({ best, attempts, passPercent }: BestScoreCellProps) {
   if (best === undefined) {
     return <span className="text-xs text-mist-400">Chưa làm</span>;
   }
   return (
     <div className="flex flex-col gap-1">
-      <Badge tone={percentTone(best)}>{best}%</Badge>
+      <Badge tone={masteryTone(best, passPercent)}>{best}%{best >= passPercent ? " · Đạt" : ""}</Badge>
       <span className="text-xs text-mist-400">{attempts ?? 0} lượt</span>
     </div>
   );

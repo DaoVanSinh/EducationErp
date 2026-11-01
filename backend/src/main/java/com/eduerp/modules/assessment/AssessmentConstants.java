@@ -27,6 +27,11 @@ public final class AssessmentConstants {
         public static final int MAX_FEEDBACK_LENGTH = 1000;
         public static final int MAX_QUESTION_LENGTH = 1000;
         public static final int MAX_OPTION_LENGTH = 500;
+        public static final int MAX_EXPLANATION_LENGTH = 1000;
+        /** Ngưỡng "Đạt" của mini-task (% số câu đúng) - khớp CHECK của V32. */
+        public static final int MIN_PASS_PERCENT = 1;
+        public static final int MAX_PASS_PERCENT = 100;
+        public static final int DEFAULT_PASS_PERCENT = 80;
         public static final int MIN_QUESTIONS = 1;
         public static final int MAX_QUESTIONS = 50;
         public static final int MIN_OPTIONS = 2;

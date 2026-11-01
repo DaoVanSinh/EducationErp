@@ -43,37 +43,48 @@ export function GradeColumnEditor({ columns, onChange }: GradeColumnEditorProps)
     onChange(columns.filter((_, i) => i !== index));
   };
 
+  // GlassInput luôn w-full và cx không gộp class trùng, nên độ rộng từng ô đặt ở khung bọc ngoài.
   return (
     <div className="flex flex-col gap-2">
+      {columns.length > 0 ? (
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+          <span className="min-w-0 flex-1">Tên cột điểm</span>
+          <span className="w-28 shrink-0">Trọng số (%)</span>
+          <span className="w-24 shrink-0">Thang điểm</span>
+          <span className="w-9 shrink-0" aria-hidden />
+        </div>
+      ) : null}
       {columns.map((column, index) => (
         <div key={index} className="flex items-center gap-2">
-          <GlassInput
-            aria-label="Tên cột điểm"
-            placeholder="Giữa kỳ"
-            value={column.name}
-            onChange={(event) => updateColumn(index, { name: event.target.value })}
-            className="min-w-0 flex-1"
-          />
-          <GlassInput
-            aria-label="Trọng số (%)"
-            type="number"
-            min={0}
-            step={0.01}
-            placeholder="40"
-            value={column.weightPercent}
-            onChange={(event) => updateColumn(index, { weightPercent: event.target.value })}
-            className="w-24"
-          />
-          <span className="text-xs text-mist-500">%</span>
-          <GlassInput
-            aria-label="Thang điểm"
-            type="number"
-            min={0}
-            step={0.01}
-            value={column.maxScore}
-            onChange={(event) => updateColumn(index, { maxScore: event.target.value })}
-            className="w-24"
-          />
+          <div className="min-w-0 flex-1">
+            <GlassInput
+              aria-label="Tên cột điểm"
+              placeholder="Ví dụ: Giữa kỳ"
+              value={column.name}
+              onChange={(event) => updateColumn(index, { name: event.target.value })}
+            />
+          </div>
+          <div className="w-28 shrink-0">
+            <GlassInput
+              aria-label="Trọng số (%)"
+              type="number"
+              min={0}
+              step={0.01}
+              placeholder="40"
+              value={column.weightPercent}
+              onChange={(event) => updateColumn(index, { weightPercent: event.target.value })}
+            />
+          </div>
+          <div className="w-24 shrink-0">
+            <GlassInput
+              aria-label="Thang điểm"
+              type="number"
+              min={0}
+              step={0.01}
+              value={column.maxScore}
+              onChange={(event) => updateColumn(index, { maxScore: event.target.value })}
+            />
+          </div>
           <GlassButton
             type="button"
             variant="ghost"

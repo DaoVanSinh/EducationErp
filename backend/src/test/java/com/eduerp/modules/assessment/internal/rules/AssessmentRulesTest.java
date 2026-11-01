@@ -2,6 +2,7 @@ package com.eduerp.modules.assessment.internal.rules;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.eduerp.modules.assessment.AssessmentConstants;
 import com.eduerp.modules.assessment.AssessmentConstants.SubmissionStatus;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -54,6 +55,27 @@ class AssessmentRulesTest {
         assertThat(AssessmentRules.isValidQuestion(1, 0)).isFalse();
         assertThat(AssessmentRules.isValidQuestion(7, 0)).isFalse();
         assertThat(AssessmentRules.isValidQuestion(2, -1)).isFalse();
+    }
+
+    @Test
+    void aMiniTaskIsPassedOnlyOnceTheScoreReachesItsThreshold() {
+        assertThat(AssessmentRules.isPassed(80, 80)).isTrue();
+        assertThat(AssessmentRules.isPassed(79, 80)).isFalse();
+        assertThat(AssessmentRules.isPassed(null, 1)).isFalse();
+    }
+
+    @Test
+    void aMissingThresholdFallsBackToTheDefault() {
+        assertThat(AssessmentRules.passPercentOrDefault(null))
+                .isEqualTo(AssessmentConstants.Limits.DEFAULT_PASS_PERCENT);
+        assertThat(AssessmentRules.passPercentOrDefault(60)).isEqualTo(60);
+    }
+
+    @Test
+    void aBlankExplanationIsStoredAsNothing() {
+        assertThat(AssessmentRules.blankToNull("   ")).isNull();
+        assertThat(AssessmentRules.blankToNull(null)).isNull();
+        assertThat(AssessmentRules.blankToNull("  vì 2 > 1 ")).isEqualTo("vì 2 > 1");
     }
 
     @Test

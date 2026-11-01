@@ -22,6 +22,7 @@ public final class QuestionValidator {
         }
         task.clearQuestions();
         questions.forEach(question -> task.addQuestion(question.content().strip(),
-                question.options().stream().map(String::strip).toList(), question.correctOptionIndex()));
+                question.options().stream().map(String::strip).toList(), question.correctOptionIndex(),
+                AssessmentRules.blankToNull(question.explanation())));
     }
 }

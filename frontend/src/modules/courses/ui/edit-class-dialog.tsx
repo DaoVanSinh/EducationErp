@@ -3,6 +3,7 @@ import { useEditClassController } from "@/modules/courses/hooks/use-edit-class-c
 import { ClassPlanFields } from "@/modules/courses/ui/class-plan-fields";
 import { ScheduleSlotEditor } from "@/modules/courses/ui/schedule-slot-editor";
 import { ErrorNotice } from "@/shared/ui/error-notice";
+import { listFieldError } from "@/shared/lib/use-zod-form";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassModal } from "@/shared/ui/glass-modal";
@@ -50,10 +51,15 @@ export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
           fieldErrors={fieldErrors}
           enrollmentTermsLocked={controller.enrollmentTermsLocked}
           minMaxSeats={controller.minMaxSeats}
+          endDateHint={controller.endDateHint}
           onChange={(field, value) => setValue(field, value)}
         />
 
-        <FormField label="Lịch học hàng tuần" htmlFor="edit-class-schedule">
+        <FormField
+          label="Lịch học hàng tuần"
+          htmlFor="edit-class-schedule"
+          error={listFieldError(fieldErrors, "schedule", "Buổi")}
+        >
           <ScheduleSlotEditor slots={values.schedule} onChange={(slots) => setValue("schedule", slots)} />
         </FormField>
       </form>

@@ -1,6 +1,7 @@
 import { useMyAssessments } from "@/entities/assessment";
 import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
-import { useMemo } from "react";
+import { todayLocalIsoDate } from "@/shared/lib/local-date";
+import { useMemo, useState } from "react";
 
 /** Dữ liệu trang "Bài tập & luyện tập" - lớp đang học xếp trước (Mandate #2). */
 export function useMyAssessmentsPageController() {
@@ -14,8 +15,12 @@ export function useMyAssessmentsPageController() {
     ];
   }, [query.data]);
 
+  /** Mốc để đánh dấu bài quá hạn chưa nộp. */
+  const [today] = useState(todayLocalIsoDate);
+
   return {
     classes,
+    today,
     isPending: query.isPending,
     error: query.isError ? query.error : null,
     isEmpty: query.isSuccess && classes.length === 0,

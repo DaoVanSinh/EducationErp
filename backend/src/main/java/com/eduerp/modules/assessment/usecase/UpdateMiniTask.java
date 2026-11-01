@@ -6,6 +6,7 @@ import com.eduerp.modules.assessment.dto.MiniTaskRequests;
 import com.eduerp.modules.assessment.internal.access.ClassAssessmentAccessGuard;
 import com.eduerp.modules.assessment.internal.repository.MiniTaskRepository;
 import com.eduerp.modules.assessment.internal.QuestionValidator;
+import com.eduerp.modules.assessment.internal.rules.AssessmentRules;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,8 @@ public class UpdateMiniTask {
         var task = miniTasks.findById(miniTaskId)
                 .orElseThrow(() -> new AssessmentException.MiniTaskNotFound(miniTaskId));
         guard.requireAccessToClass(actorAccountId, task.getClassId(), AccessConstants.Actions.UPDATE);
-        task.update(request.title().strip(), request.description(), request.active());
+        task.update(request.title().strip(), request.description(),
+                AssessmentRules.passPercentOrDefault(request.passPercent()), request.active());
         QuestionValidator.applyQuestions(task, request.questions());
         miniTasks.save(task);
     }

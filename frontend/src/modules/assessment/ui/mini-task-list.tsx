@@ -20,13 +20,13 @@ export function MiniTaskList({ miniTasks, onEdit }: MiniTaskListProps) {
           <header className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="truncate text-sm font-semibold text-mist-100">{task.title}</h3>
-              <p className="text-xs text-mist-400">{task.questions.length} câu hỏi trắc nghiệm</p>
+              <p className="text-xs text-mist-400">{task.questions.length} câu hỏi trắc nghiệm · ngưỡng đạt {task.passPercent}%</p>
             </div>
             <Badge tone={task.active ? "positive" : "neutral"}>{task.active ? "Đang mở" : "Đã tắt"}</Badge>
           </header>
           {task.description ? <p className="text-xs text-mist-400">{task.description}</p> : null}
           <div className="flex flex-wrap items-center gap-2 text-sm text-mist-100">
-            <span>{task.attemptCount} lượt làm · {task.studentsAttempted} học viên đã làm</span>
+            <span>{task.attemptCount} lượt làm · {task.studentsAttempted} học viên đã làm · {task.studentsPassed} đã đạt</span>
             <Badge tone={percentTone(task.averageBestScorePercent)}>
               TB điểm cao nhất: {percentLabel(task.averageBestScorePercent, "chưa có")}
             </Badge>

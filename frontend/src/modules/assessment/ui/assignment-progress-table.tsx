@@ -1,4 +1,4 @@
-import { SUBMISSION_STATUS_LABEL, type Assignment, type StudentAssignmentRow } from "@/entities/assessment";
+import { isMissingWork, SUBMISSION_STATUS_LABEL, type Assignment, type StudentAssignmentRow } from "@/entities/assessment";
 import { percentLabel, percentTone, submissionTone } from "@/modules/assessment/model/assessment-rules";
 import { ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Badge } from "@/shared/ui/badge";
@@ -6,10 +6,11 @@ import { Badge } from "@/shared/ui/badge";
 export interface AssignmentProgressTableProps {
   readonly assignments: readonly Assignment[];
   readonly rows: readonly StudentAssignmentRow[];
+  readonly today: string;
 }
 
-/** Tiến độ làm bài: học viên × bài (tình trạng nộp, điểm) và tỷ lệ hoàn thành các bài đang bật. */
-export function AssignmentProgressTable({ assignments, rows }: AssignmentProgressTableProps) {
+/** Tiến độ làm bài: học viên × bài (tình trạng nộp, điểm, thiếu bài) và tỷ lệ hoàn thành các bài đang bật. */
+export function AssignmentProgressTable({ assignments, rows, today }: AssignmentProgressTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left">
@@ -33,7 +34,7 @@ export function AssignmentProgressTable({ assignments, rows }: AssignmentProgres
               </td>
               {assignments.map((assignment) => (
                 <td key={assignment.id} className="p-2">
-                  <ResultCellView row={row} assignmentId={assignment.id} />
+                  <ResultCellView row={row} assignment={assignment} today={today} />
                 </td>
               ))}
               <td className="p-2">
@@ -47,8 +48,17 @@ export function AssignmentProgressTable({ assignments, rows }: AssignmentProgres
   );
 }
 
-function ResultCellView({ row, assignmentId }: { readonly row: StudentAssignmentRow; readonly assignmentId: string }) {
-  const cell = row.resultsByAssignmentId[assignmentId];
+interface ResultCellViewProps {
+  readonly row: StudentAssignmentRow;
+  readonly assignment: Assignment;
+  readonly today: string;
+}
+
+function ResultCellView({ row, assignment, today }: ResultCellViewProps) {
+  const cell = row.resultsByAssignmentId[assignment.id];
+  if (isMissingWork(assignment.dueDate, cell?.status, today)) {
+    return <Badge tone="danger">Thiếu bài</Badge>;
+  }
   if (!cell) {
     return <span className="text-xs text-mist-400">Chưa nộp</span>;
   }

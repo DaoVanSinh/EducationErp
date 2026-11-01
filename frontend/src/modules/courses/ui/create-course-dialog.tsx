@@ -1,7 +1,7 @@
 import { useCreateCourse } from "@/modules/courses/api/use-courses-mutations";
 import { createCourseFormSchema, toGradeColumnPayload } from "@/modules/courses/model/courses-forms";
 import { GradeColumnEditor } from "@/modules/courses/ui/grade-column-editor";
-import { useZodForm } from "@/shared/lib/use-zod-form";
+import { listFieldError, useZodForm } from "@/shared/lib/use-zod-form";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -94,7 +94,7 @@ export function CreateCourseDialog({ open, onClose }: CreateCourseDialogProps) {
           label="Cột điểm"
           htmlFor="course-grade-columns"
           hint="Không bắt buộc. Nếu có, tổng trọng số phải bằng 100%."
-          error={form.fieldErrors.gradeColumns}
+          error={listFieldError(form.fieldErrors, "gradeColumns", "Cột điểm")}
         >
           <div id="course-grade-columns">
             <GradeColumnEditor

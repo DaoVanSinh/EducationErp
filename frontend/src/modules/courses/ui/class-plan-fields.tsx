@@ -18,6 +18,8 @@ export interface ClassPlanFieldsProps {
   /** Lớp đã khai giảng: ngày khai giảng và sĩ số tối thiểu không còn đổi được. */
   readonly enrollmentTermsLocked?: boolean;
   readonly minMaxSeats?: number;
+  /** Gợi ý dưới ô ngày kết thúc: tự tính từ số buổi chuẩn + lịch tuần, hoặc vì sao chưa tính được. */
+  readonly endDateHint?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export function ClassPlanFields({
   minStartDate,
   enrollmentTermsLocked = false,
   minMaxSeats = 1,
+  endDateHint = "Không bắt buộc.",
 }: ClassPlanFieldsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -76,7 +79,7 @@ export function ClassPlanFields({
         label="Ngày kết thúc dự kiến"
         htmlFor={`${idPrefix}-end-date`}
         error={fieldErrors.endDate}
-        hint="Không bắt buộc."
+        hint={endDateHint}
       >
         <GlassInput
           id={`${idPrefix}-end-date`}

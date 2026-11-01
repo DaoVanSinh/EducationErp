@@ -2,6 +2,7 @@ import { ASSESSMENT_LIMITS } from "@/entities/assessment";
 import type { MiniTaskFormTarget } from "@/modules/assessment/hooks/use-class-mini-tasks-controller";
 import { useMiniTaskForm } from "@/modules/assessment/hooks/use-mini-task-form";
 import { QuestionEditor } from "@/modules/assessment/ui/question-editor";
+import { QuestionImportPanel } from "@/modules/assessment/ui/question-import-panel";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -24,7 +25,7 @@ export function MiniTaskFormDialog({ classId, target, onClose }: MiniTaskFormDia
       open
       onClose={onClose}
       title={form.isNew ? "Tạo mini-task" : "Sửa mini-task"}
-      description="Chọn nút tròn trước phương án đúng. Học viên chỉ thấy đáp án sau khi nộp bài."
+      description="Chọn nút tròn trước phương án đúng. Học viên chỉ thấy đáp án và lời giải sau khi nộp bài, và được tính là Đạt khi điểm cao nhất chạm ngưỡng."
     >
       <form id="mini-task-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.validationError ? <p className="text-sm text-rose-600">{form.validationError}</p> : null}
@@ -38,12 +39,20 @@ export function MiniTaskFormDialog({ classId, target, onClose }: MiniTaskFormDia
               onChange={(event) => form.setDescription(event.target.value)} />
           </FormField>
         </div>
-        {form.isNew ? null : (
-          <label className="flex items-center gap-2 text-sm text-mist-100">
-            <input type="checkbox" checked={form.active} onChange={(event) => form.setActive(event.target.checked)} />
-            Đang mở cho học viên luyện tập
-          </label>
-        )}
+        <div className="flex flex-wrap items-end gap-4">
+          <FormField label="Ngưỡng đạt (% câu đúng)" htmlFor="mini-task-pass-percent">
+            <GlassInput id="mini-task-pass-percent" type="number" inputMode="numeric" className="w-32"
+              min={ASSESSMENT_LIMITS.minPassPercent} max={ASSESSMENT_LIMITS.maxPassPercent}
+              value={form.passPercent} onChange={(event) => form.setPassPercent(event.target.value)} />
+          </FormField>
+          {form.isNew ? null : (
+            <label className="flex h-11 items-center gap-2 text-sm text-mist-100">
+              <input type="checkbox" checked={form.active} onChange={(event) => form.setActive(event.target.checked)} />
+              Đang mở cho học viên luyện tập
+            </label>
+          )}
+        </div>
+        <QuestionImportPanel onImport={form.appendQuestions} />
         <div className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto">
           {form.questions.map((question, index) => (
             <QuestionEditor key={index} index={index} question={question} form={form} />

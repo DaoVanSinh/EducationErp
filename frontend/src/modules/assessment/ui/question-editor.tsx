@@ -48,6 +48,14 @@ export function QuestionEditor({ index, question, form }: QuestionEditorProps) {
         </div>
       ))}
       <div className="pl-4">
+        <GlassInput
+          aria-label={`Lời giải của câu ${index + 1}`}
+          placeholder="Lời giải / giải thích (tuỳ chọn, hiện sau khi học viên nộp bài)"
+          value={question.explanation}
+          onChange={(event) => form.updateQuestion(index, { explanation: event.target.value })}
+        />
+      </div>
+      <div className="pl-4">
         <GlassButton variant="ghost" size="sm" onClick={() => form.addOption(index)}
           disabled={question.options.length >= ASSESSMENT_LIMITS.maxOptions} icon={<Plus size={14} aria-hidden />}>
           Thêm phương án

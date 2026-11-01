@@ -47,10 +47,11 @@ export function ClassAssignmentsPage() {
         ) : null}
         {data && data.assignments.length > 0 ? (
           <>
-            <AssignmentList assignments={data.assignments} onRecordResults={controller.openResults} onEdit={controller.openEdit} />
+            <AssignmentList assignments={data.assignments} rows={data.rows} today={controller.today}
+              onRecordResults={controller.openResults} onEdit={controller.openEdit} />
             <GlassPanel className="flex flex-col gap-3">
               <h2 className="text-sm font-semibold text-mist-100">Tiến độ làm bài của học viên</h2>
-              <AssignmentProgressTable assignments={data.assignments} rows={data.rows} />
+              <AssignmentProgressTable assignments={data.assignments} rows={data.rows} today={controller.today} />
             </GlassPanel>
           </>
         ) : null}

@@ -2,6 +2,7 @@ import { useCreateClassController } from "@/modules/courses/hooks/use-create-cla
 import { ClassPlanFields } from "@/modules/courses/ui/class-plan-fields";
 import { ScheduleSlotEditor } from "@/modules/courses/ui/schedule-slot-editor";
 import { ErrorNotice } from "@/shared/ui/error-notice";
+import { listFieldError } from "@/shared/lib/use-zod-form";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassInput } from "@/shared/ui/glass-input";
@@ -75,10 +76,16 @@ export function CreateClassDialog({ open, onClose }: CreateClassDialogProps) {
           values={values}
           fieldErrors={fieldErrors}
           minStartDate={controller.minStartDate}
+          endDateHint={controller.endDateHint}
           onChange={(field, value) => setValue(field, value)}
         />
 
-        <FormField label="Lịch học hàng tuần" htmlFor="class-schedule" hint="Cần có lịch học trước khi khai giảng.">
+        <FormField
+          label="Lịch học hàng tuần"
+          htmlFor="class-schedule"
+          hint="Cần có lịch học trước khi khai giảng."
+          error={listFieldError(fieldErrors, "schedule", "Buổi")}
+        >
           <ScheduleSlotEditor slots={values.schedule} onChange={(slots) => setValue("schedule", slots)} />
         </FormField>
       </form>

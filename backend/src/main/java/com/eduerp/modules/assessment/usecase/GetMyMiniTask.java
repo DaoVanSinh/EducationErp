@@ -30,6 +30,6 @@ public class GetMyMiniTask {
             throw new AssessmentException.MiniTaskInactive(miniTaskId);
         }
         return new MiniTaskResponses.PracticeMiniTaskResponse(task.getId(), task.getClassId(), task.getTitle(),
-                task.getDescription(), MiniTaskViews.questionsWithoutAnswers(task));
+                task.getDescription(), task.getPassPercent(), MiniTaskViews.questionsWithoutAnswers(task));
     }
 }

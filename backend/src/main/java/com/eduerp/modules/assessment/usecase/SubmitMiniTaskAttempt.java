@@ -56,9 +56,12 @@ public class SubmitMiniTaskAttempt {
 
         var results = IntStream.range(0, questions.size())
                 .mapToObj(i -> new MiniTaskResponses.QuestionResult(questions.get(i).getId(), answers.get(i),
-                        correctIndexes.get(i), Objects.equals(correctIndexes.get(i), answers.get(i))))
+                        correctIndexes.get(i), Objects.equals(correctIndexes.get(i), answers.get(i)),
+                        questions.get(i).getExplanation()))
                 .toList();
         return new MiniTaskResponses.AttemptResultResponse(saved.getId(), correct, questions.size(),
-                saved.getScorePercent(), saved.getSubmittedAt(), results);
+                saved.getScorePercent(), task.getPassPercent(),
+                AssessmentRules.isPassed(saved.getScorePercent(), task.getPassPercent()), saved.getSubmittedAt(),
+                results);
     }
 }

@@ -42,6 +42,10 @@ public class MiniTask {
     @Column(nullable = false)
     private boolean active;
 
+    /** Ngưỡng "Đạt" (% câu đúng) - điểm cao nhất của học viên chạm mức này là đã thành thạo. */
+    @Column(name = "pass_percent", nullable = false)
+    private int passPercent;
+
     @Column(name = "created_by_account_id", nullable = false, updatable = false)
     private UUID createdByAccountId;
 
@@ -55,19 +59,21 @@ public class MiniTask {
     @OrderBy("displayOrder ASC")
     private List<MiniTaskQuestion> questions = new ArrayList<>();
 
-    public MiniTask(UUID classId, String title, String description, UUID createdByAccountId) {
+    public MiniTask(UUID classId, String title, String description, int passPercent, UUID createdByAccountId) {
         this.classId = classId;
         this.title = title;
         this.description = description;
+        this.passPercent = passPercent;
         this.active = true;
         this.createdByAccountId = createdByAccountId;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
 
-    public void update(String title, String description, boolean active) {
+    public void update(String title, String description, int passPercent, boolean active) {
         this.title = title;
         this.description = description;
+        this.passPercent = passPercent;
         this.active = active;
         this.updatedAt = Instant.now();
     }
@@ -77,7 +83,7 @@ public class MiniTask {
         questions.clear();
     }
 
-    public void addQuestion(String content, List<String> options, int correctOptionIndex) {
-        questions.add(new MiniTaskQuestion(this, content, options, correctOptionIndex, questions.size()));
+    public void addQuestion(String content, List<String> options, int correctOptionIndex, String explanation) {
+        questions.add(new MiniTaskQuestion(this, content, options, correctOptionIndex, explanation, questions.size()));
     }
 }

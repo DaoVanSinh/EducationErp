@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
+import com.eduerp.modules.assessment.AssessmentConstants;
 import com.eduerp.modules.assessment.AssessmentConstants.AssignmentType;
 import com.eduerp.modules.assessment.AssessmentConstants.SubmissionStatus;
 import com.eduerp.modules.assessment.dto.AssignmentRequests;
@@ -175,9 +176,10 @@ class AssessmentControllerIT {
 
     private UUID createMiniTask(Cookie teacher) throws Exception {
         var result = postJson("/api/assessment/mini-tasks", teacher, new MiniTaskRequests.CreateMiniTaskRequest(
-                classId, "Ôn từ vựng", null, List.of(
-                        new MiniTaskRequests.QuestionRequest("apple nghĩa là?", List.of("quả táo", "quả cam"), 0),
-                        new MiniTaskRequests.QuestionRequest("cat nghĩa là?", List.of("con mèo", "con chó", "con gà"), 0))));
+                classId, "Ôn từ vựng", null, null, List.of(
+                        new MiniTaskRequests.QuestionRequest("apple nghĩa là?", List.of("quả táo", "quả cam"), 0, null),
+                        new MiniTaskRequests.QuestionRequest("cat nghĩa là?", List.of("con mèo", "con chó", "con gà"), 0,
+                                "cat = con mèo; dog = con chó"))));
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         return UUID.fromString(bodyOf(result).get("id").asText());
     }
@@ -234,8 +236,8 @@ class AssessmentControllerIT {
         var teacher = signIn(teacherId, AccessConstants.RoleCodes.TEACHER);
 
         var created = postJson("/api/assessment/mini-tasks", teacher, new MiniTaskRequests.CreateMiniTaskRequest(
-                classId, "Sai đáp án", null, List.of(
-                        new MiniTaskRequests.QuestionRequest("1 + 1 = ?", List.of("1", "2"), 2))));
+                classId, "Sai đáp án", null, null, List.of(
+                        new MiniTaskRequests.QuestionRequest("1 + 1 = ?", List.of("1", "2"), 2, null))));
 
         assertThat(created.getResponse().getStatus()).isEqualTo(400);
         assertThat(bodyOf(created).get("errorCode").asText()).isEqualTo("ASSESSMENT_INVALID_QUESTION");
@@ -250,15 +252,21 @@ class AssessmentControllerIT {
         var paper = getJson("/api/assessment/me/mini-tasks/" + miniTaskId, student);
         assertThat(paper.get("questions")).hasSize(2);
         assertThat(paper.get("questions").get(0).get("correctOptionIndex").isNull()).isTrue();
+        assertThat(paper.get("questions").get(1).get("explanation").isNull()).isTrue();
+        assertThat(paper.get("passPercent").asInt()).isEqualTo(AssessmentConstants.Limits.DEFAULT_PASS_PERCENT);
 
         var submitted = postJson("/api/assessment/me/mini-tasks/" + miniTaskId + "/attempts", student,
                 new MiniTaskRequests.SubmitAttemptRequest(java.util.Arrays.asList(0, 1)));
         assertThat(submitted.getResponse().getStatus()).isEqualTo(200);
         assertThat(bodyOf(submitted).get("scorePercent").asInt()).isEqualTo(50);
+        assertThat(bodyOf(submitted).get("passed").asBoolean()).isFalse();
         assertThat(bodyOf(submitted).get("results").get(1).get("correctOptionIndex").asInt()).isZero();
+        assertThat(bodyOf(submitted).get("results").get(1).get("explanation").asText())
+                .isEqualTo("cat = con mèo; dog = con chó");
 
         var board = getJson("/api/assessment/classes/" + classId + "/mini-tasks", teacher);
         assertThat(board.get("miniTasks").get(0).get("attemptCount").asInt()).isEqualTo(1);
+        assertThat(board.get("miniTasks").get(0).get("studentsPassed").asInt()).isZero();
         assertThat(board.get("rows").get(0).get("bestScoreByMiniTaskId").get(miniTaskId.toString()).asInt())
                 .isEqualTo(50);
     }

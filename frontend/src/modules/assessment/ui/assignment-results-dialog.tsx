@@ -11,6 +11,7 @@ import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
 import { GlassSelect } from "@/shared/ui/glass-select";
+import { CheckCheck } from "lucide-react";
 
 export interface AssignmentResultsDialogProps {
   readonly classId: string;
@@ -29,6 +30,11 @@ export function AssignmentResultsDialog({ classId, assignment, rows, onClose }: 
       <form id="assignment-results-form" onSubmit={form.handleSubmit} className="flex flex-col gap-3" noValidate>
         {form.validationError ? <p className="text-sm text-rose-600">{form.validationError}</p> : null}
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+        <div>
+          <GlassButton variant="secondary" size="sm" onClick={form.markAllSubmitted} icon={<CheckCheck size={14} aria-hidden />}>
+            Đánh dấu tất cả đã nộp
+          </GlassButton>
+        </div>
         <ul className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto">
           {form.rows.map((row) => {
             const draft = form.drafts[row.enrollmentId];

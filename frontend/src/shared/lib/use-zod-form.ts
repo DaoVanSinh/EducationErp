@@ -19,6 +19,29 @@ export interface ZodForm<TSchema extends z.ZodTypeAny> {
 }
 
 /**
+ * Lỗi của một trường danh sách (cột điểm, lịch học): lỗi chung của cả danh sách nếu có, không thì lỗi đầu
+ * tiên của một dòng (khoá dạng "gradeColumns.0.name") kèm số thứ tự dòng. Thiếu bước này, một ô trống trong
+ * dòng chặn submit mà không hiện gì - người dùng thấy như nút bấm không ăn.
+ */
+export function listFieldError(
+  fieldErrors: Readonly<Record<string, string>>,
+  field: string,
+  rowLabel: string,
+): string | undefined {
+  const listError = fieldErrors[field];
+  if (listError !== undefined) {
+    return listError;
+  }
+  const prefix = `${field}.`;
+  const rowKey = Object.keys(fieldErrors).find((key) => key.startsWith(prefix));
+  if (rowKey === undefined) {
+    return undefined;
+  }
+  const rowNumber = Number(rowKey.slice(prefix.length).split(".")[0]) + 1;
+  return `${rowLabel} ${rowNumber}: ${fieldErrors[rowKey]}`;
+}
+
+/**
  * Cầu nối giữa form và Zod: cùng một schema vừa kiểm tra phía client vừa là kiểu của payload gửi đi.
  *
  * Lỗi từng ô có hai nguồn và cùng đổ về một chỗ: Zod khi bấm gửi, và VALIDATION_FAILED của backend

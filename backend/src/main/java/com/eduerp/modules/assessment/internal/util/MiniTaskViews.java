@@ -13,15 +13,16 @@ public final class MiniTaskViews {
     public static List<MiniTaskResponses.QuestionResponse> questionsWithAnswers(MiniTask task) {
         return task.getQuestions().stream()
                 .map(question -> new MiniTaskResponses.QuestionResponse(question.getId(), question.getContent(),
-                        List.copyOf(question.getOptions()), question.getCorrectOptionIndex()))
+                        List.copyOf(question.getOptions()), question.getCorrectOptionIndex(),
+                        question.getExplanation()))
                 .toList();
     }
 
-    /** Đề cho học viên: KHÔNG có đáp án đúng trước khi nộp. */
+    /** Đề cho học viên: KHÔNG có đáp án đúng và lời giải trước khi nộp. */
     public static List<MiniTaskResponses.QuestionResponse> questionsWithoutAnswers(MiniTask task) {
         return task.getQuestions().stream()
                 .map(question -> new MiniTaskResponses.QuestionResponse(question.getId(), question.getContent(),
-                        List.copyOf(question.getOptions()), null))
+                        List.copyOf(question.getOptions()), null, null))
                 .toList();
     }
 }

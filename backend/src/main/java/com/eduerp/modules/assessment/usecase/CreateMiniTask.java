@@ -9,6 +9,7 @@ import com.eduerp.modules.assessment.internal.access.ClassAssessmentAccessGuard;
 import com.eduerp.modules.assessment.internal.model.MiniTask;
 import com.eduerp.modules.assessment.internal.repository.MiniTaskRepository;
 import com.eduerp.modules.assessment.internal.QuestionValidator;
+import com.eduerp.modules.assessment.internal.rules.AssessmentRules;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,8 @@ public class CreateMiniTask {
         if (!classInfo.acceptsEnrollment()) {
             throw new AssessmentException.ClassClosed(request.classId());
         }
-        var task = new MiniTask(request.classId(), request.title().strip(), request.description(), actorAccountId);
+        var task = new MiniTask(request.classId(), request.title().strip(), request.description(),
+                AssessmentRules.passPercentOrDefault(request.passPercent()), actorAccountId);
         QuestionValidator.applyQuestions(task, request.questions());
         var saved = miniTasks.save(task);
         events.publishEvent(new AssessmentEvents.MiniTaskCreated(saved.getId(), request.classId(),
