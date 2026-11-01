@@ -38,6 +38,7 @@ export function useAttendanceSessionForm(classId: string, attendance: ClassAtten
   const [statuses, setStatuses] = useState<StatusMap>(() => initialStatuses(attendance, todayLocalIsoDate()));
 
   const rows = useMemo(() => activeRows(attendance), [attendance]);
+  const hasActiveStudents = rows.length > 0;
 
   const changeDate = useCallback(
     (date: string) => {
@@ -61,6 +62,8 @@ export function useAttendanceSessionForm(classId: string, attendance: ClassAtten
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      // Lớp không còn ai đang học: backend từ chối danh sách rỗng, nên không gửi request.
+      if (!hasActiveStudents) return;
       const entries = rows.map((row) => ({
         enrollmentId: row.enrollmentId,
         status: statuses[row.enrollmentId] ?? ATTENDANCE_STATUS.present,
@@ -71,11 +74,12 @@ export function useAttendanceSessionForm(classId: string, attendance: ClassAtten
         { onSuccess: onDone },
       );
     },
-    [classId, note, onDone, recordAttendance, rows, sessionDate, statuses],
+    [classId, hasActiveStudents, note, onDone, recordAttendance, rows, sessionDate, statuses],
   );
 
   return {
     rows,
+    hasActiveStudents,
     sessionDate,
     maxDate: todayLocalIsoDate(),
     note,

@@ -7,11 +7,13 @@ import {
 } from "@/entities/attendance";
 import { useAttendanceSessionForm } from "@/modules/attendance/hooks/use-attendance-session-form";
 import { cx } from "@/shared/lib/class-names";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
+import { UserX } from "lucide-react";
 
 export interface AttendanceSessionDialogProps {
   readonly classId: string;
@@ -47,32 +49,56 @@ export function AttendanceSessionDialog({ classId, attendance, open, onClose }: 
             <GlassInput id="attendance-note" value={form.note} onChange={(event) => form.setNote(event.target.value)} />
           </FormField>
         </div>
-        <div className="flex justify-end">
-          <GlassButton variant="ghost" size="sm" onClick={() => form.markAll(ATTENDANCE_STATUS.present)}>
-            Tất cả có mặt
-          </GlassButton>
-        </div>
-        <ul className="flex max-h-[45vh] flex-col gap-2 overflow-y-auto">
-          {form.rows.map((row) => (
-            <li key={row.enrollmentId} className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm text-mist-100">{row.studentName ?? "Học viên"}</span>
-              <StatusPicker
-                value={form.statuses[row.enrollmentId] ?? ATTENDANCE_STATUS.present}
-                onChange={(status) => form.setStatus(row.enrollmentId, status)}
-              />
-            </li>
-          ))}
-        </ul>
+        <StudentStatusList form={form} />
       </form>
       <footer className="flex justify-end gap-2">
         <GlassButton variant="ghost" onClick={onClose}>
           Huỷ
         </GlassButton>
-        <GlassButton type="submit" form="attendance-session-form" loading={form.isSubmitting}>
+        <GlassButton
+          type="submit"
+          form="attendance-session-form"
+          loading={form.isSubmitting}
+          disabled={!form.hasActiveStudents}
+        >
           Lưu điểm danh
         </GlassButton>
       </footer>
     </GlassModal>
+  );
+}
+
+/** Danh sách học viên đang học kèm bộ chọn trạng thái; lớp không còn ai đang học thì báo rỗng. */
+function StudentStatusList({ form }: { readonly form: ReturnType<typeof useAttendanceSessionForm> }) {
+  if (!form.hasActiveStudents) {
+    return (
+      <EmptyState
+        icon={<UserX size={28} aria-hidden />}
+        title="Lớp không còn học viên đang học"
+        description="Học viên đã hoàn tất hoặc đã rút khỏi lớp nên không cần điểm danh thêm. Bạn vẫn xem được lịch sử điểm danh ở bảng bên ngoài."
+      />
+    );
+  }
+
+  return (
+    <>
+      <div className="flex justify-end">
+        <GlassButton variant="ghost" size="sm" onClick={() => form.markAll(ATTENDANCE_STATUS.present)}>
+          Tất cả có mặt
+        </GlassButton>
+      </div>
+      <ul className="flex max-h-[45vh] flex-col gap-2 overflow-y-auto">
+        {form.rows.map((row) => (
+          <li key={row.enrollmentId} className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm text-mist-100">{row.studentName ?? "Học viên"}</span>
+            <StatusPicker
+              value={form.statuses[row.enrollmentId] ?? ATTENDANCE_STATUS.present}
+              onChange={(status) => form.setStatus(row.enrollmentId, status)}
+            />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
