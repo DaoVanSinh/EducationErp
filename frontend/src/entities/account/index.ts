@@ -7,6 +7,7 @@ export {
   ACCOUNT_STATUS_LABEL,
   type AccountStatus,
   type AccountSummary,
+  type AvatarUploadResponse,
   type ChangePasswordPayload,
   type CreateAccountPayload,
   type ProfileUpdatePayload,

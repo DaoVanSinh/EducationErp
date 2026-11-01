@@ -15,6 +15,15 @@ export function useUpdateProfile() {
   });
 }
 
+/** Tải ảnh đại diện mới lên MinIO hoặc xoá ảnh để quay về chữ cái đầu của tên. */
+export function useSaveAvatar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (image: File | null) => accountApi.saveAvatar(image),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: accountKeys.session() }),
+  });
+}
+
 /**
  * Đổi mật khẩu thành công thì backend đã đóng mọi phiên khác của tài khoản này. Phiên hiện tại vẫn
  * sống, nên không cần đưa người dùng ra trang đăng nhập.

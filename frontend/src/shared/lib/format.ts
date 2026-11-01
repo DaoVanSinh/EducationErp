@@ -47,6 +47,10 @@ export const formatter = {
     return numberFormat.format(value);
   },
 
+  currency(value: number): string {
+    return `${numberFormat.format(Math.round(value))} đ`;
+  },
+
   /** Chữ cái đầu của tên, dùng cho ảnh đại diện khi tài khoản chưa có avatar. */
   initials(fullName: string): string {
     const words = fullName.trim().split(/\s+/).filter((word) => word.length > 0);

@@ -10,8 +10,10 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /** Cơ chế thuần: không biết nội dung/ý nghĩa nghiệp vụ của bất kỳ file nào - mirror MailClient. */
@@ -51,9 +53,17 @@ public class StorageClient {
 
     public String upload(String keyPrefix, String fileName, byte[] content, String contentType) {
         var key = keyPrefix + "/" + UUID.randomUUID() + "-" + fileName;
-        s3Client.putObject(
-                PutObjectRequest.builder().bucket(properties.bucket()).key(key).contentType(contentType).build(),
-                RequestBody.fromBytes(content));
+        var putRequest = PutObjectRequest.builder()
+                .bucket(properties.bucket())
+                .key(key)
+                .contentType(contentType)
+                .build();
+        try {
+            s3Client.putObject(putRequest, RequestBody.fromBytes(content));
+        } catch (NoSuchBucketException ex) {
+            s3Client.createBucket(CreateBucketRequest.builder().bucket(properties.bucket()).build());
+            s3Client.putObject(putRequest, RequestBody.fromBytes(content));
+        }
         return key;
     }
 

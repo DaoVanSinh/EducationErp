@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/oauth/logo.png?v=2" type="image/png">
+  <title>{{ page_title }}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --font-sans: "Plus Jakarta Sans", "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --color-brand: #ea580c;
+      --color-brand-hover: #c2410c;
+      --color-accent: #ff8c42;
+      --color-story: #9a3412;
+      --color-ink: #291811;
+      --color-ink-soft: #5c4033;
+      --color-ink-muted: #7c5846;
+      --color-subtle: #9a7360;
+      --aurora-white: #ffffff;
+      --aurora-transparent: transparent;
+      --aurora-orange-200: #fed7aa;
+      --aurora-orange-300: #fdba74;
+      --aurora-orange-400: #fb923c;
+      --aurora-orange-500: #ff8c42;
+      --aurora-peach-100: #ffedd5;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 16px;
+      background: linear-gradient(180deg, #fffaf5 0%, #fff2e6 50%, #ffe6cf 100%);
+      color: var(--color-ink);
+      font: 15px/1.55 var(--font-sans);
+      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Pastel Orange & White Wave Aurora Stage ── */
+    .aurora-stage {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .aurora-waves {
+      --white-gradient: repeating-linear-gradient(
+        105deg,
+        var(--aurora-white) 0%,
+        var(--aurora-white) 8%,
+        var(--aurora-transparent) 12%,
+        var(--aurora-transparent) 16%,
+        var(--aurora-white) 22%
+      );
+      --aurora: repeating-linear-gradient(
+        105deg,
+        var(--aurora-orange-500) 8%,
+        var(--aurora-orange-200) 14%,
+        var(--aurora-white) 20%,
+        var(--aurora-orange-300) 26%,
+        var(--aurora-peach-100) 32%,
+        var(--aurora-orange-400) 38%
+      );
+      position: absolute;
+      inset: -20px;
+      background-image: var(--white-gradient), var(--aurora);
+      background-size: 280%, 200%;
+      background-position: 50% 50%, 50% 50%;
+      filter: blur(16px);
+      opacity: 0.72;
+      -webkit-mask-image: radial-gradient(ellipse 95% 88% at 60% 35%, #000 30%, transparent 90%);
+      mask-image: radial-gradient(ellipse 95% 88% at 60% 35%, #000 30%, transparent 90%);
+    }
+
+    .aurora-waves::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: var(--white-gradient), var(--aurora);
+      background-size: 200%, 120%;
+      animation: aurora 48s linear infinite;
+      mix-blend-mode: soft-light;
+    }
+
+    /* ── Layered Orange & White Flowing Waves ── */
+    .wave-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .wave-svg-top {
+      position: absolute;
+      top: -4%;
+      left: -5%;
+      width: 110%;
+      height: 46%;
+      opacity: 0.85;
+      animation: waveDriftTop 20s ease-in-out infinite alternate;
+    }
+
+    .wave-svg-bottom {
+      position: absolute;
+      bottom: -2%;
+      left: -5%;
+      width: 110%;
+      height: 58%;
+      animation: waveDriftBottom 18s ease-in-out infinite alternate;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(56px);
+      will-change: transform;
+    }
+
+    .orb-brand {
+      width: 360px;
+      height: 360px;
+      top: calc(50% - 270px);
+      left: calc(50% - 250px);
+      background: radial-gradient(circle, rgba(255, 140, 66, 0.34) 0%, rgba(254, 215, 170, 0.18) 58%, transparent 100%);
+      animation: orbFloatA 22s ease-in-out infinite;
+    }
+
+    .orb-orange {
+      width: 440px;
+      height: 440px;
+      bottom: calc(50% - 290px);
+      right: calc(50% - 270px);
+      background: radial-gradient(circle, rgba(251, 146, 60, 0.36) 0%, rgba(234, 88, 12, 0.18) 62%, transparent 100%);
+      animation: orbFloatB 26s ease-in-out infinite;
+    }
+
+    .orb-peach {
+      width: 320px;
+      height: 320px;
+      top: calc(50% - 90px);
+      left: calc(50% - 70px);
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(254, 215, 170, 0.42) 65%, transparent 100%);
+      animation: orbFloatA 19s ease-in-out infinite reverse;
+    }
+
+    @keyframes aurora {
+      from { background-position: 50% 50%, 50% 50%; }
+      to { background-position: 350% 50%, 350% 50%; }
+    }
+
+    @keyframes waveDriftTop {
+      0% { transform: translate3d(-1.5%, 0, 0) scaleY(1); }
+      100% { transform: translate3d(1.5%, 10px, 0) scaleY(1.04); }
+    }
+
+    @keyframes waveDriftBottom {
+      0% { transform: translate3d(1.5%, 0, 0) scaleY(1); }
+      100% { transform: translate3d(-1.5%, -12px, 0) scaleY(1.05); }
+    }
+
+    @keyframes orbFloatA {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(18px, -16px, 0) scale(1.05); }
+    }
+
+    @keyframes orbFloatB {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-20px, 14px, 0) scale(1.04); }
+    }
+
+    @keyframes dialogEnter {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    /* ── Centered Viewport Shell ── */
+    main {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Borderless Translucent Liquid Glass Dialog ── */
+    .glass-dialog {
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      border-radius: 36px;
+      padding: 36px 28px 30px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      background: linear-gradient(
+        165deg,
+        rgba(255, 255, 255, 0.72) 0%,
+        rgba(255, 250, 245, 0.52) 48%,
+        rgba(255, 237, 213, 0.58) 100%
+      );
+      backdrop-filter: blur(32px) saturate(195%);
+      -webkit-backdrop-filter: blur(32px) saturate(195%);
+      box-shadow:
+        0 30px 70px -18px rgba(234, 88, 12, 0.20),
+        0 10px 28px -10px rgba(154, 52, 18, 0.08),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.92),
+        inset 0 -1px 1.5px rgba(255, 237, 213, 0.45);
+      animation: dialogEnter 480ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      overflow: hidden;
+    }
+
+    /* Soft internal lensing sheen at top-left */
+    .glass-dialog::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(
+        110% 60% at 25% 0%,
+        rgba(255, 255, 255, 0.72) 0%,
+        rgba(255, 247, 237, 0.22) 45%,
+        transparent 75%
+      );
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* ── Centered Glass Halo + DS Academy Brand Logo ── */
+    .avatar-halo {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 18px;
+      border-radius: 28px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.62);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow:
+        0 14px 30px -8px rgba(234, 88, 12, 0.22),
+        inset 0 1.5px 2px rgba(255, 255, 255, 0.92),
+        inset 0 -1px 1px rgba(254, 215, 170, 0.45);
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 21px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 20px rgba(234, 88, 12, 0.32);
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── Centered Heading & Description ── */
+    h1 {
+      font-size: 23px;
+      line-height: 1.28;
+      font-weight: 800;
+      letter-spacing: -0.55px;
+      color: var(--color-ink);
+      margin-bottom: 8px;
+    }
+
+    .sub {
+      color: var(--color-ink-soft);
+      font-size: 13.5px;
+      line-height: 1.62;
+      margin: 0 auto 22px;
+      max-width: 380px;
+    }
+
+    .sub strong {
+      color: var(--color-ink);
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    /* ── Bento Translucent Glass Tiles ── */
+    .bento-top {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .bento-mid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .glass-tile {
+      position: relative;
+      border-radius: 20px;
+      padding: 15px 14px;
+      background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.78) 0%,
+        rgba(255, 247, 237, 0.52) 100%
+      );
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow:
+        0 8px 20px -8px rgba(234, 88, 12, 0.10),
+        inset 0 1px 1px rgba(255, 255, 255, 0.90),
+        inset 0 -1px 1px rgba(254, 215, 170, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .tile-value {
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 700;
+      letter-spacing: -0.25px;
+      color: var(--color-ink);
+      width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .tile-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-ink-muted);
+      width: 100%;
+    }
+
+    .glass-pill-tile {
+      border-radius: 20px;
+      padding: 12px 14px;
+      background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.78) 0%,
+        rgba(255, 247, 237, 0.52) 100%
+      );
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow:
+        0 8px 20px -8px rgba(234, 88, 12, 0.10),
+        inset 0 1px 1px rgba(255, 255, 255, 0.90),
+        inset 0 -1px 1px rgba(254, 215, 170, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .glass-pill-tile.is-full {
+      grid-column: 1 / -1;
+    }
+
+    .pill-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: rgba(255, 247, 237, 0.95);
+      color: var(--color-brand);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(234, 88, 12, 0.10);
+    }
+
+    .pill-badge.is-brand {
+      background: linear-gradient(135deg, #ff8c42 0%, #ea580c 100%);
+      color: #ffffff;
+    }
+
+    .pill-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .pill-text {
+      font-size: 12.5px;
+      line-height: 1.35;
+      font-weight: 700;
+      color: var(--color-ink);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      min-width: 0;
+    }
+
+    .help {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--color-ink-muted);
+      margin-bottom: 20px;
+      padding: 0 6px;
+    }
+
+    /* ── Error Alert Box ── */
+    .err {
+      margin-top: 12px;
+      padding: 15px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow:
+        0 8px 20px -8px rgba(194, 65, 12, 0.14),
+        inset 0 1px 1px rgba(255, 255, 255, 0.88);
+      color: #c2410c;
+      font-size: 13.5px;
+      line-height: 1.6;
+      font-weight: 600;
+    }
+
+    /* ── Pill Action Buttons ── */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px 22px;
+      border-radius: 9999px;
+      border: none;
+      font: 700 14px/1.25 var(--font-sans);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition:
+        transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+        background 180ms ease;
+    }
+
+    button svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--color-brand);
+      outline-offset: 2px;
+    }
+
+    button[value="approve"] {
+      background: linear-gradient(135deg, #ff8c42 0%, #f97316 55%, #ea580c 100%);
+      color: #ffffff;
+      box-shadow:
+        0 14px 28px -8px rgba(234, 88, 12, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    button[value="approve"] svg {
+      color: #ffffff;
+    }
+
+    button[value="approve"]:hover {
+      background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+      transform: translateY(-1.5px);
+      box-shadow:
+        0 18px 34px -8px rgba(234, 88, 12, 0.46),
+        inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    }
+
+    button[value="approve"]:active {
+      transform: translateY(0);
+    }
+
+    button.ghost {
+      background: rgba(255, 255, 255, 0.52);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: var(--color-ink-soft);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.78),
+        inset 0 -1px 1px rgba(254, 215, 170, 0.32);
+    }
+
+    button.ghost:hover {
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--color-ink);
+      transform: translateY(-1px);
+    }
+
+    button.ghost:active {
+      transform: translateY(0);
+    }
+
+    /* ── Footer ── */
+    .dialog-footer {
+      margin-top: 18px;
+      width: 100%;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--color-ink-muted);
+    }
+
+    .dialog-footer-tagline {
+      letter-spacing: normal;
+      font-weight: 500;
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      .glass-dialog {
+        padding: 30px 20px 24px;
+        border-radius: 30px;
+      }
+      .bento-top {
+        gap: 8px;
+      }
+      .bento-mid {
+        gap: 8px;
+      }
+      .dialog-footer-tagline {
+        display: none;
+      }
+      .dialog-footer {
+        justify-content: center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="aurora-stage" aria-hidden="true">
+    <div class="aurora-waves"></div>
+    <div class="wave-canvas">
+      <svg class="wave-svg-top" viewBox="0 0 1440 420" preserveAspectRatio="none" fill="none">
+        <defs>
+          <linearGradient id="orangeWaveTop" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffedd5" stop-opacity="0.92" />
+            <stop offset="50%" stop-color="#fed7aa" stop-opacity="0.75" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.95" />
+          </linearGradient>
+          <linearGradient id="orangeWaveTopAccent" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ff8c42" stop-opacity="0.28" />
+            <stop offset="55%" stop-color="#fdba74" stop-opacity="0.38" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.85" />
+          </linearGradient>
+        </defs>
+        <path d="M0,0 L1440,0 L1440,240 C1180,330 920,130 640,230 C380,320 180,190 0,270 Z" fill="url(#orangeWaveTop)" />
+        <path d="M0,0 L1440,0 L1440,180 C1120,280 860,90 540,190 C280,270 120,150 0,210 Z" fill="url(#orangeWaveTopAccent)" />
+      </svg>
+
+      <svg class="wave-svg-bottom" viewBox="0 0 1440 520" preserveAspectRatio="none" fill="none">
+        <defs>
+          <linearGradient id="orangeWaveBack" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#fed7aa" stop-opacity="0.72" />
+            <stop offset="50%" stop-color="#fdba74" stop-opacity="0.58" />
+            <stop offset="100%" stop-color="#ffedd5" stop-opacity="0.82" />
+          </linearGradient>
+          <linearGradient id="orangeWaveMid" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff8c42" stop-opacity="0.42" />
+            <stop offset="48%" stop-color="#fb923c" stop-opacity="0.32" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.90" />
+          </linearGradient>
+          <linearGradient id="whiteWaveFront" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.88" />
+            <stop offset="50%" stop-color="#fff7ed" stop-opacity="0.94" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.88" />
+          </linearGradient>
+        </defs>
+        <path d="M0,190 C320,70 620,310 960,170 C1180,80 1320,150 1440,110 L1440,520 L0,520 Z" fill="url(#orangeWaveBack)" />
+        <path d="M0,260 C280,360 580,140 920,250 C1160,330 1310,220 1440,260 L1440,520 L0,520 Z" fill="url(#orangeWaveMid)" />
+        <path d="M0,340 C360,240 720,420 1080,310 C1260,255 1360,300 1440,330 L1440,520 L0,520 Z" fill="url(#whiteWaveFront)" />
+      </svg>
+    </div>
+    <div class="ambient-orb orb-brand"></div>
+    <div class="ambient-orb orb-orange"></div>
+    <div class="ambient-orb orb-peach"></div>
+  </div>
+
+  <main>
+    <section class="glass-dialog" role="dialog" aria-modal="true" aria-labelledby="consent-heading">
+      <div class="avatar-halo" aria-hidden="true">
+        <span class="brand-mark">
+          <img src="/oauth/logo.png?v=2" alt="DS Academy">
+        </span>
+      </div>
+
+      <h1 id="consent-heading">{{ heading }}</h1>
+
+      {% if is_error %}
+      <p class="err">{{ description }}</p>
+      {% else %}
+      <p class="sub">
+        {{ intro }} <strong>{{ client_id }}</strong>
+        {{ request_verb }} <strong>{{ mcp_title }}</strong>
+        {{ account_verb }} <strong>{{ account }}</strong>.
+      </p>
+
+      <div class="bento-top">
+        <div class="glass-tile">
+          <span class="tile-value">{{ mcp_title }}</span>
+          <span class="tile-label">{{ label_mcp }}</span>
+        </div>
+        <div class="glass-tile">
+          <span class="tile-value">{{ account }}</span>
+          <span class="tile-label">{{ label_account }}</span>
+        </div>
+      </div>
+
+      <div class="bento-mid">
+        <div class="glass-pill-tile is-full">
+          <span class="pill-badge is-brand" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </span>
+          <span class="pill-text">{{ client_id }}</span>
+        </div>
+        <div class="glass-pill-tile">
+          <span class="pill-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </span>
+          <span class="pill-text">{{ brand_name }}</span>
+        </div>
+        <div class="glass-pill-tile">
+          <span class="pill-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="7.5" cy="15.5" r="5.5"></circle>
+              <path d="m21 2-9.6 9.6"></path>
+              <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+            </svg>
+          </span>
+          <span class="pill-text">{{ badge_protocol }}</span>
+        </div>
+      </div>
+
+      <p class="help">{{ note }}</p>
+
+      <form method="post" action="{{ authorize_action }}">
+        {% for field in hidden_fields %}
+        <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+        {% endfor %}
+        <div class="actions">
+          <button type="submit" name="{{ decision_field }}" value="{{ approve_value }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path>
+              <path d="m21.854 2.147-10.94 10.939"></path>
+            </svg>
+            {{ approve_label }}
+          </button>
+          <button type="submit" class="ghost" name="{{ decision_field }}" value="{{ deny_value }}">{{ deny_label }}</button>
+        </div>
+      </form>
+      {% endif %}
+    </section>
+
+    <footer class="dialog-footer">
+      <span>{{ footer_left }}</span>
+      <span class="dialog-footer-tagline">{{ footer_right }}</span>
+    </footer>
+  </main>
+</body>
+</html>

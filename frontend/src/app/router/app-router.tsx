@@ -2,13 +2,13 @@ import { AuthLayout } from "@/app/layouts/auth-layout";
 import { RedirectWhenSignedIn } from "@/app/router/redirect-when-signed-in";
 import { RequireAuth } from "@/app/router/require-auth";
 import { FullScreenLoader } from "@/app/ui/full-screen-loader";
-import { APP_ROUTE } from "@/shared/constants/app-routes";
+import { APP_ROUTE, LANDING_LEGACY_PATH } from "@/shared/constants/app-routes";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassPanel } from "@/shared/ui/glass-panel";
 import { FileQuestion } from "lucide-react";
 import { lazy, Suspense } from "react";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 
 /**
  * Mỗi trang là một chunk riêng: người chỉ vào xem hồ sơ của mình không phải tải kèm cả màn hình quản
@@ -26,6 +26,9 @@ const DashboardPage = lazy(() =>
 );
 const ProfilePage = lazy(() =>
   import("@/modules/profile").then((module) => ({ default: module.ProfilePage })),
+);
+const McpConnectorPage = lazy(() =>
+  import("@/modules/mcp-connector").then((module) => ({ default: module.McpConnectorPage })),
 );
 const AccountsPage = lazy(() => import("@/modules/rbac").then((module) => ({ default: module.AccountsPage })));
 const RolesPage = lazy(() => import("@/modules/rbac").then((module) => ({ default: module.RolesPage })));
@@ -84,6 +87,12 @@ const ClassProgressPage = lazy(() =>
 const PaymentReturnPage = lazy(() =>
   import("@/modules/billing").then((module) => ({ default: module.PaymentReturnPage })),
 );
+const LandingPage = lazy(() =>
+  import("@/modules/landing").then((module) => ({ default: module.LandingPage })),
+);
+const CenterConfigPage = lazy(() =>
+  import("@/modules/landing").then((module) => ({ default: module.CenterConfigPage })),
+);
 
 function NotFoundPage() {
   return (
@@ -108,6 +117,9 @@ export function AppRouter() {
   return (
     <Suspense fallback={<FullScreenLoader />}>
       <Routes>
+        <Route path={APP_ROUTE.landing} element={<LandingPage />} />
+        <Route path={LANDING_LEGACY_PATH} element={<Navigate to={APP_ROUTE.landing} replace />} />
+
         <Route element={<AuthLayout />}>
           <Route element={<RedirectWhenSignedIn />}>
             <Route path={APP_ROUTE.login} element={<LoginPage />} />
@@ -121,6 +133,7 @@ export function AppRouter() {
           <Route path={APP_ROUTE.dashboard} element={<DashboardPage />} />
           <Route path={APP_ROUTE.accounts} element={<AccountsPage />} />
           <Route path={APP_ROUTE.branches} element={<BranchesPage />} />
+          <Route path={APP_ROUTE.centerConfig} element={<CenterConfigPage />} />
           <Route path={APP_ROUTE.courses} element={<CoursesPage />} />
           <Route path={APP_ROUTE.classes} element={<ClassesPage />} />
           <Route path={APP_ROUTE.teachers} element={<TeachersPage />} />
@@ -140,6 +153,7 @@ export function AppRouter() {
           <Route path={APP_ROUTE.classProgress} element={<ClassProgressPage />} />
           <Route path={APP_ROUTE.roles} element={<RolesPage />} />
           <Route path={APP_ROUTE.profile} element={<ProfilePage />} />
+          <Route path={APP_ROUTE.mcpConnector} element={<McpConnectorPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

@@ -1,5 +1,7 @@
 import {
   accountSummarySchema,
+  avatarUploadResponseSchema,
+  type AvatarUploadResponse,
   type ChangePasswordPayload,
   type CreateAccountPayload,
   type ProfileUpdatePayload,
@@ -29,6 +31,18 @@ export const accountApi = {
 
   async updateProfile(payload: ProfileUpdatePayload): Promise<void> {
     await apiClient.patch<void>(API_ROUTE.account.profile, payload);
+  },
+
+  async saveAvatar(image: File | null): Promise<AvatarUploadResponse> {
+    const formData = new FormData();
+    if (image) {
+      formData.append("image", image);
+    } else {
+      formData.append("remove", "true");
+    }
+    return avatarUploadResponseSchema.parse(
+      await apiClient.postForm<unknown>(API_ROUTE.account.avatar, formData),
+    );
   },
 
   async changePassword(payload: ChangePasswordPayload): Promise<void> {

@@ -5,9 +5,20 @@ import {
   type LoginPayload,
   type ResetPasswordPayload,
 } from "@/modules/auth/api/auth-api";
-import { APP_ROUTE } from "@/shared/constants/app-routes";
+import { APP_ROUTE, OAUTH_PATH_PREFIX } from "@/shared/constants/app-routes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+
+function navigateAfterAuth(
+  navigate: ReturnType<typeof useNavigate>,
+  redirectTo: string,
+): void {
+  if (redirectTo.startsWith(OAUTH_PATH_PREFIX) && !redirectTo.startsWith("//")) {
+    window.location.replace(redirectTo);
+    return;
+  }
+  navigate(redirectTo, { replace: true });
+}
 
 /**
  * Đăng nhập xong thì phiên cũ trong cache không còn đúng nữa. Chờ invalidate hoàn tất rồi mới điều
@@ -25,7 +36,7 @@ export function useLogin(redirectTo: string) {
         return;
       }
       await queryClient.invalidateQueries({ queryKey: accountKeys.session() });
-      navigate(redirectTo, { replace: true });
+      navigateAfterAuth(navigate, redirectTo);
     },
   });
 }
@@ -38,7 +49,7 @@ export function useCompleteInvite(redirectTo: string) {
     mutationFn: (payload: CompleteInvitePayload) => authApi.completeInvite(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: accountKeys.session() });
-      navigate(redirectTo, { replace: true });
+      navigateAfterAuth(navigate, redirectTo);
     },
   });
 }

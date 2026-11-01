@@ -53,6 +53,12 @@ export interface ProfileUpdatePayload {
   readonly avatarUrl: string | null;
 }
 
+export const avatarUploadResponseSchema = z.object({
+  avatarUrl: z.string().nullable(),
+});
+
+export type AvatarUploadResponse = z.infer<typeof avatarUploadResponseSchema>;
+
 export interface ChangePasswordPayload {
   readonly currentPassword: string;
   readonly newPassword: string;

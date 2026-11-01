@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.UuidGenerator;
 
 @Entity
@@ -35,6 +36,7 @@ public class TeacherProfile {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "teacher_profile_subjects", joinColumns = @JoinColumn(name = "teacher_profile_id"))
     @Column(name = "subject", nullable = false)
+    @BatchSize(size = 50)
     private final List<String> subjects = new ArrayList<>();
 
     @Setter

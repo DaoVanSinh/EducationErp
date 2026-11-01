@@ -6,7 +6,8 @@ import org.springframework.http.HttpStatus;
 /** Gốc của mọi lỗi nghiệp vụ do module identity phát ra. */
 public sealed class IdentityException extends AppException
         permits AccountNotFoundException, InvalidCredentialsException, ReferenceNotFoundException, TokenInvalidException,
-        EmailAlreadyExistsException, AccountInviteExpiredException, AccountAlreadyActivatedException {
+        EmailAlreadyExistsException, AccountInviteExpiredException, AccountAlreadyActivatedException,
+        InvalidAvatarException, AvatarNotFoundException {
 
     protected IdentityException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);

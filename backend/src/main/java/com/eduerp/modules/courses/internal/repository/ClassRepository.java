@@ -1,6 +1,7 @@
 package com.eduerp.modules.courses.internal.repository;
 
 import com.eduerp.modules.courses.internal.model.Class;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -26,4 +27,7 @@ public interface ClassRepository extends JpaRepository<Class, UUID> {
      * cùng lý do không đưa {@code schedule} vào vì đây vẫn là truy vấn có {@code Pageable}). */
     @EntityGraph(attributePaths = "course")
     Page<Class> findAllByTeacherId(UUID teacherId, Pageable pageable);
+
+    @EntityGraph(attributePaths = "course")
+    List<Class> findAllByActiveTrueOrderByCodeAsc();
 }

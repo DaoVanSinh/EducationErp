@@ -71,7 +71,7 @@ compose-down:
 	docker compose -f $(COMPOSE_FILE) down
 
 compose-restart: logo
-	docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d --build app nginx
+	docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) up -d --build app eduerp-mcp frontend nginx
 
 logs:
 	docker compose -f $(COMPOSE_FILE) logs -f

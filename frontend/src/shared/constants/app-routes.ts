@@ -3,11 +3,14 @@
  * vì đó là link được gửi trong email đặt lại mật khẩu.
  */
 export const APP_ROUTE = {
-  dashboard: "/",
+  landing: "/",
+  dashboard: "/dashboard",
   profile: "/profile",
+  mcpConnector: "/mcp-connector",
   accounts: "/admin/accounts",
   roles: "/admin/roles",
   branches: "/admin/branches",
+  centerConfig: "/admin/center-config",
   courses: "/admin/courses",
   classes: "/admin/classes",
   teachers: "/admin/teachers",
@@ -37,8 +40,17 @@ export function buildPayrollRunDetailPath(runId: string): string {
   return `/admin/payroll/runs/${runId}`;
 }
 
+/** Đường dẫn cũ của trang chủ để hỗ trợ chuyển hướng tự động về `/`. */
+export const LANDING_LEGACY_PATH = "/landing";
+
 /** Tham số query mang token trong link email đặt lại mật khẩu. */
 export const RESET_TOKEN_PARAM = "token";
+
+/** Tham số query chứa đường dẫn đích sau khi đăng nhập (ví dụ luồng ủy quyền OAuth 2.1 của MCP). */
+export const NEXT_PATH_PARAM = "next";
+
+/** Tiền tố đường dẫn OAuth 2.1 cần điều hướng toàn trang (full-page navigation) để trình duyệt gửi cookie. */
+export const OAUTH_PATH_PREFIX = "/oauth/";
 
 /** Link thật tới trang chi tiết một hoá đơn - APP_ROUTE.invoiceDetail chỉ là route template. */
 export function buildInvoiceDetailPath(invoiceId: string): string {

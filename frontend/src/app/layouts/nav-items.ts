@@ -26,6 +26,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { path: APP_ROUTE.accounts, label: "Tài khoản", requirement: ACCESS_RULE.readAccount },
       { path: APP_ROUTE.branches, label: "Chi nhánh", requirement: ACCESS_RULE.readBranch },
+      {
+        path: APP_ROUTE.centerConfig,
+        label: "Thông tin & Trang giới thiệu",
+        requirement: ACCESS_RULE.readBranch,
+      },
     ],
   },
   {
@@ -67,6 +72,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     title: "Cá nhân",
     items: [
       { path: APP_ROUTE.profile, label: "Hồ sơ của tôi" },
+      { path: APP_ROUTE.mcpConnector, label: "Kết nối AI (MCP)" },
     ],
   },
 ];

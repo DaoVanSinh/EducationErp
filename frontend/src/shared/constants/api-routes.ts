@@ -9,6 +9,7 @@ export const API_ROUTE = {
   account: {
     me: "/api/account/me",
     profile: "/api/account/profile",
+    avatar: "/api/account/avatar",
     changePassword: "/api/account/change-password",
     forgotPassword: "/api/account/forgot-password",
     resetPassword: "/api/account/reset-password",
@@ -92,6 +93,21 @@ export const API_ROUTE = {
     classProgressExport: (classId: string) => `/api/academic/classes/${classId}/progress/export`,
     studentSummary: (studentProfileId: string) => `/api/academic/students/${studentProfileId}/summary`,
   },
+  landing: {
+    overview: "/api/landing/overview",
+    consultations: "/api/landing/consultations",
+    adminConfig: "/api/landing/admin/config",
+    adminConsultations: "/api/landing/admin/consultations",
+    adminConsultationById: (consultationId: string) =>
+      `/api/landing/admin/consultations/${consultationId}`,
+  },
+  mcp: {
+    connector: "/api/mcp/my/connector",
+    rotateSecret: "/api/mcp/my/connector/secret",
+    mcps: "/api/mcp/my/mcps",
+    connections: "/api/mcp/my/connections",
+    revokeConnection: (connectionId: number) => `/api/mcp/my/connections/${connectionId}/revoke`,
+  },
 } as const;
 
 /**
@@ -110,4 +126,8 @@ export const ENDPOINTS_WITHOUT_SESSION_RETRY: readonly string[] = [
  * Endpoint public có path động nên không so khớp được bằng danh sách chuỗi ở trên -
  * {@code apiClient} tự bỏ qua lượt refresh với mọi path bắt đầu bằng tiền tố này.
  */
-export const PUBLIC_PATH_PREFIXES: readonly string[] = ["/api/billing/payments/"];
+export const PUBLIC_PATH_PREFIXES: readonly string[] = [
+  "/api/billing/payments/",
+  "/api/landing/overview",
+  "/api/landing/consultations",
+];
