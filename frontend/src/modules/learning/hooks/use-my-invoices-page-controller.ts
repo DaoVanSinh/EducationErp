@@ -1,6 +1,7 @@
+import { usePayMyInvoice } from "@/modules/learning/api/use-pay-invoice-mutation";
 import { useMyInvoices, useMyLearningClasses } from "@/modules/learning/api/use-learning-queries";
 import { tuitionTotals } from "@/modules/learning/model/learning-rules";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 /**
  * Toàn bộ dữ liệu trang "Học phí của tôi" - tổng tiền và tên khóa học ghép ở đây, ui/* chỉ render.
@@ -25,10 +26,25 @@ export function useMyInvoicesPageController() {
   const courseNameOf = (courseId: string | null): string | null =>
     courseId === null ? null : (courseNames.get(courseId) ?? null);
 
+  const payMyInvoice = usePayMyInvoice();
+  /** Tạo link VNPay rồi rời trang sang cổng; quay về qua /payment/return/vnpay. */
+  const onPayVnpay = useCallback(
+    (invoiceId: string) => {
+      payMyInvoice.mutate(invoiceId, {
+        onSuccess: ({ payUrl }) => window.location.assign(payUrl),
+      });
+    },
+    [payMyInvoice],
+  );
+  const payingInvoiceId = payMyInvoice.isPending ? (payMyInvoice.variables ?? null) : null;
+
   return {
     invoices,
     totals,
     courseNameOf,
+    onPayVnpay,
+    payingInvoiceId,
+    payError: payMyInvoice.isError ? payMyInvoice.error : null,
     isPending: invoicesQuery.isPending,
     error: invoicesQuery.isError ? invoicesQuery.error : null,
     isEmpty: invoicesQuery.isSuccess && invoices.length === 0,

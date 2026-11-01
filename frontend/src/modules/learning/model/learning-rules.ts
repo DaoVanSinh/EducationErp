@@ -32,6 +32,18 @@ export interface TuitionTotals {
   readonly remaining: number;
 }
 
+/** Khớp BillingRules.isPayable ở backend: chưa thu, thu một phần, quá hạn vẫn còn nhận tiền. */
+const PAYABLE_STATUSES: ReadonlySet<InvoiceStatus> = new Set([
+  INVOICE_STATUS.unpaid,
+  INVOICE_STATUS.partiallyPaid,
+  INVOICE_STATUS.overdue,
+]);
+
+/** Học viên chỉ thấy nút thanh toán online khi hoá đơn còn nhận tiền và còn nợ. */
+export function canPayOnline(invoice: InvoiceDetail["invoice"]): boolean {
+  return PAYABLE_STATUSES.has(invoice.status) && invoice.amount > invoice.amountPaid;
+}
+
 /** Tổng học phí phải đóng / đã đóng / còn lại - hoá đơn đã huỷ không tính. */
 export function tuitionTotals(invoices: readonly InvoiceDetail[]): TuitionTotals {
   const billable = invoices.filter((detail) => detail.invoice.status !== INVOICE_STATUS.cancelled);

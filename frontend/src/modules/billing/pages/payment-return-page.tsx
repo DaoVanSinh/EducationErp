@@ -7,7 +7,7 @@ import { ErrorNotice } from "@/shared/ui/error-notice";
 import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassPanel } from "@/shared/ui/glass-panel";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { CheckCircle2, Clock, FileQuestion, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, FileQuestion, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /**
@@ -67,6 +67,7 @@ const OUTCOME_ICON = {
   [PAYMENT_STATUS.pending]: <Clock size={28} aria-hidden />,
   [PAYMENT_STATUS.success]: <CheckCircle2 size={28} aria-hidden />,
   [PAYMENT_STATUS.failed]: <XCircle size={28} aria-hidden />,
+  [PAYMENT_STATUS.rejected]: <AlertTriangle size={28} aria-hidden />,
 } as const;
 
 const OUTCOME_DESCRIPTION = {
@@ -74,6 +75,8 @@ const OUTCOME_DESCRIPTION = {
     "Cổng thanh toán đang xác nhận. Trang sẽ tự cập nhật, bạn không cần thanh toán lại.",
   [PAYMENT_STATUS.success]: "Trung tâm đã ghi nhận khoản thanh toán này vào hoá đơn của bạn.",
   [PAYMENT_STATUS.failed]: "Giao dịch không thành công. Bạn có thể thử lại hoặc liên hệ trung tâm.",
+  [PAYMENT_STATUS.rejected]:
+    "Cổng đã nhận tiền nhưng hoá đơn đã được thanh toán hoặc huỷ trước đó. Trung tâm sẽ đối soát và liên hệ bạn.",
 } as const;
 
 function PaymentOutcome({
@@ -86,7 +89,7 @@ function PaymentOutcome({
   return (
     <EmptyState
       icon={OUTCOME_ICON[status]}
-      title={`${PAYMENT_STATUS_LABEL[status]} — ${formatter.count(amount)} đ`}
+      title={`${PAYMENT_STATUS_LABEL[status]} — ${formatter.money(amount)}`}
       description={OUTCOME_DESCRIPTION[status]}
     />
   );

@@ -17,7 +17,26 @@ public final class BillingConstants {
     /** {@code MOMO}/{@code VNPAY} trùng tên {@code integrations.payment.PaymentGatewayType} - đó là
      * cách {@code PaymentGatewayClientResolver} map hai enum ({@code BillingConstantsTest} chốt lại). */
     public enum PaymentMethod {
-        MOMO, VNPAY, MANUAL
+        MOMO, VNPAY,
+        /** Thu tay trước khi tách tiền mặt/chuyển khoản - chỉ còn ở dữ liệu cũ, không ghi mới nữa. */
+        MANUAL,
+        /** Tiền mặt thu tại quầy. */
+        CASH,
+        /** Chuyển khoản ngân hàng do kế toán đối chiếu sao kê rồi ghi nhận. */
+        BANK_TRANSFER
+    }
+
+    /**
+     * Kênh thu tay mà kế toán được chọn khi ghi nhận - tách khỏi {@link PaymentMethod} để request
+     * thu tay không thể gửi nhầm {@code VNPAY}/{@code MOMO} (Jackson trả 400 cho giá trị lạ), và để
+     * {@code MANUAL} cũ không được ghi mới.
+     */
+    public enum OfflinePaymentMethod {
+        CASH, BANK_TRANSFER;
+
+        public PaymentMethod toPaymentMethod() {
+            return PaymentMethod.valueOf(name());
+        }
     }
 
     /** {@code REJECTED} (final review Critical #2): cổng xác nhận thành công bằng chữ ký hợp lệ,
@@ -42,6 +61,9 @@ public final class BillingConstants {
 
         /** Spec mục 6 bước 1: dưới mốc này thì đó không phải combo, chỉ là một ghi danh. */
         public static final int MIN_ENROLLMENTS_PER_COMBO = 2;
+
+        /** Khớp cột {@code payments.note VARCHAR(255)} (V35): số phiếu thu, nội dung chuyển khoản... */
+        public static final int MAX_PAYMENT_NOTE_LENGTH = 255;
     }
 
     /** Cron phải là hằng biên dịch để nhét được vào {@code @Scheduled} - không hardcode trong annotation. */

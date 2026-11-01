@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.SortedMap;
@@ -40,6 +42,7 @@ class VnPayPaymentGatewayClient implements PaymentGatewayClient {
         static final String RETURN_URL = "vnp_ReturnUrl";
         static final String IP_ADDR = "vnp_IpAddr";
         static final String CREATE_DATE = "vnp_CreateDate";
+        static final String EXPIRE_DATE = "vnp_ExpireDate";
         static final String SECURE_HASH = "vnp_SecureHash";
         static final String SECURE_HASH_TYPE = "vnp_SecureHashType";
         static final String RESPONSE_CODE = "vnp_ResponseCode";
@@ -62,6 +65,11 @@ class VnPayPaymentGatewayClient implements PaymentGatewayClient {
         static final String SERVER_IP = "127.0.0.1";
         /** VNPay đếm theo đơn vị xu, nên mọi số tiền VND phải nhân 100 trước khi ký. */
         static final BigDecimal AMOUNT_MULTIPLIER = new BigDecimal("100");
+        /** VNPay đọc vnp_CreateDate/vnp_ExpireDate theo giờ Việt Nam (GMT+7), KHÔNG theo múi giờ của
+         * server - container chạy UTC sẽ gửi giờ chậm 7 tiếng và đơn bị coi là quá hạn. */
+        static final ZoneId VNPAY_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+        /** Thời gian người trả được giữ ở trang VNPay trước khi link hết hạn (vnp_ExpireDate, bắt buộc ở 2.1.0). */
+        static final Duration PAYMENT_WINDOW = Duration.ofMinutes(15);
     }
 
     private static final DateTimeFormatter CREATE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -71,7 +79,7 @@ class VnPayPaymentGatewayClient implements PaymentGatewayClient {
 
     @Autowired
     VnPayPaymentGatewayClient(VnPayProperties properties) {
-        this(properties, Clock.systemDefaultZone());
+        this(properties, Clock.system(Values.VNPAY_ZONE));
     }
 
     /** Constructor cho test: {@code vnp_CreateDate} phụ thuộc giờ nên phải chốt được Clock. */
@@ -101,7 +109,9 @@ class VnPayPaymentGatewayClient implements PaymentGatewayClient {
         params.put(Params.LOCALE, Values.LOCALE);
         params.put(Params.RETURN_URL, returnUrl);
         params.put(Params.IP_ADDR, Values.SERVER_IP);
-        params.put(Params.CREATE_DATE, LocalDateTime.now(clock).format(CREATE_DATE_FORMAT));
+        var createdAt = LocalDateTime.now(clock.withZone(Values.VNPAY_ZONE));
+        params.put(Params.CREATE_DATE, createdAt.format(CREATE_DATE_FORMAT));
+        params.put(Params.EXPIRE_DATE, createdAt.plus(Values.PAYMENT_WINDOW).format(CREATE_DATE_FORMAT));
 
         var hashData = hashData(params);
         var secureHash = hmacSha512Hex(properties.hashSecret(), hashData);

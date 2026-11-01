@@ -17,7 +17,7 @@ export function MyInvoicesPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Học phí của tôi"
-          description="Các đợt học phí, số tiền đã đóng, còn lại và lịch sử thanh toán. Liên hệ trung tâm để đóng học phí."
+          description="Các đợt học phí, số tiền đã đóng, còn lại và lịch sử thanh toán. Thanh toán online qua VNPay hoặc đóng tiền mặt tại quầy."
         />
         <MyInvoicesContent />
       </div>
@@ -48,8 +48,15 @@ function MyInvoicesContent() {
   return (
     <div className="flex flex-col gap-4">
       <TotalsPanel totals={controller.totals} />
+      {controller.payError ? <ErrorNotice error={controller.payError} /> : null}
       {controller.invoices.map((detail) => (
-        <InvoiceCard key={detail.invoice.id} detail={detail} courseName={controller.courseNameOf(detail.invoice.courseId)} />
+        <InvoiceCard
+          key={detail.invoice.id}
+          detail={detail}
+          courseName={controller.courseNameOf(detail.invoice.courseId)}
+          onPayVnpay={controller.onPayVnpay}
+          isPaying={controller.payingInvoiceId === detail.invoice.id}
+        />
       ))}
     </div>
   );

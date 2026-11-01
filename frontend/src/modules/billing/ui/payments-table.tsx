@@ -30,8 +30,11 @@ export function PaymentsTable({ rows }: PaymentsTableProps) {
           key={payment.id}
           className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
         >
-          <p className="truncate text-sm text-mist-100">{PAYMENT_METHOD_LABEL[payment.method]}</p>
-          <p className="text-sm text-mist-100">{formatter.count(payment.amount)} đ</p>
+          <div className="min-w-0">
+            <p className="truncate text-sm text-mist-100">{PAYMENT_METHOD_LABEL[payment.method]}</p>
+            {payment.note ? <p className="truncate text-xs text-mist-500">{payment.note}</p> : null}
+          </div>
+          <p className="text-sm text-mist-100">{formatter.money(payment.amount)}</p>
           <Badge tone={payment.status === PAYMENT_STATUS.success ? "positive" : "neutral"}>
             {PAYMENT_STATUS_LABEL[payment.status]}
           </Badge>

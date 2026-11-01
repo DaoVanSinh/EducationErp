@@ -59,6 +59,24 @@ public class Payment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** Số phiếu thu / nội dung chuyển khoản của lần thu tay; null với giao dịch qua cổng. */
+    @Column(length = BillingConstants.Limits.MAX_PAYMENT_NOTE_LENGTH, updatable = false)
+    private String note;
+
+    /** Tài khoản kế toán ghi nhận lần thu tay; null với giao dịch qua cổng (không có người thu). */
+    @Column(name = "recorded_by", updatable = false)
+    private UUID recordedBy;
+
+    /** Thu tay (tiền mặt/chuyển khoản): luôn SUCCESS ngay, không có mã cổng. */
+    public static Payment offline(Invoice invoice, BigDecimal amount, BillingConstants.OfflinePaymentMethod method,
+            String note, UUID recordedBy) {
+        var payment = new Payment(invoice, amount, method.toPaymentMethod(), null,
+                BillingConstants.PaymentStatus.SUCCESS);
+        payment.note = note == null || note.isBlank() ? null : note.strip();
+        payment.recordedBy = recordedBy;
+        return payment;
+    }
+
     public Payment(Invoice invoice, BigDecimal amount, BillingConstants.PaymentMethod method,
             String gatewayTransactionId, BillingConstants.PaymentStatus status) {
         this.invoice = invoice;

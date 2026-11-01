@@ -1,20 +1,26 @@
 import {
   INVOICE_STATUS_LABEL,
   PAYMENT_METHOD_LABEL,
+  PAYMENT_STATUS,
+  PAYMENT_STATUS_LABEL,
   type InvoiceDetail,
 } from "@/entities/billing";
-import { invoiceTone } from "@/modules/learning/model/learning-rules";
+import { canPayOnline, invoiceTone } from "@/modules/learning/model/learning-rules";
 import { formatter } from "@/shared/lib/format";
 import { Badge } from "@/shared/ui/badge";
+import { GlassButton } from "@/shared/ui/glass-button";
 import { GlassPanel } from "@/shared/ui/glass-panel";
+import { CreditCard } from "lucide-react";
 
 export interface InvoiceCardProps {
   readonly detail: InvoiceDetail;
   readonly courseName: string | null;
+  readonly onPayVnpay: (invoiceId: string) => void;
+  readonly isPaying: boolean;
 }
 
-/** Một hoá đơn học phí + lịch sử thanh toán của chính học viên (chỉ xem, không thao tác). */
-export function InvoiceCard({ detail, courseName }: InvoiceCardProps) {
+/** Một hoá đơn học phí + lịch sử thanh toán của chính học viên, kèm nút tự thanh toán qua VNPay. */
+export function InvoiceCard({ detail, courseName, onPayVnpay, isPaying }: InvoiceCardProps) {
   const { invoice, payments } = detail;
   return (
     <GlassPanel className="flex flex-col gap-3">
@@ -34,8 +40,31 @@ export function InvoiceCard({ detail, courseName }: InvoiceCardProps) {
         <Amount label="Còn lại" value={Math.max(invoice.amount - invoice.amountPaid, 0)} />
       </dl>
 
+      {canPayOnline(invoice) ? (
+        <PayActions isPaying={isPaying} onPay={() => onPayVnpay(invoice.id)} />
+      ) : null}
+
       <PaymentHistory payments={payments} />
     </GlassPanel>
+  );
+}
+
+function PayActions({ isPaying, onPay }: { readonly isPaying: boolean; readonly onPay: () => void }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-orange-100 bg-orange-50/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-slate-600">
+        Thanh toán phần còn lại qua thẻ ATM, QR ngân hàng hoặc ví bằng VNPay. Hoặc đóng tiền mặt / chuyển khoản
+        tại quầy chi nhánh.
+      </p>
+      <GlassButton
+        size="sm"
+        loading={isPaying}
+        onClick={onPay}
+        icon={<CreditCard size={14} aria-hidden />}
+      >
+        Thanh toán qua VNPay
+      </GlassButton>
+    </div>
   );
 }
 
@@ -58,6 +87,7 @@ function PaymentHistory({ payments }: { readonly payments: InvoiceDetail["paymen
         <li key={payment.id} className="flex flex-wrap justify-between gap-2 text-xs text-mist-400">
           <span>
             {formatter.dateTime(payment.paidAt ?? payment.createdAt)} · {PAYMENT_METHOD_LABEL[payment.method]}
+            {payment.status === PAYMENT_STATUS.success ? null : ` · ${PAYMENT_STATUS_LABEL[payment.status]}`}
           </span>
           <span className="font-semibold text-mist-100">{formatter.money(payment.amount)}</span>
         </li>

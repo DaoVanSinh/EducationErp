@@ -11,4 +11,5 @@ export const billingKeys = {
   discountTiers: () => [...billingKeys.all, "combo", "discount-tier", "list"] as const,
   paymentStatus: (gatewayTransactionId: string) =>
     [...billingKeys.all, "payment", "status", gatewayTransactionId] as const,
+  vnpayReturn: (signedQuery: string) => [...billingKeys.all, "payment", "vnpay-return", signedQuery] as const,
 } as const;

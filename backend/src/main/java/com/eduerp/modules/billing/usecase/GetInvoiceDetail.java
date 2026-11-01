@@ -40,6 +40,6 @@ public class GetInvoiceDetail {
     /** Dùng lại ở {@code GetPaymentStatus} - một chỗ map duy nhất cho Payment. */
     static PaymentResponse toPaymentResponse(Payment payment) {
         return new PaymentResponse(payment.getId(), payment.getAmount(), payment.getMethod(), payment.getStatus(),
-                payment.getPaidAt(), payment.getCreatedAt());
+                payment.getPaidAt(), payment.getCreatedAt(), payment.getNote());
     }
 }

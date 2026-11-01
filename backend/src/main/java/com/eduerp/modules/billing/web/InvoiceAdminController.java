@@ -91,8 +91,7 @@ class InvoiceAdminController {
     @PreAuthorize(AccessConstants.AccessRules.UPDATE_INVOICE)
     InvoiceResponse recordManualPayment(@AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID invoiceId, @Valid @RequestBody RecordManualPaymentRequest request) {
-        return recordManualPayment.execute(invoiceId, request.amount(), principal.accountId(),
-                principal.homeBranchId());
+        return recordManualPayment.execute(invoiceId, request, principal.accountId(), principal.homeBranchId());
     }
 
     @PostMapping("/{invoiceId}/cancel")

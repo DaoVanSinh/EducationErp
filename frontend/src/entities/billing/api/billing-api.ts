@@ -116,4 +116,19 @@ export const billingApi = {
       await apiClient.get<unknown>(API_ROUTE.billing.paymentStatus(gatewayTransactionId)),
     );
   },
+
+  /**
+   * Endpoint public - gửi lại nguyên bộ tham số VNPay đã ký trên Return URL. Backend kiểm chữ ký rồi
+   * xử lý như một lần IPN (idempotent), trả trạng thái thật của giao dịch.
+   */
+  async confirmVnpayReturn(signedParams: Record<string, string>) {
+    return paymentSchema.parse(await apiClient.get<unknown>(API_ROUTE.billing.vnpayReturn, signedParams));
+  },
+
+  /** Học viên tự tạo link thanh toán cho hoá đơn của chính mình (READ_LEARNING). */
+  async initiateMyOnlinePayment(invoiceId: string, payload: InitiateOnlinePaymentPayload) {
+    return payUrlSchema.parse(
+      await apiClient.post<unknown>(API_ROUTE.billing.myInvoiceOnlinePayment(invoiceId), payload),
+    );
+  },
 } as const;

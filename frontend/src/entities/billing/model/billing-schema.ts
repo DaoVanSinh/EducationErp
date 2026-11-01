@@ -23,28 +23,46 @@ export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
 export const PAYMENT_METHOD = {
   momo: "MOMO",
   vnpay: "VNPAY",
+  /** Thu tay gộp chung của dữ liệu cũ - không ghi mới nữa. */
   manual: "MANUAL",
+  cash: "CASH",
+  bankTransfer: "BANK_TRANSFER",
 } as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];
 
-/** Chỉ hai cổng online - MANUAL không gửi được sang endpoint online-payment (backend ném
+/** Chỉ hai cổng online - thu tay không gửi được sang endpoint online-payment (backend ném
  * BILLING_UNKNOWN_PAYMENT_GATEWAY), nên kiểu này chặn luôn ở client. */
 export type OnlineGateway = typeof PAYMENT_METHOD.momo | typeof PAYMENT_METHOD.vnpay;
 
 export const ONLINE_GATEWAYS: readonly OnlineGateway[] = [PAYMENT_METHOD.momo, PAYMENT_METHOD.vnpay];
 
+/** Khớp BillingConstants.OfflinePaymentMethod - kênh kế toán chọn khi ghi nhận thu tay. */
+export type OfflinePaymentMethod = typeof PAYMENT_METHOD.cash | typeof PAYMENT_METHOD.bankTransfer;
+
+export const OFFLINE_PAYMENT_METHODS: readonly OfflinePaymentMethod[] = [
+  PAYMENT_METHOD.cash,
+  PAYMENT_METHOD.bankTransfer,
+];
+
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   [PAYMENT_METHOD.momo]: "MoMo",
   [PAYMENT_METHOD.vnpay]: "VNPay",
-  [PAYMENT_METHOD.manual]: "Tiền mặt / chuyển khoản",
+  [PAYMENT_METHOD.manual]: "Thu tay",
+  [PAYMENT_METHOD.cash]: "Tiền mặt",
+  [PAYMENT_METHOD.bankTransfer]: "Chuyển khoản",
 };
+
+/** Khớp Limits.MAX_PAYMENT_NOTE_LENGTH ở backend (cột payments.note VARCHAR(255)). */
+export const MAX_PAYMENT_NOTE_LENGTH = 255;
 
 /** Khớp BillingConstants.PaymentStatus ở backend. */
 export const PAYMENT_STATUS = {
   pending: "PENDING",
   success: "SUCCESS",
   failed: "FAILED",
+  /** Cổng báo thành công nhưng hoá đơn đã chốt - chờ kế toán đối soát thủ công. */
+  rejected: "REJECTED",
 } as const;
 
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];
@@ -53,6 +71,7 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   [PAYMENT_STATUS.pending]: "Đang xử lý",
   [PAYMENT_STATUS.success]: "Thành công",
   [PAYMENT_STATUS.failed]: "Thất bại",
+  [PAYMENT_STATUS.rejected]: "Chờ đối soát",
 };
 
 /** Khớp BillingConstants.Limits.MIN_ENROLLMENTS_PER_COMBO - dưới mốc này backend trả
@@ -94,10 +113,23 @@ export type InvoiceSummary = z.infer<typeof invoiceSummarySchema>;
 export const paymentSchema = z.object({
   id: z.string().uuid(),
   amount: z.number(),
-  method: z.enum([PAYMENT_METHOD.momo, PAYMENT_METHOD.vnpay, PAYMENT_METHOD.manual]),
-  status: z.enum([PAYMENT_STATUS.pending, PAYMENT_STATUS.success, PAYMENT_STATUS.failed]),
+  method: z.enum([
+    PAYMENT_METHOD.momo,
+    PAYMENT_METHOD.vnpay,
+    PAYMENT_METHOD.manual,
+    PAYMENT_METHOD.cash,
+    PAYMENT_METHOD.bankTransfer,
+  ]),
+  status: z.enum([
+    PAYMENT_STATUS.pending,
+    PAYMENT_STATUS.success,
+    PAYMENT_STATUS.failed,
+    PAYMENT_STATUS.rejected,
+  ]),
   paidAt: z.string().nullable(),
   createdAt: z.string(),
+  /** Số phiếu thu / nội dung chuyển khoản - chỉ có ở lần thu tay. */
+  note: z.string().nullable().optional(),
 });
 
 export type Payment = z.infer<typeof paymentSchema>;
@@ -197,4 +229,6 @@ export interface InitiateOnlinePaymentPayload {
 
 export interface RecordManualPaymentPayload {
   readonly amount: number;
+  readonly method: OfflinePaymentMethod;
+  readonly note?: string;
 }

@@ -1,6 +1,7 @@
 export { billingApi } from "@/entities/billing/api/billing-api";
 export { billingKeys } from "@/entities/billing/api/billing-keys";
 export { useComboDetail } from "@/entities/billing/api/use-combo-detail";
+export { useConfirmVnpayReturn } from "@/entities/billing/api/use-confirm-vnpay-return";
 export { useComboDiscountTiers } from "@/entities/billing/api/use-combo-discount-tiers";
 export { useCombos } from "@/entities/billing/api/use-combos";
 export { useInvoiceDetail } from "@/entities/billing/api/use-invoice-detail";
@@ -15,7 +16,9 @@ export {
   INVOICE_STATUS_LABEL,
   invoiceDetailSchema,
   invoiceSummarySchema,
+  MAX_PAYMENT_NOTE_LENGTH,
   MIN_COMBO_ENROLLMENTS,
+  OFFLINE_PAYMENT_METHODS,
   ONLINE_GATEWAYS,
   PAYMENT_METHOD,
   PAYMENT_METHOD_LABEL,
@@ -35,6 +38,7 @@ export {
   type InvoiceDetail,
   type InvoiceStatus,
   type InvoiceSummary,
+  type OfflinePaymentMethod,
   type OnlineGateway,
   type Payment,
   type PaymentMethod,

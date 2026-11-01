@@ -1,4 +1,4 @@
-import { MIN_COMBO_ENROLLMENTS } from "@/entities/billing";
+import { MAX_PAYMENT_NOTE_LENGTH, MIN_COMBO_ENROLLMENTS, PAYMENT_METHOD } from "@/entities/billing";
 import { z } from "zod";
 
 export const createInvoiceFormSchema = z.object({
@@ -17,6 +17,11 @@ export const manualPaymentFormSchema = z.object({
     .min(1, "Nhập số tiền")
     .transform((value) => Number(value))
     .refine((value) => Number.isFinite(value) && value > 0, "Số tiền phải lớn hơn 0"),
+  method: z.enum([PAYMENT_METHOD.cash, PAYMENT_METHOD.bankTransfer]),
+  note: z
+    .string()
+    .trim()
+    .max(MAX_PAYMENT_NOTE_LENGTH, `Ghi chú tối đa ${MAX_PAYMENT_NOTE_LENGTH} ký tự`),
 });
 
 export const createComboFormSchema = z.object({

@@ -20,7 +20,10 @@ final class BillingPublicPaths {
     static final String VNPAY_CALLBACK = "/api/billing/payments/callback/vnpay";
     static final String MOMO_CALLBACK = "/api/billing/payments/callback/momo";
     static final String PAYMENT_STATUS_PATTERN = "/api/billing/payments/*/status";
+    /** Trang Return URL gửi lại tham số đã ký của VNPay - public vì người trả có thể chưa đăng nhập;
+     * xác thực bằng chữ ký HMAC như IPN ({@code ConfirmGatewayReturn}). */
+    static final String VNPAY_RETURN = "/api/billing/payments/return/vnpay";
 
     /** Truyền thẳng vào {@code securityMatcher(...)}. */
-    static final String[] ALL = {VNPAY_CALLBACK, MOMO_CALLBACK, PAYMENT_STATUS_PATTERN};
+    static final String[] ALL = {VNPAY_CALLBACK, MOMO_CALLBACK, PAYMENT_STATUS_PATTERN, VNPAY_RETURN};
 }

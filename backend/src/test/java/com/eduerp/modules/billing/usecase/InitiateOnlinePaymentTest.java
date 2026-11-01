@@ -18,6 +18,7 @@ import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.InvoiceNotFoundException;
 import com.eduerp.modules.billing.InvoiceNotPayableException;
 import com.eduerp.modules.billing.PaymentGatewayUnavailableException;
+import com.eduerp.modules.billing.internal.OnlinePaymentStarter;
 import com.eduerp.modules.billing.internal.PaymentGatewayClientResolver;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
@@ -38,8 +39,8 @@ class InitiateOnlinePaymentTest {
     private final PaymentGatewayClientResolver resolver = mock(PaymentGatewayClientResolver.class);
     private final PaymentGatewayClient client = mock(PaymentGatewayClient.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final InitiateOnlinePayment useCase =
-            new InitiateOnlinePayment(invoices, payments, resolver, events, mock(BillingBranchGuard.class));
+    private final InitiateOnlinePayment useCase = new InitiateOnlinePayment(invoices, mock(BillingBranchGuard.class),
+            new OnlinePaymentStarter(payments, resolver));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

@@ -94,8 +94,12 @@ export const API_ROUTE = {
     /** Public ở backend - trang Return URL gọi được khi phụ huynh chưa đăng nhập. */
     paymentStatus: (gatewayTransactionId: string) =>
       `/api/billing/payments/${gatewayTransactionId}/status`,
+    /** Public - trang Return URL gửi lại nguyên query string VNPay đã ký để backend xác nhận. */
+    vnpayReturn: "/api/billing/payments/return/vnpay",
     /** Cổng học tập: hoá đơn + lịch sử thanh toán của CHÍNH học viên (READ_LEARNING). */
     myInvoices: "/api/billing/me/invoices",
+    /** Cổng học tập: học viên tự tạo link thanh toán online cho hoá đơn của chính mình. */
+    myInvoiceOnlinePayment: (invoiceId: string) => `/api/billing/me/invoices/${invoiceId}/online-payment`,
   },
   academic: {
     /** POST upsert điểm một cột - classId/enrollmentId/courseGradeColumnId nằm trong body. */

@@ -110,9 +110,24 @@ class VnPayPaymentGatewayClientTest {
         assertThat(result.payUrl()).contains("vnp_Amount=50000000");
         assertThat(result.payUrl()).contains("vnp_TxnRef=order-1");
         assertThat(result.payUrl()).contains("vnp_CreateDate=20261003010203");
+        // vnp_ExpireDate bắt buộc ở 2.1.0: 15 phút sau vnp_CreateDate.
+        assertThat(result.payUrl()).contains("vnp_ExpireDate=20261003011703");
         assertThat(result.payUrl()).contains("vnp_SecureHash="
-                + "562c7e85d55fd0405e85fa3428da53a04a1a84cf3b76048d11354728f2ca8fb4"
-                + "6f4516888217181583e7b1170c4d53305efccd69214b7732d6fb8a4e12fe3f2a");
+                + "16c92792d32db93e3ff2b754b5c366eef703255d53d9908083297eb36141f69d"
+                + "1baa330b0176e2e48eaab097e0f70f0b4fde827803672ae96bd55c4d8252351c");
+    }
+
+    /** Server chạy UTC (container) vẫn phải gửi giờ Việt Nam - VNPay đọc vnp_CreateDate theo GMT+7. */
+    @Test
+    void createDateIsAlwaysVietnamTimeEvenWhenTheServerClockIsUtc() {
+        var utcClock = Clock.fixed(Instant.parse("2026-10-02T18:02:03Z"), ZoneId.of("UTC"));
+        var utcClient = new VnPayPaymentGatewayClient(
+                new VnPayProperties(TMN_CODE, HASH_SECRET, PAY_URL, RETURN_URL, IPN_URL), utcClock);
+
+        var result = utcClient.createPaymentUrl(
+                PaymentRequest.withGatewayDefaults("order-1", new BigDecimal("500000"), "Hoc phi dot 1"));
+
+        assertThat(result.payUrl()).contains("vnp_CreateDate=20261003010203");
     }
 
     private Map<String, String> validCallbackParams() {
