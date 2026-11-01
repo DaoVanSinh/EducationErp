@@ -280,7 +280,7 @@ SELECT e.id, e.student_profile_id, e.class_id, pg_temp.did(6, e.course_n), e.bra
 FROM sd_enroll e CROSS JOIN sd_ctx x;
 
 -- ---------------------------------------------------------------------------------------------------
--- 7. Học phí: combo giảm giá, hoá đơn từng kỳ, thanh toán (tiền mặt / MoMo / VNPay, có cả giao dịch lỗi)
+-- 7. Học phí: combo giảm giá, hoá đơn từng kỳ, thanh toán (tiền mặt / chuyển khoản / VNPay, có cả giao dịch lỗi)
 -- ---------------------------------------------------------------------------------------------------
 -- Combo cho tối đa 3 học viên đang học 2 lớp khác khoá cùng lúc (cần một bậc giảm giá áp dụng cho 2 khoá).
 CREATE TEMP TABLE sd_combo_pick ON COMMIT DROP AS
@@ -387,18 +387,21 @@ LEFT JOIN sd_enroll e ON e.n = i.enroll_n
 LEFT JOIN sd_combo c ON c.n = i.combo_n
 CROSS JOIN sd_ctx x;
 
--- Thanh toán thành công cho phần đã trả; vài giao dịch MoMo lỗi ở hoá đơn quá hạn cho giống thực tế.
-INSERT INTO payments (id, invoice_id, amount, method, gateway_transaction_id, status, paid_at, created_at)
+-- Thanh toán thành công cho phần đã trả (tiền mặt / chuyển khoản kèm ghi chú, hoặc VNPay); vài giao
+-- dịch VNPay lỗi ở hoá đơn quá hạn cho giống thực tế. Không sinh MoMo: cổng MoMo nằm ngoài đề cương.
+INSERT INTO payments (id, invoice_id, amount, method, gateway_transaction_id, status, paid_at, created_at, note)
 SELECT pg_temp.did(12, i.n), pg_temp.did(11, i.n), i.amount_paid, m.method,
-       CASE WHEN m.method <> 'MANUAL' THEN 'DEMO-' || m.method || '-' || lpad(i.n::text, 6, '0') END,
-       'SUCCESS', pg_temp.at_vn(i.paid_on, '15:20'), pg_temp.at_vn(i.paid_on, '15:18')
+       CASE WHEN m.method = 'VNPAY' THEN 'DEMO-VNPAY-' || lpad(i.n::text, 6, '0') END,
+       'SUCCESS', pg_temp.at_vn(i.paid_on, '15:20'), pg_temp.at_vn(i.paid_on, '15:18'),
+       CASE m.method WHEN 'CASH' THEN 'PT-DEMO-' || lpad(i.n::text, 4, '0')
+                     WHEN 'BANK_TRANSFER' THEN 'CK VCB DEMO' || lpad(i.n::text, 6, '0') END
 FROM sd_invoice i
-CROSS JOIN LATERAL (SELECT CASE WHEN pg_temp.rnd('pay' || i.n) < 50 THEN 'MANUAL'
-                                WHEN pg_temp.rnd('pay' || i.n) < 75 THEN 'MOMO' ELSE 'VNPAY' END AS method) m
+CROSS JOIN LATERAL (SELECT CASE WHEN pg_temp.rnd('pay' || i.n) < 40 THEN 'CASH'
+                                WHEN pg_temp.rnd('pay' || i.n) < 60 THEN 'BANK_TRANSFER' ELSE 'VNPAY' END AS method) m
 WHERE i.amount_paid > 0
 UNION ALL
-SELECT pg_temp.did(12, 100000 + i.n), pg_temp.did(11, i.n), i.amount, 'MOMO',
-       'DEMO-MOMO-FAIL-' || lpad(i.n::text, 6, '0'), 'FAILED', NULL, pg_temp.at_vn(i.due_date - 1, '20:05')
+SELECT pg_temp.did(12, 100000 + i.n), pg_temp.did(11, i.n), i.amount, 'VNPAY',
+       'DEMO-VNPAY-FAIL-' || lpad(i.n::text, 6, '0'), 'FAILED', NULL, pg_temp.at_vn(i.due_date - 1, '20:05'), NULL
 FROM sd_invoice i WHERE i.status = 'OVERDUE' AND pg_temp.rnd('fail' || i.n) < 40;
 
 -- ---------------------------------------------------------------------------------------------------

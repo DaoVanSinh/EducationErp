@@ -14,10 +14,14 @@ public final class BillingConstants {
         UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED
     }
 
-    /** {@code MOMO}/{@code VNPAY} trùng tên {@code integrations.payment.PaymentGatewayType} - đó là
-     * cách {@code PaymentGatewayClientResolver} map hai enum ({@code BillingConstantsTest} chốt lại). */
+    /** {@code VNPAY} trùng tên {@code integrations.payment.PaymentGatewayType} - đó là cách
+     * {@code PaymentGatewayClientResolver} map hai enum ({@code BillingConstantsTest} chốt lại). Các
+     * giá trị không có cổng tương ứng (MOMO cũ, thu tay) bị resolver từ chối bằng
+     * {@code UnknownPaymentGatewayException}. */
     public enum PaymentMethod {
-        MOMO, VNPAY,
+        /** Ví MoMo - đã gỡ cổng (ngoài đề cương ĐATN); chỉ còn ở dữ liệu cũ, không tạo giao dịch mới. */
+        MOMO,
+        VNPAY,
         /** Thu tay trước khi tách tiền mặt/chuyển khoản - chỉ còn ở dữ liệu cũ, không ghi mới nữa. */
         MANUAL,
         /** Tiền mặt thu tại quầy. */

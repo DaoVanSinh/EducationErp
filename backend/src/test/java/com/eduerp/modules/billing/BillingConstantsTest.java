@@ -31,9 +31,11 @@ class BillingConstantsTest {
     void everyOnlinePaymentMethodNamesAnExistingGatewayType() {
         var gatewayNames = Arrays.stream(PaymentGatewayType.values()).map(Enum::name).toList();
 
-        assertThat(gatewayNames).contains(BillingConstants.PaymentMethod.MOMO.name(),
-                BillingConstants.PaymentMethod.VNPAY.name());
-        assertThat(gatewayNames).doesNotContain(BillingConstants.PaymentMethod.MANUAL.name());
+        assertThat(gatewayNames).contains(BillingConstants.PaymentMethod.VNPAY.name());
+        // MoMo đã gỡ cổng; thu tay không bao giờ có cổng - resolver phải từ chối cả hai.
+        assertThat(gatewayNames).doesNotContain(BillingConstants.PaymentMethod.MOMO.name(),
+                BillingConstants.PaymentMethod.MANUAL.name(), BillingConstants.PaymentMethod.CASH.name(),
+                BillingConstants.PaymentMethod.BANK_TRANSFER.name());
     }
 
     @Test

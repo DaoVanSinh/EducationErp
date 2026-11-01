@@ -21,6 +21,7 @@ export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
 
 /** Khớp BillingConstants.PaymentMethod ở backend. */
 export const PAYMENT_METHOD = {
+  /** Ví MoMo - đã gỡ cổng (ngoài đề cương); chỉ còn ở lịch sử thanh toán cũ. */
   momo: "MOMO",
   vnpay: "VNPAY",
   /** Thu tay gộp chung của dữ liệu cũ - không ghi mới nữa. */
@@ -31,11 +32,11 @@ export const PAYMENT_METHOD = {
 
 export type PaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];
 
-/** Chỉ hai cổng online - thu tay không gửi được sang endpoint online-payment (backend ném
- * BILLING_UNKNOWN_PAYMENT_GATEWAY), nên kiểu này chặn luôn ở client. */
-export type OnlineGateway = typeof PAYMENT_METHOD.momo | typeof PAYMENT_METHOD.vnpay;
+/** Cổng online duy nhất là VNPay - MoMo/thu tay gửi sang endpoint online-payment sẽ bị backend từ
+ * chối (BILLING_UNKNOWN_PAYMENT_GATEWAY), nên kiểu này chặn luôn ở client. */
+export type OnlineGateway = typeof PAYMENT_METHOD.vnpay;
 
-export const ONLINE_GATEWAYS: readonly OnlineGateway[] = [PAYMENT_METHOD.momo, PAYMENT_METHOD.vnpay];
+export const ONLINE_GATEWAYS: readonly OnlineGateway[] = [PAYMENT_METHOD.vnpay];
 
 /** Khớp BillingConstants.OfflinePaymentMethod - kênh kế toán chọn khi ghi nhận thu tay. */
 export type OfflinePaymentMethod = typeof PAYMENT_METHOD.cash | typeof PAYMENT_METHOD.bankTransfer;

@@ -17,8 +17,8 @@ import org.springframework.security.web.SecurityFilterChain;
  * <p>{@code @Order(1)} để chain này được xét TRƯỚC chain của identity (chain đó không có
  * {@code securityMatcher} nên là catch-all và nhận {@code LOWEST_PRECEDENCE}).
  *
- * <p>CSRF tắt trên đúng ba path này: MoMo gọi IPN bằng POST server-to-server, không thể mang CSRF
- * token của SPA. Cũng không gắn {@code CookieAuthenticationFilter} - ba endpoint này không cần biết
+ * <p>CSRF tắt trên đúng các path này: cổng thanh toán gọi IPN server-to-server, không thể mang CSRF
+ * token của SPA. Cũng không gắn {@code CookieAuthenticationFilter} - các endpoint này không cần biết
  * "ai đang gọi", xác thực đi bằng chữ ký HMAC trong usecase.
  */
 @Configuration

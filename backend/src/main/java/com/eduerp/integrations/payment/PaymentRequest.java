@@ -7,8 +7,8 @@ import java.math.BigDecimal;
  * client vì đơn vị của nó là xu.
  *
  * <p>{@code returnUrl}/{@code ipnUrl} để {@code null}/trống nghĩa là "dùng cấu hình của chính
- * client" ({@code MomoProperties}/{@code VnPayProperties}): {@code modules.billing} không đọc được
- * hai property đó (chúng là nội bộ của integration), nên {@link #withGatewayDefaults} là cách gọi
+ * client" ({@code VnPayProperties}): {@code modules.billing} không đọc được property đó (nó là nội
+ * bộ của integration), nên {@link #withGatewayDefaults} là cách gọi
  * bình thường. Hai field vẫn tồn tại để một lời gọi đặc biệt (sandbox, test thủ công) ghi đè được.
  */
 public record PaymentRequest(String orderId, BigDecimal amount, String orderInfo, String returnUrl, String ipnUrl) {

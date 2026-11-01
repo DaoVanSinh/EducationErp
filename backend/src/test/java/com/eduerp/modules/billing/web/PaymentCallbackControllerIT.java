@@ -4,11 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.TreeMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -25,22 +22,21 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Review Focus #5: hai endpoint callback không được tạo oracle. Test chốt secret qua property để tự
+ * Review Focus #5: endpoint IPN của VNPay không được tạo oracle. Test chốt secret qua property để tự
  * ký được chữ ký hợp lệ, và tự cài lại HMAC trong test (không gọi code production).
  */
 @Testcontainers
 @SpringBootTest(properties = {
         "payment.vnpay.tmn-code=TMN001",
-        "payment.vnpay.hash-secret=VNPAYSECRET123",
-        "payment.momo.partner-code=PARTNER01",
-        "payment.momo.access-key=ACCESS123",
-        "payment.momo.secret-key=MOMOSECRET123"
+        "payment.vnpay.hash-secret=VNPAYSECRET123"
 })
 @AutoConfigureMockMvc
 class PaymentCallbackControllerIT {
 
     private static final String VNPAY_CALLBACK = "/api/billing/payments/callback/vnpay";
-    private static final String MOMO_CALLBACK = "/api/billing/payments/callback/momo";
+    private static final String VNPAY_RETURN = "/api/billing/payments/return/vnpay";
+    /** Đường IPN của MoMo trước khi gỡ cổng (MoMo nằm ngoài đề cương). */
+    private static final String REMOVED_MOMO_CALLBACK = "/api/billing/payments/callback/momo";
 
     @Container
     @ServiceConnection
@@ -53,13 +49,10 @@ class PaymentCallbackControllerIT {
     @Autowired
     MockMvc mockMvc;
 
-    @Autowired
-    ObjectMapper objectMapper;
-
-    private static String hmacHex(String algorithm, String secret, String data) {
+    private static String hmacSha512Hex(String secret, String data) {
         try {
-            var mac = Mac.getInstance(algorithm);
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), algorithm));
+            var mac = Mac.getInstance("HmacSHA512");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA512"));
             var bytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             var hex = new StringBuilder(bytes.length * 2);
             for (var b : bytes) {
@@ -84,43 +77,18 @@ class PaymentCallbackControllerIT {
                 .reduce((left, right) -> left + "&" + right).orElseThrow();
         var plainQuery = params.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
                 .reduce((left, right) -> left + "&" + right).orElseThrow();
-        return plainQuery + "&vnp_SecureHash=" + hmacHex("HmacSHA512", "VNPAYSECRET123", hashData);
+        return plainQuery + "&vnp_SecureHash=" + hmacSha512Hex("VNPAYSECRET123", hashData);
     }
 
-    private Map<String, String> signedMomoBody(String orderId) {
-        var body = new LinkedHashMap<String, String>();
-        body.put("partnerCode", "PARTNER01");
-        body.put("orderId", orderId);
-        body.put("requestId", "req-1");
-        body.put("amount", "6000000");
-        body.put("orderInfo", "Hoc phi dot 1");
-        body.put("orderType", "momo_wallet");
-        body.put("transId", "2345678901");
-        body.put("resultCode", "0");
-        body.put("message", "Successful.");
-        body.put("payType", "qr");
-        body.put("responseTime", "1767222123000");
-        body.put("extraData", "");
-        var payload = "accessKey=ACCESS123&amount=" + body.get("amount") + "&extraData="
-                + "&message=" + body.get("message") + "&orderId=" + orderId
-                + "&orderInfo=" + body.get("orderInfo") + "&orderType=" + body.get("orderType")
-                + "&partnerCode=" + body.get("partnerCode") + "&payType=" + body.get("payType")
-                + "&requestId=" + body.get("requestId") + "&responseTime=" + body.get("responseTime")
-                + "&resultCode=" + body.get("resultCode") + "&transId=" + body.get("transId");
-        body.put("signature", hmacHex("HmacSHA256", "MOMOSECRET123", payload));
-        return body;
-    }
-
-    /** Hai endpoint callback phải gọi được KHÔNG kèm cookie đăng nhập và KHÔNG kèm CSRF token - cổng
-     * thanh toán gọi server-to-server (spec mục 5). */
+    /** IPN và trang Return URL phải gọi được KHÔNG kèm cookie đăng nhập và KHÔNG kèm CSRF token - cổng
+     * gọi server-to-server, còn người trả có thể chưa đăng nhập khi quay về (spec mục 5, 10). */
     @Test
-    void bothCallbackEndpointsArePublicAndCsrfExempt() throws Exception {
-        var vnpay = mockMvc.perform(get(VNPAY_CALLBACK + "?" + signedVnpayQuery("order-public-check"))).andReturn();
-        var momo = mockMvc.perform(post(MOMO_CALLBACK).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signedMomoBody("order-public-check")))).andReturn();
+    void vnpayIpnAndReturnEndpointsArePublicAndCsrfExempt() throws Exception {
+        var ipn = mockMvc.perform(get(VNPAY_CALLBACK + "?" + signedVnpayQuery("order-public-check"))).andReturn();
+        var returned = mockMvc.perform(get(VNPAY_RETURN + "?" + signedVnpayQuery("order-public-check"))).andReturn();
 
-        assertThat(vnpay.getResponse().getStatus()).isNotIn(401, 403);
-        assertThat(momo.getResponse().getStatus()).isNotIn(401, 403);
+        assertThat(ipn.getResponse().getStatus()).isNotIn(401, 403);
+        assertThat(returned.getResponse().getStatus()).isNotIn(401, 403);
     }
 
     /**
@@ -140,22 +108,6 @@ class PaymentCallbackControllerIT {
         assertThat(badSignature.getContentAsString()).doesNotContain("order-x", "SIGNATURE", "signature");
     }
 
-    /** Review Focus #5, MoMo: cùng một yêu cầu, ở cả hai trường hợp. */
-    @Test
-    void momoReturnsAnIdenticalResponseForABadSignatureAndForAnUnknownOrderId() throws Exception {
-        var forged = signedMomoBody("order-y");
-        forged.put("signature", "deadbeef");
-        var badSignature = mockMvc.perform(post(MOMO_CALLBACK).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(forged))).andReturn().getResponse();
-        var unknownOrder = mockMvc.perform(post(MOMO_CALLBACK).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signedMomoBody("order-also-missing"))))
-                .andReturn().getResponse();
-
-        assertThat(badSignature.getStatus()).isEqualTo(unknownOrder.getStatus());
-        assertThat(badSignature.getContentAsString()).isEqualTo(unknownOrder.getContentAsString());
-        assertThat(badSignature.getContentAsString()).doesNotContain("order-y", "SIGNATURE", "signature");
-    }
-
     /** Body cố định của VNPay đúng theo hợp đồng IPN của họ - trả khác đi là VNPay coi như chưa nhận. */
     @Test
     void vnpayAlwaysAnswersWithTheFixedConfirmationBody() throws Exception {
@@ -164,6 +116,26 @@ class PaymentCallbackControllerIT {
 
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(response.getContentAsString()).isEqualTo("{\"RspCode\":\"00\",\"Message\":\"Confirm Success\"}");
+    }
+
+    /** Trang Return URL không phải đường vào của cổng: chữ ký sai trả thẳng 400 cho người dùng thấy. */
+    @Test
+    void vnpayReturnRejectsATamperedQueryWithBadRequest() throws Exception {
+        var response = mockMvc.perform(get(VNPAY_RETURN
+                + "?vnp_Amount=600000000&vnp_ResponseCode=00&vnp_TmnCode=TMN001&vnp_TxnRef=order-z"
+                + "&vnp_SecureHash=deadbeef")).andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getContentAsString()).contains("BILLING_INVALID_CALLBACK_SIGNATURE");
+    }
+
+    /** MoMo đã gỡ: đường IPN cũ không còn xử lý gì (không public, không controller). */
+    @Test
+    void theRemovedMomoCallbackNoLongerAcceptsAnything() throws Exception {
+        var response = mockMvc.perform(post(REMOVED_MOMO_CALLBACK).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"orderId\":\"order-momo\"}")).andReturn().getResponse();
+
+        assertThat(response.getStatus()).isGreaterThanOrEqualTo(400);
     }
 
     /** Endpoint tra trạng thái cũng public (trang Return URL chạy khi phụ huynh chưa đăng nhập), và

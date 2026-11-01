@@ -5,10 +5,9 @@ import { useParams, useSearchParams } from "react-router-dom";
 
 const VNPAY_GATEWAY = PAYMENT_METHOD.vnpay.toLowerCase();
 
-/** Tên query param mang mã giao dịch của từng cổng - VNPay dùng vnp_TxnRef, MoMo dùng orderId. */
+/** Tên query param mang mã giao dịch của từng cổng - VNPay dùng vnp_TxnRef. */
 const TRANSACTION_ID_PARAM: Record<string, string> = {
   [VNPAY_GATEWAY]: "vnp_TxnRef",
-  [PAYMENT_METHOD.momo.toLowerCase()]: "orderId",
 };
 
 /**

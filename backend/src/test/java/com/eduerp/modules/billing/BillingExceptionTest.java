@@ -87,10 +87,10 @@ class BillingExceptionTest {
     /** Message không được chứa orderId - Review Focus #5: không để response/log thành oracle. */
     @Test
     void invalidCallbackSignatureIsBadRequestAndNamesOnlyTheGateway() {
-        var ex = new InvalidCallbackSignatureException(PaymentGatewayType.MOMO);
+        var ex = new InvalidCallbackSignatureException(PaymentGatewayType.VNPAY);
         assertThat(ex.getErrorCode()).isEqualTo("BILLING_INVALID_CALLBACK_SIGNATURE");
         assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(ex.getMessage()).contains("MOMO").doesNotContain("order");
+        assertThat(ex.getMessage()).contains("VNPAY").doesNotContain("order");
     }
 
     @Test

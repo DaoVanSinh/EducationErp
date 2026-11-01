@@ -5,14 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
-/** Hợp đồng của integrations.payment: chỉ 2 cổng, và PaymentRequest để trống URL nghĩa là "dùng cấu
- * hình của chính client" (modules.billing không đọc được MomoProperties/VnPayProperties). */
+/** Hợp đồng của integrations.payment: chỉ VNPay (MoMo đã gỡ - ngoài đề cương), và PaymentRequest để
+ * trống URL nghĩa là "dùng cấu hình của chính client" (modules.billing không đọc được VnPayProperties). */
 class PaymentContractTest {
 
     @Test
-    void supportsExactlyTwoGateways() {
-        assertThat(PaymentGatewayType.values())
-                .containsExactly(PaymentGatewayType.MOMO, PaymentGatewayType.VNPAY);
+    void supportsOnlyVnpay() {
+        assertThat(PaymentGatewayType.values()).containsExactly(PaymentGatewayType.VNPAY);
     }
 
     @Test

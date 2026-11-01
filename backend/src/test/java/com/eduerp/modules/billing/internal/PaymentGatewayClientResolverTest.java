@@ -29,13 +29,11 @@ class PaymentGatewayClientResolverTest {
         }
     }
 
-    private final PaymentGatewayClientResolver resolver = new PaymentGatewayClientResolver(
-            List.of(new StubClient(PaymentGatewayType.MOMO), new StubClient(PaymentGatewayType.VNPAY)));
+    private final PaymentGatewayClientResolver resolver =
+            new PaymentGatewayClientResolver(List.of(new StubClient(PaymentGatewayType.VNPAY)));
 
     @Test
-    void resolvesEachOnlineMethodToTheMatchingClient() {
-        assertThat(resolver.resolve(BillingConstants.PaymentMethod.MOMO).type())
-                .isEqualTo(PaymentGatewayType.MOMO);
+    void resolvesVnpayToItsClient() {
         assertThat(resolver.resolve(BillingConstants.PaymentMethod.VNPAY).type())
                 .isEqualTo(PaymentGatewayType.VNPAY);
     }
@@ -47,13 +45,21 @@ class PaymentGatewayClientResolverTest {
                 .hasMessageContaining("MANUAL");
     }
 
-    /** Nếu một client bị thiếu bean (cấu hình sai, profile tắt), lỗi phải là lỗi nghiệp vụ rõ ràng,
+    /** MoMo đã gỡ cổng: giá trị MOMO chỉ còn cho dữ liệu cũ, không được tạo link mới. */
+    @Test
+    void refusesMomoBecauseTheGatewayWasRemoved() {
+        assertThatThrownBy(() -> resolver.resolve(BillingConstants.PaymentMethod.MOMO))
+                .isInstanceOf(UnknownPaymentGatewayException.class)
+                .hasMessageContaining("MOMO");
+    }
+
+    /** Nếu client bị thiếu bean (cấu hình sai, profile tắt), lỗi phải là lỗi nghiệp vụ rõ ràng,
      * không phải NullPointerException ở giữa luồng thanh toán. */
     @Test
     void refusesAMethodWhoseClientBeanIsMissing() {
-        var partial = new PaymentGatewayClientResolver(List.of(new StubClient(PaymentGatewayType.MOMO)));
+        var empty = new PaymentGatewayClientResolver(List.of());
 
-        assertThatThrownBy(() -> partial.resolve(BillingConstants.PaymentMethod.VNPAY))
+        assertThatThrownBy(() -> empty.resolve(BillingConstants.PaymentMethod.VNPAY))
                 .isInstanceOf(UnknownPaymentGatewayException.class);
     }
 }

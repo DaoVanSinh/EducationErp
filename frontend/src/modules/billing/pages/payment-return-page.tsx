@@ -11,7 +11,7 @@ import { AlertTriangle, CheckCircle2, Clock, FileQuestion, XCircle } from "lucid
 import { Link } from "react-router-dom";
 
 /**
- * Trang phụ huynh thấy sau khi quay về từ MoMo/VNPay. Public: không bọc trong RequireAuth, không gọi
+ * Trang phụ huynh/học viên thấy sau khi quay về từ VNPay. Public: không bọc trong RequireAuth, không gọi
  * endpoint nào cần quyền. Trạng thái LUÔN đọc lại từ API (IPN là nguồn sự thật), không suy từ query
  * param trên URL (spec mục 10).
  */
