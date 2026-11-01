@@ -42,8 +42,12 @@ public final class CoursesConstants {
         }
 
         public static final String CENTER_ZONE_ID = "Asia/Ho_Chi_Minh";
-        /** 00:30 mỗi ngày, sau mốc nửa đêm để "hôm nay" đã là ngày mới. */
-        public static final String AUTO_START_CRON = "0 30 0 * * *";
+        /**
+         * Phút thứ 5 mỗi giờ (00:05 là lượt đầu của ngày mới). Chạy mỗi giờ thay vì một lần lúc nửa đêm: lớp đủ
+         * người trong ngày, hoặc app khởi động lại đúng giờ chạy job, không phải đợi tới đêm hôm sau mới khai
+         * giảng. Use case idempotent nên chạy dày không gây hại.
+         */
+        public static final String AUTO_START_CRON = "0 5 * * * *";
     }
 
     public static final class ErrorCodes {

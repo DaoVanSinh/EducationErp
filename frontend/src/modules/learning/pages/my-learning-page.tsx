@@ -46,7 +46,7 @@ function MyLearningContent() {
   return (
     <div className="flex flex-col gap-4">
       {controller.classes.map((item) => (
-        <LearningClassCard key={item.enrollmentId} item={item} />
+        <LearningClassCard key={item.enrollmentId} item={item} today={controller.today} />
       ))}
     </div>
   );

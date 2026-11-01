@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Tự khai giảng mỗi ngày (trả lời câu "khi nào lớp bắt đầu học"): lớp đang tuyển sinh đã tới ngày khai
+ * Tự khai giảng mỗi giờ và một lượt bù khi app khởi động (trả lời câu "khi nào lớp bắt đầu học"): lớp đang tuyển sinh đã tới ngày khai
  * giảng, có lịch học và đủ sĩ số tối thiểu thì chuyển sang Đang học. Lớp chưa đủ người được GIỮ NGUYÊN ở
  * Đang tuyển sinh - màn Lớp học đánh dấu "quá ngày khai giảng, chưa đủ sĩ số" để admin quyết dời ngày hay huỷ;
  * hệ thống không tự huỷ một lớp đã có người đóng tiền.

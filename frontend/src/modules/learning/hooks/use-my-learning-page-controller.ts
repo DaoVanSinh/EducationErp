@@ -1,5 +1,6 @@
 import { useMyLearningClasses } from "@/modules/learning/api/use-learning-queries";
 import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
+import { todayLocalIsoDate } from "@/shared/lib/local-date";
 import { useMemo } from "react";
 
 /** Toàn bộ dữ liệu trang "Học tập của tôi" - ui/* chỉ render (Mandate #2). Lớp đang học xếp trước. */
@@ -15,6 +16,7 @@ export function useMyLearningPageController() {
 
   return {
     classes,
+    today: todayLocalIsoDate(),
     isPending: query.isPending,
     error: query.isError ? query.error : null,
     isEmpty: query.isSuccess && classes.length === 0,

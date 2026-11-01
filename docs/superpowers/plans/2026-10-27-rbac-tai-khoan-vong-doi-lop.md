@@ -117,6 +117,10 @@ Lớp học:
 - Ghi danh khi lớp Đang tuyển sinh hoặc Đang học, chưa đầy.
 - Khai giảng (thủ công hoặc tự động mỗi ngày): Đang tuyển sinh, đã tới ngày khai giảng, có lịch học,
   số ghi danh đang học ≥ sĩ số tối thiểu.
+  - Sửa 2026-11-01: job tự khai giảng chạy mỗi giờ (phút 05) và chạy bù một lượt khi app khởi động. Chạy một lần
+    lúc 00:30 thì lớp đủ điều kiện kẹt ở Đang tuyển sinh tới hết ngày hôm sau nếu app đang deploy đúng giờ đó.
+  - Lớp quá ngày khai giảng mà chưa đủ điều kiện vẫn giữ Đang tuyển sinh (không tự huỷ); admin và giáo viên thấy
+    cảnh báo, học viên thấy "chưa khai giảng, trung tâm sẽ báo ngày mới" thay vì "dự kiến khai giảng" ngày đã qua.
 - Kết thúc: Đang học → Đã kết thúc, ghi danh đang học → hoàn tất. Huỷ: Đang tuyển sinh → Đã huỷ,
   ghi danh đang học → rút.
 - Điểm danh chỉ khi lớp Đang học, ngày điểm danh trong [ngày khai giảng, hôm nay].

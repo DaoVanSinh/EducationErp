@@ -1,7 +1,12 @@
-import { CLASS_STATUS, ClassStatusBadge, formatScheduleSlot } from "@/entities/class";
+import { ClassStatusBadge, formatScheduleSlot } from "@/entities/class";
 import { formatter } from "@/shared/lib/format";
 import type { MyLearningClass } from "@/modules/learning/model/learning-schema";
-import { enrollmentTone } from "@/modules/learning/model/learning-rules";
+import {
+  CLASS_TIMELINE,
+  classTimeline,
+  enrollmentTone,
+  showsClassStatus,
+} from "@/modules/learning/model/learning-rules";
 import { GradeList } from "@/modules/learning/ui/grade-list";
 import { ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Badge } from "@/shared/ui/badge";
@@ -10,10 +15,16 @@ import { CalendarDays, UserRound } from "lucide-react";
 
 export interface LearningClassCardProps {
   readonly item: MyLearningClass;
+  /** "YYYY-MM-DD" - để biết lớp chưa khai giảng đã quá ngày dự kiến hay chưa. */
+  readonly today: string;
+}
+
+interface ItemProps {
+  readonly item: MyLearningClass;
 }
 
 /** Một lớp trong cổng học tập: khóa học, giáo viên, lịch học, tiến trình và điểm. */
-export function LearningClassCard({ item }: LearningClassCardProps) {
+export function LearningClassCard({ item, today }: LearningClassCardProps) {
   return (
     <GlassPanel className="flex flex-col gap-4">
       <header className="flex flex-wrap items-start justify-between gap-2">
@@ -21,13 +32,10 @@ export function LearningClassCard({ item }: LearningClassCardProps) {
           <h2 className="truncate text-base font-semibold text-mist-100">{item.courseName ?? "(đã xoá)"}</h2>
           <p className="text-xs text-mist-400">Lớp {item.classCode ?? "(đã xoá)"}</p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          <ClassStatusBadge status={item.classStatus} />
-          <Badge tone={enrollmentTone(item.status)}>{ENROLLMENT_STATUS_LABEL[item.status]}</Badge>
-        </div>
+        <StatusBadge item={item} />
       </header>
 
-      <ClassTimeline item={item} />
+      <ClassTimelineNote item={item} today={today} />
 
       <div className="flex flex-col gap-2 text-sm text-mist-100">
         <p className="flex items-center gap-2">
@@ -45,12 +53,28 @@ export function LearningClassCard({ item }: LearningClassCardProps) {
   );
 }
 
+function StatusBadge({ item }: ItemProps) {
+  if (showsClassStatus(item.status)) {
+    return <ClassStatusBadge status={item.classStatus} />;
+  }
+  return <Badge tone={enrollmentTone(item.status)}>{ENROLLMENT_STATUS_LABEL[item.status]}</Badge>;
+}
+
 /** Lớp chưa khai giảng: nói rõ ngày bắt đầu học, để học viên không tưởng đã lỡ buổi. */
-function ClassTimeline({ item }: LearningClassCardProps) {
-  if (item.classStatus === CLASS_STATUS.enrolling) {
+function ClassTimelineNote({ item, today }: LearningClassCardProps) {
+  const timeline = classTimeline(item, today);
+  if (timeline === CLASS_TIMELINE.upcoming) {
     return (
       <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
         Lớp đang tuyển sinh, dự kiến khai giảng ngày {formatter.date(item.classStartDate)}.
+      </p>
+    );
+  }
+  if (timeline === CLASS_TIMELINE.delayed) {
+    return (
+      <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+        Lớp chưa khai giảng: đã qua ngày dự kiến {formatter.date(item.classStartDate)} nhưng lớp chưa đủ điều kiện
+        khai giảng (sĩ số tối thiểu hoặc lịch học). Trung tâm sẽ thông báo ngày khai giảng mới.
       </p>
     );
   }
@@ -62,7 +86,7 @@ function ClassTimeline({ item }: LearningClassCardProps) {
   );
 }
 
-function ScheduleChips({ item }: LearningClassCardProps) {
+function ScheduleChips({ item }: ItemProps) {
   if (item.schedule.length === 0) {
     return <span className="text-xs text-mist-400">Chưa có lịch học</span>;
   }
@@ -77,7 +101,7 @@ function ScheduleChips({ item }: LearningClassCardProps) {
   );
 }
 
-function ProgressBar({ item }: LearningClassCardProps) {
+function ProgressBar({ item }: ItemProps) {
   if (item.progressPercent === null) {
     return <p className="text-xs text-mist-400">Khóa học chưa cấu hình tổng số buổi, chưa tính được tiến trình.</p>;
   }

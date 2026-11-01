@@ -1,4 +1,6 @@
 import { INVOICE_STATUS, type InvoiceDetail, type InvoiceStatus } from "@/entities/billing";
+import { CLASS_STATUS } from "@/entities/class";
+import type { MyLearningClass } from "@/modules/learning/model/learning-schema";
 import { ENROLLMENT_STATUS, type EnrollmentStatus } from "@/shared/api/schemas";
 
 /** Nhánh hiển thị tách khỏi JSX (Mandate #3) - giữ component thuần render. */
@@ -24,6 +26,35 @@ export function invoiceTone(status: InvoiceStatus): Tone {
 
 export function enrollmentTone(status: EnrollmentStatus): Tone {
   return ENROLLMENT_TONE[status];
+}
+
+/**
+ * Thẻ lớp chỉ hiện MỘT nhãn trạng thái. Ghi danh còn hiệu lực thì trạng thái lớp nói đủ (nhãn ghi danh "Đang
+ * học" cạnh "Đang tuyển sinh" là tự mâu thuẫn, cạnh "Đang học" là lặp); đã rút/hoàn tất thì trạng thái ghi
+ * danh mới là điều học viên cần biết.
+ */
+export function showsClassStatus(status: EnrollmentStatus): boolean {
+  return status === ENROLLMENT_STATUS.active;
+}
+
+export const CLASS_TIMELINE = {
+  upcoming: "upcoming",
+  delayed: "delayed",
+  started: "started",
+} as const;
+
+export type ClassTimeline = (typeof CLASS_TIMELINE)[keyof typeof CLASS_TIMELINE];
+
+/**
+ * Lớp chưa khai giảng mà đã QUA ngày khai giảng (tác vụ tự khai giảng chạy mỗi giờ, nên còn ở đây nghĩa là lớp
+ * chưa đủ sĩ số tối thiểu hoặc chưa có lịch) thì không được ghi "dự kiến khai giảng" một ngày đã qua.
+ * `today` là "YYYY-MM-DD", so chuỗi ISO là so ngày.
+ */
+export function classTimeline(item: Pick<MyLearningClass, "classStatus" | "classStartDate">, today: string): ClassTimeline {
+  if (item.classStatus !== CLASS_STATUS.enrolling) {
+    return CLASS_TIMELINE.started;
+  }
+  return item.classStartDate < today ? CLASS_TIMELINE.delayed : CLASS_TIMELINE.upcoming;
 }
 
 export interface TuitionTotals {

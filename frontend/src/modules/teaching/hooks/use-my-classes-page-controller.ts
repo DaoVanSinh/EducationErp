@@ -1,5 +1,6 @@
 import { useMyTeachingClasses } from "@/entities/class";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
+import { todayLocalIsoDate } from "@/shared/lib/local-date";
 import { useState } from "react";
 
 /** Toàn bộ state trang "Lớp của tôi" của giáo viên - ui/* chỉ render (Mandate #2). */
@@ -9,6 +10,7 @@ export function useMyClassesPageController() {
 
   return {
     data: query.data,
+    today: todayLocalIsoDate(),
     isPending: query.isPending,
     error: query.isError ? query.error : null,
     isEmpty: query.isSuccess && query.data.items.length === 0,
