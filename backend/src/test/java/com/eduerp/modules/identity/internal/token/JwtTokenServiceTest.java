@@ -6,7 +6,9 @@ import com.eduerp.modules.identity.TokenInvalidException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -48,5 +50,20 @@ class JwtTokenServiceTest {
 
         assertThat(access.type()).isEqualTo(IdentityConstants.TokenTypes.ACCESS);
         assertThat(refresh.type()).isEqualTo(IdentityConstants.TokenTypes.REFRESH);
+    }
+
+    /** eduerp-mcp chỉ nhận HS256 - khóa 64+ byte không được làm jjwt tự nâng lên HS512. */
+    @Test
+    void alwaysSignsWithHs256EvenForLongSecrets() {
+        var longSecretProperties = new IdentityProperties("x".repeat(64),
+                Duration.ofMinutes(15), Duration.ofDays(30), Duration.ofMinutes(30), Duration.ofDays(7),
+                "no-reply@eduerp.local", "http://localhost:5173/reset-password",
+                "admin@eduerp.local", "ChangeMe123!", true);
+        var token = new JwtTokenService(longSecretProperties).issueAccessToken(UUID.randomUUID()).token();
+
+        var header = new String(Base64.getUrlDecoder().decode(token.substring(0, token.indexOf('.'))),
+                StandardCharsets.UTF_8);
+
+        assertThat(header).contains("\"alg\":\"HS256\"");
     }
 }

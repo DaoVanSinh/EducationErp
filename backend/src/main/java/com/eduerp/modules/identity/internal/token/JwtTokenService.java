@@ -70,7 +70,10 @@ public class JwtTokenService {
                 .issuedAt(Date.from(issuedAt))
                 .claim(ISSUED_AT_MILLIS_CLAIM, issuedAt.toEpochMilli())
                 .expiration(Date.from(expiresAt))
-                .signWith(key)
+                // Ghim HS256: signWith(key) tự nâng lên HS384/HS512 khi khóa dài >= 48/64 byte, và
+                // eduerp-mcp (đọc cùng cookie access_token) chỉ chấp nhận HS256 -> đổi độ dài khóa
+                // không được làm chatbot báo "phiên đăng nhập không hợp lệ".
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
         return new IssuedToken(jti, token, expiresAt);
     }
