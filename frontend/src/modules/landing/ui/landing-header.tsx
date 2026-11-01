@@ -43,7 +43,9 @@ export function LandingHeader({
   onCloseMobileMenu,
   onConsultClick,
 }: LandingHeaderProps) {
-  const displayAddress = primaryBranch?.address ?? centerInfo.defaultAddress;
+  // Ưu tiên "Địa chỉ trụ sở chính" admin cấu hình ở trang Thông tin & Trang giới thiệu; chỉ khi ô đó
+  // trống mới mượn địa chỉ chi nhánh đầu tiên. (Trước đây làm ngược lại nên sửa địa chỉ không ăn.)
+  const displayAddress = centerInfo.defaultAddress.trim() || primaryBranch?.address || "";
 
   return (
     <>
