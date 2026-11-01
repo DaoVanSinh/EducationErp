@@ -77,7 +77,7 @@ export function McpUrlsCard({
           </span>
           <div>
             <h2 className="text-base font-bold text-slate-900">
-              Điểm cuối kết nối MCP &amp; OAuth 2.1
+              Điểm cuối kết nối MCP
             </h2>
             <p className="text-sm text-slate-500">
               Dùng chung cho Claude.ai, ChatGPT và các trình soạn thảo AI (Antigravity, Cursor, Claude Code, VS Code).
@@ -90,32 +90,15 @@ export function McpUrlsCard({
         </Badge>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <CopyableUrlRow
-          label="MCP Server URL"
-          hint="Streamable HTTP endpoint"
-          value={mcpUrl}
-          field={MCP_COPY_FIELD.MCP_URL}
-          copiedField={copiedField}
-          onCopyText={onCopyText}
-        />
-        <CopyableUrlRow
-          label="OAuth Authorization URL"
-          hint="Tự động khám phá qua /.well-known"
-          value={connector.oauthAuthorizeUrl}
-          field={MCP_COPY_FIELD.OAUTH_AUTHORIZE_URL}
-          copiedField={copiedField}
-          onCopyText={onCopyText}
-        />
-        <CopyableUrlRow
-          label="OAuth Token URL"
-          hint="Hỗ trợ PKCE S256 & Refresh Rotation"
-          value={connector.oauthTokenUrl}
-          field={MCP_COPY_FIELD.OAUTH_TOKEN_URL}
-          copiedField={copiedField}
-          onCopyText={onCopyText}
-        />
-      </div>
+      {/* Chỉ một URL: client MCP tự khám phá OAuth (authorize/token) qua /.well-known của URL này. */}
+      <CopyableUrlRow
+        label="MCP Server URL"
+        hint="OAuth tự cấu hình qua /.well-known"
+        value={mcpUrl}
+        field={MCP_COPY_FIELD.MCP_URL}
+        copiedField={copiedField}
+        onCopyText={onCopyText}
+      />
     </GlassPanel>
   );
 }

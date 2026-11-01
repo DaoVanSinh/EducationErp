@@ -30,8 +30,6 @@ export const MCP_IDE_TAB_OPTIONS: ReadonlyArray<{
 
 export const MCP_COPY_FIELD = {
   MCP_URL: "mcp_url",
-  OAUTH_AUTHORIZE_URL: "oauth_authorize_url",
-  OAUTH_TOKEN_URL: "oauth_token_url",
   CLIENT_ID: "client_id",
   CLIENT_SECRET: "client_secret",
   BEARER_TOKEN: "bearer_token",
