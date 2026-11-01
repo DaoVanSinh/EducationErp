@@ -42,4 +42,8 @@ public interface ClassRepository extends JpaRepository<Class, UUID>, JpaSpecific
 
     /** Ứng viên của tác vụ tự khai giảng: đang tuyển sinh và đã tới (hoặc qua) ngày khai giảng. */
     List<Class> findAllByStatusAndStartDateLessThanEqual(CoursesConstants.ClassStatus status, LocalDate date);
+
+    /** Lớp hiển thị ở trang chủ: các lớp còn mở (đang tuyển sinh hoặc đang học). */
+    @EntityGraph(attributePaths = "course")
+    List<Class> findAllByStatusInOrderByCodeAsc(Collection<CoursesConstants.ClassStatus> statuses);
 }

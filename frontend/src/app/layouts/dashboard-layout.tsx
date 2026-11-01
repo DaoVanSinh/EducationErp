@@ -4,10 +4,11 @@ import { SessionCard } from "@/app/ui/session-card";
 import type { Session } from "@/entities/account";
 import { cx } from "@/shared/lib/class-names";
 import { FADE_IN, MOTION_SPRING } from "@/shared/lib/motion";
+import { BrandLogoIcon } from "@/shared/ui/brand-logo";
 import { MorphToggleIcon } from "@/shared/ui/morph-toggle-icon";
 import { AnimatePresence, m } from "framer-motion";
 import { Menu, X } from "lucide";
-import { GraduationCap, PanelLeftClose, PanelLeftOpen, X as XIcon } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, X as XIcon } from "lucide-react";
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
@@ -28,11 +29,11 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
       {/* Mobile Sticky Header */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/80 bg-white/85 px-4 py-3 backdrop-blur-xl shadow-xs lg:hidden">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-sm shadow-orange-500/25">
-            <GraduationCap size={20} aria-hidden />
-          </div>
+          <BrandLogoIcon size="sm" />
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-slate-900 leading-none">EduERP</span>
+            <span className="text-sm font-extrabold tracking-tight text-slate-900 leading-none">
+              DS Academy
+            </span>
             <span className="text-[10px] font-semibold text-orange-600 tracking-wider uppercase mt-0.5">
               Quản trị đào tạo
             </span>
@@ -69,33 +70,25 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
                 onClick={() => setSidebarCollapsed(false)}
                 title="Mở rộng thanh bên"
                 aria-label="Mở rộng thanh bên"
-                className="group relative flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-md shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105 transition-all cursor-pointer"
+                className="group relative flex size-10 items-center justify-center rounded-2xl transition-all hover:scale-105 cursor-pointer"
               >
-                <GraduationCap
-                  size={20}
+                <BrandLogoIcon
+                  size="md"
                   className="transition-transform group-hover:scale-75 group-hover:opacity-0"
-                  aria-hidden
                 />
-                <PanelLeftOpen
-                  size={18}
-                  className="absolute inset-0 m-auto opacity-0 transition-opacity group-hover:opacity-100"
-                  aria-hidden
-                />
+                <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white opacity-0 shadow-md shadow-orange-500/25 transition-opacity group-hover:opacity-100">
+                  <PanelLeftOpen size={18} aria-hidden />
+                </span>
               </button>
             </div>
           ) : (
             <div className="flex items-center justify-between border-b border-slate-100/90 pb-3 w-full">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-sm shadow-orange-500/25">
-                  <GraduationCap size={20} aria-hidden />
-                </div>
+                <BrandLogoIcon size="sm" />
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-base font-extrabold tracking-tight text-slate-900 truncate">
-                      EduERP
-                    </span>
-                    <span className="rounded-md bg-orange-100/80 px-1.5 py-0.2 text-[9px] font-bold text-orange-700">
-                      v1.2
+                      DS Academy
                     </span>
                   </div>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-orange-600 truncate">
@@ -170,12 +163,10 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
               <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF8C42] to-[#FF5E62] text-white shadow-sm shadow-orange-500/25">
-                      <GraduationCap size={20} aria-hidden />
-                    </div>
+                    <BrandLogoIcon size="sm" />
                     <div className="flex flex-col">
                       <span className="text-base font-extrabold tracking-tight text-slate-900">
-                        EduERP
+                        DS Academy
                       </span>
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-orange-600">
                         Quản trị đào tạo

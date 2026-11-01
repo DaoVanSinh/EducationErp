@@ -1,6 +1,7 @@
 package com.eduerp.modules.courses.internal.repository;
 
 import com.eduerp.modules.courses.internal.model.Course;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -11,4 +12,6 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     Optional<Course> findByCode(String code);
 
     Page<Course> findAll(Pageable pageable);
+
+    List<Course> findAllByActiveTrueOrderByCodeAsc();
 }

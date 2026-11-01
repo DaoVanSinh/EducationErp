@@ -3,19 +3,23 @@ import { z } from "zod";
 /** Khớp @Size(min = 8) của ChangePasswordRequest ở backend. */
 const PASSWORD_MIN_LENGTH = 8;
 
+/**
+ * Hằng số chuẩn hoá tải ảnh đại diện lên MinIO — theo khuôn {@code LOGO} của mcp-hub.
+ */
+export const PROFILE_AVATAR = {
+  LABEL: "Ảnh đại diện",
+  PICK: "Chọn ảnh từ máy",
+  CHANGE: "Đổi ảnh khác",
+  REMOVE: "Dùng chữ cái đầu",
+  HINT: "Ảnh PNG, JPEG hoặc WebP tối đa 5 MB. Ảnh được chuẩn hoá và lưu trữ trên MinIO.",
+  INVALID: "Chọn ảnh PNG, JPEG hoặc WebP tối đa 5 MB.",
+  ACCEPT: "image/png,image/jpeg,image/webp",
+  TYPES: ["image/png", "image/jpeg", "image/webp"] as readonly string[],
+  MAX_BYTES: 5 * 1024 * 1024,
+} as const;
+
 export const profileFormSchema = z.object({
   fullName: z.string().min(1, "Nhập họ tên"),
-  /**
-   * Ô để trống nghĩa là "xoá ảnh đại diện": backend nhận avatarUrl = null, nên chuỗi rỗng phải được
-   * đổi thành null ở đây thay vì gửi "" rồi lưu một URL rỗng vào cơ sở dữ liệu.
-   */
-  avatarUrl: z
-    .string()
-    .trim()
-    .transform((value) => (value.length === 0 ? null : value))
-    .refine((value) => value === null || z.string().url().safeParse(value).success, {
-      message: "Địa chỉ ảnh phải là một URL hợp lệ",
-    }),
 });
 
 export const changePasswordFormSchema = z

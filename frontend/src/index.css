@@ -140,3 +140,128 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.98), transparent);
 }
+
+/* Hiệu ứng Morphicon Squircle & 3D Card Hover cho trang Landing Page */
+@keyframes morphBlob {
+  0% {
+    border-radius: 40% 60% 50% 50% / 50% 50% 60% 40%;
+  }
+  50% {
+    border-radius: 60% 40% 40% 60% / 40% 60% 50% 50%;
+  }
+  100% {
+    border-radius: 50% 50% 60% 40% / 60% 40% 50% 50%;
+  }
+}
+
+@keyframes pingRing {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  70%,
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.morphicon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.morphicon-wrap:hover {
+  transform: translateY(-2px);
+}
+
+.morphicon-shape {
+  position: absolute;
+  inset: 0;
+  border-radius: 40% 60% 50% 50% / 50% 50% 60% 40%;
+  animation: morphBlob 10s ease-in-out infinite alternate;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.morphicon-shape.variant-blue {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+.morphicon-shape.variant-blue + .morphicon-icon {
+  color: #ea580c;
+}
+
+.morphicon-shape.variant-rose {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+}
+.morphicon-shape.variant-rose + .morphicon-icon {
+  color: #f43f5e;
+}
+
+.morphicon-shape.variant-emerald {
+  background: #e6f8f1;
+  border: 1px solid #bbf0d8;
+}
+.morphicon-shape.variant-emerald + .morphicon-icon {
+  color: #059669;
+}
+
+.morphicon-shape.variant-amber {
+  background: #fff8e6;
+  border: 1px solid #ffe8b3;
+}
+.morphicon-shape.variant-amber + .morphicon-icon {
+  color: #d97706;
+}
+
+.morphicon-shape.variant-purple {
+  background: #f3e8ff;
+  border: 1px solid #e9d5ff;
+}
+.morphicon-shape.variant-purple + .morphicon-icon {
+  color: #7c3aed;
+}
+
+.morphicon-shape.variant-cyan {
+  background: #ecfeff;
+  border: 1px solid #cffafe;
+}
+.morphicon-shape.variant-cyan + .morphicon-icon {
+  color: #0891b2;
+}
+
+.morphicon-icon {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-3d-hover {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.card-3d-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 28px -4px rgba(255, 140, 66, 0.14),
+    0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  border-color: #fed7aa;
+}
+
+.hero-script {
+  font-family: "Playfair Display", "Be Vietnam Pro", Georgia, serif;
+  font-style: italic;
+}

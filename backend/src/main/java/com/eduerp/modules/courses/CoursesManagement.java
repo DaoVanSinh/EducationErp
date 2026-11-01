@@ -8,6 +8,7 @@ import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,20 @@ public class CoursesManagement {
      * tập. */
     public record ClassBasicSummary(UUID classId, String code, UUID courseId, String courseName) {
     }
+
+    /** Ảnh chụp một khóa học đang mở cho trang giới thiệu công khai (Landing Page). */
+    public record ActiveCourseSnapshot(UUID id, String code, String name, String description,
+            Integer standardSessionCount, BigDecimal tuitionFee, List<GradeColumnResponse> gradeColumns) {
+    }
+
+    /** Ảnh chụp một lớp đang hoạt động cho trang giới thiệu công khai (Landing Page). */
+    public record ActiveClassSnapshot(UUID id, String code, UUID courseId, String courseName,
+            UUID branchId, UUID teacherId, int maxSeats, List<WeeklyScheduleSlot> schedule) {
+    }
+
+    /** Trạng thái lớp được coi là "đang hoạt động" để hiện ở trang chủ - cùng quy tắc {@link CoursesConstants.ClassStatus#isOpen()}. */
+    private static final List<CoursesConstants.ClassStatus> OPEN_CLASS_STATUSES = Arrays.stream(
+            CoursesConstants.ClassStatus.values()).filter(CoursesConstants.ClassStatus::isOpen).toList();
 
     private final CourseRepository courses;
     private final ClassRepository classes;
@@ -118,6 +133,31 @@ public class CoursesManagement {
         return classes.findAllById(classIds).stream()
                 .collect(Collectors.toMap(Class::getId, cls -> new ClassBasicSummary(cls.getId(), cls.getCode(),
                         cls.getCourse().getId(), cls.getCourse().getName())));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActiveCourseSnapshot> listActiveCourses() {
+        return courses.findAllByActiveTrueOrderByCodeAsc().stream()
+                .map(course -> new ActiveCourseSnapshot(course.getId(), course.getCode(), course.getName(),
+                        course.getDescription(), course.getStandardSessionCount(), course.getTuitionFee(),
+                        course.getGradeColumns().stream()
+                                .map(col -> new GradeColumnResponse(col.getId(), col.getName(),
+                                        col.getWeightPercent(), col.getMaxScore(), col.getDisplayOrder()))
+                                .toList()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActiveClassSnapshot> listActiveClasses() {
+        return classes.findAllByStatusInOrderByCodeAsc(OPEN_CLASS_STATUSES).stream()
+                .filter(cls -> cls.getCourse().isActive())
+                .map(cls -> new ActiveClassSnapshot(cls.getId(), cls.getCode(), cls.getCourse().getId(),
+                        cls.getCourse().getName(), cls.getBranchId(), cls.getTeacherId(), cls.getMaxSeats(),
+                        cls.getSchedule().stream()
+                                .map(slot -> new WeeklyScheduleSlot(slot.getDayOfWeek(), slot.getStartTime(),
+                                        slot.getEndTime()))
+                                .toList()))
+                .toList();
     }
 
     private static ClassInfoResponse toClassInfo(Class cls) {

@@ -86,7 +86,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ["vite.config.ts", "eslint.config.js"],
-    languageOptions: { globals: { process: "readonly" } },
+    files: ["vite.config.ts", "eslint.config.js", "server.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        Buffer: "readonly",
+        console: "readonly",
+        setTimeout: "readonly",
+      },
+    },
   },
 );

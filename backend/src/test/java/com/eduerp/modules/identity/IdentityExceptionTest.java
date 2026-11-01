@@ -28,4 +28,19 @@ class IdentityExceptionTest {
         assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(ex.getErrorCode()).isEqualTo("IDENTITY_ACCOUNT_ALREADY_ACTIVATED");
     }
+
+    @Test
+    void invalidAvatarIsBadRequest() {
+        var ex = new InvalidAvatarException();
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ex.getErrorCode()).isEqualTo(IdentityConstants.ErrorCodes.INVALID_AVATAR);
+    }
+
+    @Test
+    void avatarNotFoundIsNotFound() {
+        var id = java.util.UUID.randomUUID();
+        var ex = new AvatarNotFoundException(id);
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(ex.getErrorCode()).isEqualTo(IdentityConstants.ErrorCodes.AVATAR_NOT_FOUND);
+    }
 }

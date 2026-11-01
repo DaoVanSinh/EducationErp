@@ -65,6 +65,11 @@ export const formatter = {
     return `${numberFormat.format(value)}${CURRENCY_SUFFIX}`;
   },
 
+  /** Như money() nhưng làm tròn về đồng - dùng cho giá hiển thị ở trang chủ. */
+  currency(value: number): string {
+    return `${numberFormat.format(Math.round(value))}${CURRENCY_SUFFIX}`;
+  },
+
   /** Chữ cái đầu của tên, dùng cho ảnh đại diện khi tài khoản chưa có avatar. */
   initials(fullName: string): string {
     const words = fullName.trim().split(/\s+/).filter((word) => word.length > 0);

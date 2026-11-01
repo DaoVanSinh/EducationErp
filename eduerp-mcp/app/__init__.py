@@ -1,0 +1,1 @@
+"""EduERP MCP Service."""

@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 public sealed class IdentityException extends AppException
         permits AccountNotFoundException, InvalidCredentialsException, ReferenceNotFoundException, TokenInvalidException,
         EmailAlreadyExistsException, AccountInviteExpiredException, AccountAlreadyActivatedException,
+        InvalidAvatarException, AvatarNotFoundException,
         IdentityException.CannotModifyOwnAccount, IdentityException.AccountNeverActivated {
 
     protected IdentityException(String errorCode, HttpStatus status, String message) {

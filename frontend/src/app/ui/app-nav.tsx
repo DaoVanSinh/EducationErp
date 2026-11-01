@@ -7,10 +7,12 @@ import { m } from "framer-motion";
 import {
   BadgePercent,
   BookOpen,
+  Bot,
   Building2,
   CalendarDays,
   ClipboardList,
   FileSignature,
+  Globe,
   GraduationCap,
   LayoutDashboard,
   Package,
@@ -28,6 +30,7 @@ const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.dashboard]: <LayoutDashboard size={18} aria-hidden />,
   [APP_ROUTE.accounts]: <Users size={18} aria-hidden />,
   [APP_ROUTE.branches]: <Building2 size={18} aria-hidden />,
+  [APP_ROUTE.centerConfig]: <Globe size={18} aria-hidden />,
   [APP_ROUTE.courses]: <BookOpen size={18} aria-hidden />,
   [APP_ROUTE.classes]: <CalendarDays size={18} aria-hidden />,
   [APP_ROUTE.teachers]: <GraduationCap size={18} aria-hidden />,
@@ -40,6 +43,7 @@ const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.comboDiscountTiers]: <BadgePercent size={18} aria-hidden />,
   [APP_ROUTE.roles]: <ShieldCheck size={18} aria-hidden />,
   [APP_ROUTE.profile]: <UserCircle size={18} aria-hidden />,
+  [APP_ROUTE.mcpConnector]: <Bot size={18} aria-hidden />,
 };
 
 export interface AppNavProps {

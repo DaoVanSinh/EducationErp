@@ -3,9 +3,12 @@ package com.eduerp.modules.identity.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+import com.eduerp.integrations.storage.MinioTestImage;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.ChangePasswordRequest;
 import com.eduerp.modules.identity.dto.ForgotPasswordRequest;
@@ -20,6 +23,9 @@ import com.redis.testcontainers.RedisContainer;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.Cookie;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +36,12 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -50,6 +60,18 @@ class AccountSelfServiceControllerIT {
     @Container
     @ServiceConnection
     static RedisContainer redis = new RedisContainer(DockerImageName.parse("redis:7"));
+
+    @Container
+    static MinIOContainer minio = new MinIOContainer(MinioTestImage.NAME);
+
+    @DynamicPropertySource
+    static void storageProperties(DynamicPropertyRegistry registry) {
+        registry.add("storage.endpoint", minio::getS3URL);
+        registry.add("storage.region", () -> "us-east-1");
+        registry.add("storage.bucket", () -> "eduerp-avatars-test");
+        registry.add("storage.access-key", minio::getUserName);
+        registry.add("storage.secret-key", minio::getPassword);
+    }
 
     @MockBean
     JavaMailSender mailSender;
@@ -163,5 +185,46 @@ class AccountSelfServiceControllerIT {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         assertThat(accounts.findByEmail("profile@eduerp.local").orElseThrow().getFullName()).isEqualTo("New Name");
+    }
+
+    @Test
+    void uploadsDownloadsAndRemovesAvatarOnMinio() throws Exception {
+        var account = new Account("avatar-minio@eduerp.local", passwordEncoder.encode("Password123!"), "Avatar User",
+                null);
+        account.recordFirstLogin();
+        accounts.save(account);
+        var access = login("avatar-minio@eduerp.local", "Password123!");
+
+        var img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
+        var out = new ByteArrayOutputStream();
+        ImageIO.write(img, "png", out);
+        var file = new MockMultipartFile(
+                "image",
+                "avatar.png",
+                IdentityConstants.Avatar.CONTENT_TYPE_PNG,
+                out.toByteArray());
+
+        var uploadResult = mockMvc.perform(multipart("/api/account/avatar")
+                        .file(file)
+                        .cookie(access)
+                        .with(csrf()))
+                .andReturn();
+
+        assertThat(uploadResult.getResponse().getStatus()).isEqualTo(200);
+        var updatedAccount = accounts.findByEmail("avatar-minio@eduerp.local").orElseThrow();
+        assertThat(updatedAccount.getAvatarUrl()).startsWith(IdentityConstants.Avatar.KEY_QUERY_PREFIX);
+
+        var downloadResult = mockMvc.perform(get("/api/account/avatar").cookie(access)).andReturn();
+        assertThat(downloadResult.getResponse().getStatus()).isEqualTo(200);
+        assertThat(downloadResult.getResponse().getContentType()).isEqualTo(IdentityConstants.Avatar.CONTENT_TYPE_PNG);
+        assertThat(downloadResult.getResponse().getContentAsByteArray()).isNotEmpty();
+
+        var removeResult = mockMvc.perform(multipart("/api/account/avatar")
+                        .param("remove", "true")
+                        .cookie(access)
+                        .with(csrf()))
+                .andReturn();
+        assertThat(removeResult.getResponse().getStatus()).isEqualTo(200);
+        assertThat(accounts.findByEmail("avatar-minio@eduerp.local").orElseThrow().getAvatarUrl()).isNull();
     }
 }

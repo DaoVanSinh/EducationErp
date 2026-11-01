@@ -1,0 +1,328 @@
+"""Curated EduERP endpoint registry with exact RBAC (resource, action, min_scope) requirements."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from app.modules.eduerp.constants import EduErpModuleConstants as C
+
+
+@dataclass(frozen=True)
+class EndpointSpec:
+    endpoint_id: str
+    domain: str
+    method: str  # "GET" | "POST" | "PATCH"
+    path_template: str
+    resource: str
+    action: str
+    min_scope: str
+    summary: str
+    path_params: tuple[str, ...] = ()
+    query_params: tuple[str, ...] = ()
+    body_fields: tuple[str, ...] = ()
+
+
+EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
+    # Dashboard & Reports
+    EndpointSpec(
+        endpoint_id="dashboard.stats",
+        domain="dashboard",
+        method="GET",
+        path_template="/api/dashboard/stats",
+        resource=C.Resources.REPORT,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Xem tổng quan chỉ số vận hành EduERP (học viên, lớp học, doanh thu, công nợ).",
+    ),
+    # Organization — Branches
+    EndpointSpec(
+        endpoint_id="branches.list",
+        domain="organization",
+        method="GET",
+        path_template="/api/organization/branches",
+        resource=C.Resources.BRANCH,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách cơ sở đào tạo (phân trang, tìm kiếm theo từ khóa/trạng thái).",
+        query_params=("page", "size", "search", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="branches.create",
+        domain="organization",
+        method="POST",
+        path_template="/api/organization/branches",
+        resource=C.Resources.BRANCH,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Tạo cơ sở đào tạo mới.",
+        body_fields=("code", "name", "address", "phone"),
+    ),
+    # Academic — Courses & Classes
+    EndpointSpec(
+        endpoint_id="courses.list",
+        domain="academic",
+        method="GET",
+        path_template="/api/courses/courses",
+        resource=C.Resources.COURSE,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách khóa học (mã khóa học, học phí chuẩn, số buổi, trạng thái).",
+        query_params=("page", "size", "search", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="courses.create",
+        domain="academic",
+        method="POST",
+        path_template="/api/courses/courses",
+        resource=C.Resources.COURSE,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Tạo khóa học mới.",
+        body_fields=("code", "name", "description", "totalSessions", "tuitionFee"),
+    ),
+    EndpointSpec(
+        endpoint_id="classes.list",
+        domain="academic",
+        method="GET",
+        path_template="/api/courses/classes",
+        resource=C.Resources.CLASS,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.PERSONAL,
+        summary="Danh sách lớp học theo cơ sở/khóa học/trạng thái.",
+        query_params=("page", "size", "search", "branchId", "courseId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="classes.create",
+        domain="academic",
+        method="POST",
+        path_template="/api/courses/classes",
+        resource=C.Resources.CLASS,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.BRANCH,
+        summary="Mở lớp học mới tại cơ sở.",
+        body_fields=(
+            "code",
+            "name",
+            "courseId",
+            "branchId",
+            "teacherId",
+            "maxCapacity",
+            "startDate",
+            "endDate",
+            "scheduleText",
+        ),
+    ),
+    # Teachers
+    EndpointSpec(
+        endpoint_id="teachers.list",
+        domain="teacher",
+        method="GET",
+        path_template="/api/teachers/profiles",
+        resource=C.Resources.TEACHER,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.PERSONAL,
+        summary="Danh sách hồ sơ giáo viên và thông tin chuyên môn.",
+        query_params=("page", "size", "search", "branchId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="teachers.create",
+        domain="teacher",
+        method="POST",
+        path_template="/api/teachers/profiles",
+        resource=C.Resources.TEACHER,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.BRANCH,
+        summary="Thêm hồ sơ giáo viên mới.",
+        body_fields=("employeeCode", "fullName", "email", "phone", "specialization", "homeBranchId"),
+    ),
+    # Admissions — Students & Enrollments
+    EndpointSpec(
+        endpoint_id="students.list",
+        domain="admission",
+        method="GET",
+        path_template="/api/students/profiles",
+        resource=C.Resources.STUDENT,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách học viên theo cơ sở, tìm kiếm theo mã/họ tên/SĐT.",
+        query_params=("page", "size", "search", "branchId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="students.create",
+        domain="admission",
+        method="POST",
+        path_template="/api/students/profiles",
+        resource=C.Resources.STUDENT,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.BRANCH,
+        summary="Tạo hồ sơ học viên mới.",
+        body_fields=(
+            "studentCode",
+            "fullName",
+            "email",
+            "phone",
+            "guardianName",
+            "guardianPhone",
+            "branchId",
+        ),
+    ),
+    EndpointSpec(
+        endpoint_id="enrollments.list",
+        domain="admission",
+        method="GET",
+        path_template="/api/enrollment/enrollments",
+        resource=C.Resources.ENROLLMENT,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách bản ghi ghi danh học viên vào lớp học.",
+        query_params=("page", "size", "studentId", "classId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="enrollments.create",
+        domain="admission",
+        method="POST",
+        path_template="/api/enrollment/enrollments",
+        resource=C.Resources.ENROLLMENT,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.BRANCH,
+        summary="Ghi danh học viên vào lớp học.",
+        body_fields=("studentId", "classId", "notes"),
+    ),
+    # Finance — Invoices & Combos
+    EndpointSpec(
+        endpoint_id="invoices.list",
+        domain="finance",
+        method="GET",
+        path_template="/api/billing/invoices",
+        resource=C.Resources.INVOICE,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách hóa đơn học phí và trạng thái thanh toán.",
+        query_params=("page", "size", "search", "branchId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="invoices.create",
+        domain="finance",
+        method="POST",
+        path_template="/api/billing/invoices",
+        resource=C.Resources.INVOICE,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.BRANCH,
+        summary="Phát hành hóa đơn học phí mới cho học viên.",
+        body_fields=("enrollmentId", "studentId", "branchId", "totalAmount", "discountAmount", "dueDate", "note"),
+    ),
+    EndpointSpec(
+        endpoint_id="invoices.manual_payment",
+        domain="finance",
+        method="POST",
+        path_template="/api/billing/invoices/{invoiceId}/manual-payment",
+        resource=C.Resources.INVOICE,
+        action=C.Actions.UPDATE,
+        min_scope=C.Scopes.BRANCH,
+        summary="Ghi nhận giao dịch thanh toán thủ công cho hóa đơn.",
+        path_params=("invoiceId",),
+        body_fields=("amount", "paymentMethod", "referenceCode", "note"),
+    ),
+    EndpointSpec(
+        endpoint_id="combos.list",
+        domain="finance",
+        method="GET",
+        path_template="/api/billing/combos",
+        resource=C.Resources.COMBO,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách gói combo khóa học và ưu đãi học phí.",
+        query_params=("page", "size", "search", "status"),
+    ),
+    # Learning — Gradebook & Progress
+    EndpointSpec(
+        endpoint_id="grades.class_gradebook",
+        domain="learning",
+        method="GET",
+        path_template="/api/academic/classes/{classId}/gradebook",
+        resource=C.Resources.GRADE,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.PERSONAL,
+        summary="Tra cứu sổ điểm của một lớp học.",
+        path_params=("classId",),
+    ),
+    EndpointSpec(
+        endpoint_id="grades.upsert",
+        domain="learning",
+        method="POST",
+        path_template="/api/academic/grades",
+        resource=C.Resources.GRADE,
+        action=C.Actions.CREATE,
+        min_scope=C.Scopes.PERSONAL,
+        summary="Nhập hoặc cập nhật điểm một cột điểm cho học viên trong lớp.",
+        body_fields=("classId", "enrollmentId", "courseGradeColumnId", "score", "comment"),
+    ),
+    # HR & Payroll — Contracts, Payroll Runs & Personal Payslips
+    EndpointSpec(
+        endpoint_id="contracts.list",
+        domain="payroll",
+        method="GET",
+        path_template="/api/payroll/contracts",
+        resource=C.Resources.CONTRACT,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.PERSONAL,
+        summary="Danh sách hợp đồng lao động / giảng dạy.",
+        query_params=("page", "size", "teacherId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="payroll_runs.list",
+        domain="payroll",
+        method="GET",
+        path_template="/api/payroll/runs",
+        resource=C.Resources.PAYROLL,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách kỳ tính lương theo tháng/năm và cơ sở.",
+        query_params=("page", "size", "branchId", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="payroll.my_payslips",
+        domain="payroll",
+        method="GET",
+        path_template="/api/payroll/me/payslips",
+        resource=C.Resources.PAYROLL,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.PERSONAL,
+        summary="Xem phiếu lương cá nhân của chính tài khoản đang đăng nhập.",
+        query_params=("page", "size"),
+    ),
+    # Administration — Accounts & RBAC
+    EndpointSpec(
+        endpoint_id="accounts.list",
+        domain="identity",
+        method="GET",
+        path_template="/api/rbac/accounts",
+        resource=C.Resources.ACCOUNT,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Danh sách tài khoản người dùng hệ thống EduERP.",
+        query_params=("page", "size", "search", "status"),
+    ),
+    EndpointSpec(
+        endpoint_id="roles.list",
+        domain="access",
+        method="GET",
+        path_template="/api/rbac/roles",
+        resource=C.Resources.ROLE,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Danh sách vai trò (Role) trong hệ thống phân quyền RBAC.",
+    ),
+    EndpointSpec(
+        endpoint_id="permissions.catalog",
+        domain="access",
+        method="GET",
+        path_template="/api/rbac/catalog",
+        resource=C.Resources.PERMISSION,
+        action=C.Actions.READ,
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Danh mục toàn bộ quyền hạn (Resource + Action) của EduERP.",
+    ),
+)
+
+ENDPOINTS_BY_ID: dict[str, EndpointSpec] = {spec.endpoint_id: spec for spec in EDUERP_ENDPOINTS}

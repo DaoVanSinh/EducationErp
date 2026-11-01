@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrganizationManagement {
 
+    public record BranchPublicSummary(UUID id, String code, String name, String address) {
+    }
+
     private final BranchRepository branches;
 
     OrganizationManagement(BranchRepository branches) {
@@ -51,6 +54,13 @@ public class OrganizationManagement {
         return branches.findAll(Sort.by("code")).stream()
                 .map(b -> new NamedReference(b.getId(), b.getName()))
                 .sorted(Comparator.comparing(NamedReference::name))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BranchPublicSummary> listActiveBranches() {
+        return branches.findAllByActiveTrueOrderByCodeAsc().stream()
+                .map(b -> new BranchPublicSummary(b.getId(), b.getCode(), b.getName(), b.getAddress()))
                 .toList();
     }
 }

@@ -8,14 +8,21 @@ import com.eduerp.modules.identity.internal.token.SessionRevocationService;
 import com.eduerp.modules.identity.internal.token.TokenBlacklistService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
+import java.util.Arrays;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * {@code @EnableWebSecurity}/{@code @EnableMethodSecurity} và việc bật cơ chế đã chuyển sang
@@ -31,10 +38,30 @@ class IdentitySecurityConfig {
     }
 
     @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${cors.allowed-origins:*}") String allowedOrigins) {
+        var config = new CorsConfiguration();
+        var patterns = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        config.setAllowedOriginPatterns(patterns.isEmpty() ? List.of("*") : patterns);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("X-CSRF-Token", "Content-Disposition"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    @Bean
     SecurityFilterChain filterChain(HttpSecurity http, JwtTokenService jwtTokenService, TokenBlacklistService blacklist,
             SessionRevocationService revocations, IdentityRules rules, AccessManagement access,
             AccountRepository accounts, ObjectMapper objectMapper) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 // Token nằm trong cookie nên CSRF là rủi ro thật: chỉ miễn đúng các endpoint chưa có
                 // phiên (chưa thể có CSRF token trong trang). Mọi hành động trên phiên đã đăng nhập -
                 // logout, đổi mật khẩu, sửa profile - vẫn phải mang CSRF token.

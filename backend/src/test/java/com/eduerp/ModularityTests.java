@@ -35,7 +35,7 @@ class ModularityTests {
                 "modules.organization", "modules.audit", "modules.dashboard", "modules.courses",
                 "modules.teachers", "modules.students", "modules.payroll", "modules.enrollment",
                 "modules.billing", "modules.academic", "modules.attendance", "modules.assessment",
-                "integrations.cache", "integrations.mail",
+                "modules.landing", "integrations.cache", "integrations.mail",
                 "integrations.notification", "integrations.payment", "integrations.storage");
     }
 }
