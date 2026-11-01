@@ -1,19 +1,24 @@
-import { DAY_OF_WEEK_LABEL } from "@/entities/class";
+import type { ConsultPrefill } from "@/modules/landing/hooks/use-consultation-form";
+import { sessionCountLabel } from "@/modules/landing/model/landing-class-rules";
 import type { LandingClass, LandingCourse } from "@/modules/landing/model/landing-schema";
+import { LandingCourseClassRow } from "@/modules/landing/ui/landing-course-class-row";
 import { formatter } from "@/shared/lib/format";
 import { AnimatePresence, m } from "framer-motion";
-import { Award, BookOpen, Building2, Calendar, Clock, Sparkles, UserCheck, Users, X } from "lucide-react";
+import { Award, BookOpen, Calendar, Clock, Sparkles, Users, X } from "lucide-react";
 
 interface LandingCourseModalProps {
   readonly course: LandingCourse | null;
   readonly courseClasses: readonly LandingClass[];
+  /** % giảm khi rủ thêm 1 người học chung (nhóm 2 người); 0 = chưa cấu hình ưu đãi. */
+  readonly groupDiscountPercent: number;
   readonly onClose: () => void;
-  readonly onConsultCourse: (options: { courseId: string; branchId?: string }) => void;
+  readonly onConsultCourse: (options: ConsultPrefill) => void;
 }
 
 export function LandingCourseModal({
   course,
   courseClasses,
+  groupDiscountPercent,
   onClose,
   onConsultCourse,
 }: LandingCourseModalProps) {
@@ -44,7 +49,7 @@ export function LandingCourseModal({
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#fff0f3] px-3 py-1 text-[11px] font-bold text-[#f04452]">
                     <Calendar className="h-3.5 w-3.5" />
-                    {course.standardSessionCount ?? 24} buổi tiêu chuẩn
+                    {sessionCountLabel(course.standardSessionCount)}
                   </span>
                 </div>
                 <h3 id="landing-course-modal-title" className="text-[22px] font-black text-[#1e293b] sm:text-[26px]">
@@ -72,6 +77,13 @@ export function LandingCourseModal({
                     {course.tuitionFee !== null ? formatter.currency(course.tuitionFee) : "Liên hệ tư vấn"}
                   </span>
                 </div>
+                {groupDiscountPercent > 0 && course.tuitionFee !== null && (
+                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[12.5px] font-semibold text-[#9a3412] ring-1 ring-[#fed7aa]">
+                    <Users className="h-3.5 w-3.5 text-[#ea580c]" aria-hidden />
+                    Rủ bạn học chung từ 2 người: mỗi người giảm {groupDiscountPercent}%, chỉ còn{" "}
+                    {formatter.currency(Math.round(course.tuitionFee * (1 - groupDiscountPercent / 100)))}
+                  </p>
+                )}
               </div>
 
               {course.gradeColumns.length > 0 && (
@@ -106,52 +118,13 @@ export function LandingCourseModal({
                 ) : (
                   <div className="space-y-3">
                     {courseClasses.map((cls) => (
-                      <div key={cls.id} className="flex flex-col justify-between gap-3 rounded-2xl border border-[#ffedd5] bg-[#fffaf5] p-4 sm:flex-row sm:items-center">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-lg border border-[#fed7aa] bg-[#fff7ed] px-2.5 py-0.5 text-[11.5px] font-bold text-[#ea580c]">
-                              Lớp {cls.code}
-                            </span>
-                            {cls.branchName && (
-                              <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#ea580c]">
-                                <Building2 className="h-3.5 w-3.5" />
-                                {cls.branchName}
-                              </span>
-                            )}
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-3 text-[12.5px] text-[#475569]">
-                            {cls.teacherName && (
-                              <span className="inline-flex items-center gap-1">
-                                <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
-                                GV: {cls.teacherName}
-                              </span>
-                            )}
-                            <span className="inline-flex items-center gap-1">
-                              <Users className="h-3.5 w-3.5 text-[#64748b]" />
-                              Sĩ số tối đa: {cls.maxSeats} HV
-                            </span>
-                          </div>
-                          {cls.schedule.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {cls.schedule.map((slot) => (
-                                <span
-                                  key={`${slot.dayOfWeek}-${slot.startTime}`}
-                                  className="rounded-lg border border-[#fed7aa] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#ea580c]"
-                                >
-                                  {DAY_OF_WEEK_LABEL[slot.dayOfWeek]}: {slot.startTime} – {slot.endTime}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => onConsultCourse({ courseId: course.id, branchId: cls.branchId })}
-                          className="shrink-0 cursor-pointer rounded-full bg-white px-4 py-2 text-[12.5px] font-bold text-[#ea580c] ring-1 ring-[#fed7aa] transition-all hover:bg-gradient-to-r hover:from-[#ff8c42] hover:to-[#ff5e62] hover:text-white"
-                        >
-                          Giữ chỗ lớp này
-                        </button>
-                      </div>
+                      <LandingCourseClassRow
+                        key={cls.id}
+                        cls={cls}
+                        onReserve={() =>
+                          onConsultCourse({ courseId: course.id, branchId: cls.branchId, notes: `Giữ chỗ lớp ${cls.code}.` })
+                        }
+                      />
                     ))}
                   </div>
                 )}

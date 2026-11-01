@@ -16,6 +16,7 @@ import com.eduerp.modules.landing.dto.LandingContentConfigResponse.CenterInfoIte
 import com.eduerp.modules.organization.OrganizationManagement;
 import com.eduerp.modules.teachers.TeachersManagement;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,8 @@ class GetLandingOverviewTest {
                         teacherAccountId,
                         25,
                         List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON,
-                                LocalTime.of(18, 0), LocalTime.of(20, 0))))));
+                                LocalTime.of(18, 0), LocalTime.of(20, 0))),
+                        CoursesConstants.ClassStatus.ENROLLING, LocalDate.of(2026, 11, 20), 5L)));
 
         when(organization.listActiveBranches()).thenReturn(List.of(
                 new OrganizationManagement.BranchPublicSummary(branchId, "HCM-Q1", "Cơ sở Quận 1",
@@ -129,6 +131,9 @@ class GetLandingOverviewTest {
         assertThat(result.courses()).hasSize(1);
         assertThat(result.courses().getFirst().openClassCount()).isEqualTo(1);
         assertThat(result.classes().getFirst().branchName()).isEqualTo("Cơ sở Quận 1");
+        // 25 chỗ, 5 người đang học: khách thấy còn 20 chỗ và lớp còn đang tuyển.
+        assertThat(result.classes().getFirst().seatsLeft()).isEqualTo(20);
+        assertThat(result.classes().getFirst().status()).isEqualTo(CoursesConstants.ClassStatus.ENROLLING);
         assertThat(result.classes().getFirst().teacherName()).isEqualTo("ThS. Nguyễn Minh Anh");
         assertThat(result.teachers().getFirst().fullName()).isEqualTo("ThS. Nguyễn Minh Anh");
         assertThat(result.branches().getFirst().code()).isEqualTo("HCM-Q1");

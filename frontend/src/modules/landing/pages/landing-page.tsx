@@ -28,6 +28,7 @@ export function LandingPage() {
     openFaqIndex,
     catalogFilter,
     calculator,
+    groupDiscountPercent,
     consultationForm,
     onSelectTab,
     onScrollToSection,
@@ -89,13 +90,9 @@ export function LandingPage() {
               onOpenCourseDetail={catalogFilter.onOpenCourseDetail}
             />
             <LandingCalculatorSection
-              courses={overview.courses}
+              calculator={calculator}
               comboTiers={overview.comboDiscountTiers}
-              selectedCourseIds={calculator.selectedCourseIds}
-              calculation={calculator.calculation}
-              onToggleCourse={calculator.onToggleCourse}
-              onSelectPresetCount={calculator.onSelectPresetCount}
-              onConsultCombo={() => onConsultClick()}
+              onConsult={() => onConsultClick(calculator.consultRequest)}
             />
           </>
         )}
@@ -147,6 +144,7 @@ export function LandingPage() {
       <LandingCourseModal
         course={catalogFilter.selectedCourse}
         courseClasses={catalogFilter.selectedCourseClasses}
+        groupDiscountPercent={groupDiscountPercent}
         onClose={catalogFilter.onCloseCourseDetail}
         onConsultCourse={(opts) => onConsultClick(opts)}
       />

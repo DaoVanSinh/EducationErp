@@ -82,10 +82,12 @@ export function LandingCourseCard({ course, index, onOpenDetail }: LandingCourse
             <Calendar className="h-3.5 w-3.5 text-[#ea580c]" />
             {sessionLabel}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#fff1f2] px-3 py-1.5 text-[12px] font-semibold text-[#475569]">
-            <Layers className="h-3.5 w-3.5 text-[#ff5e62]" />
-            {course.gradeColumns.length} đợt đánh giá định kỳ
-          </span>
+          {course.gradeColumns.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#fff1f2] px-3 py-1.5 text-[12px] font-semibold text-[#475569]">
+              <Layers className="h-3.5 w-3.5 text-[#ff5e62]" />
+              {course.gradeColumns.length} đợt đánh giá định kỳ
+            </span>
+          )}
         </div>
 
         {course.gradeColumns.length > 0 && (

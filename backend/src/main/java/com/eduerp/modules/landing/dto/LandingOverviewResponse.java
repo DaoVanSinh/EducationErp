@@ -1,8 +1,10 @@
 package com.eduerp.modules.landing.dto;
 
+import com.eduerp.modules.courses.CoursesConstants;
 import com.eduerp.modules.courses.dto.GradeColumnResponse;
 import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,7 +60,10 @@ public record LandingOverviewResponse(
             String branchName,
             String teacherName,
             int maxSeats,
-            List<WeeklyScheduleSlot> schedule) {
+            List<WeeklyScheduleSlot> schedule,
+            CoursesConstants.ClassStatus status,
+            LocalDate startDate,
+            int seatsLeft) {
         public LandingClassItem {
             schedule = List.copyOf(schedule);
         }

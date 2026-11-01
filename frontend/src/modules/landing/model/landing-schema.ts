@@ -1,4 +1,4 @@
-import { weeklyScheduleSlotSchema } from "@/entities/class";
+import { classStatusSchema, weeklyScheduleSlotSchema } from "@/entities/class";
 import { gradeColumnSchema } from "@/shared/api/schemas";
 import { z } from "zod";
 
@@ -31,6 +31,10 @@ export const landingClassSchema = z.object({
   teacherName: z.string().nullable(),
   maxSeats: z.number().int(),
   schedule: z.array(weeklyScheduleSlotSchema),
+  /** Lớp còn tuyển hay đã học - khách cần biết để không đăng ký nhầm một lớp đã khai giảng lâu. */
+  status: classStatusSchema,
+  startDate: z.string(),
+  seatsLeft: z.number().int(),
 });
 
 export const landingTeacherSchema = z.object({

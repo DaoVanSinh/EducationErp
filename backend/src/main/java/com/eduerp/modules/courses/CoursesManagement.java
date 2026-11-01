@@ -66,9 +66,13 @@ public class CoursesManagement {
             Integer standardSessionCount, BigDecimal tuitionFee, List<GradeColumnResponse> gradeColumns) {
     }
 
-    /** Ảnh chụp một lớp đang hoạt động cho trang giới thiệu công khai (Landing Page). */
+    /**
+     * Ảnh chụp một lớp đang hoạt động cho trang giới thiệu công khai (Landing Page). {@code status} và
+     * {@code startDate} để khách biết lớp còn tuyển hay đã học; {@code activeEnrollments} để tính chỗ trống.
+     */
     public record ActiveClassSnapshot(UUID id, String code, UUID courseId, String courseName,
-            UUID branchId, UUID teacherId, int maxSeats, List<WeeklyScheduleSlot> schedule) {
+            UUID branchId, UUID teacherId, int maxSeats, List<WeeklyScheduleSlot> schedule,
+            CoursesConstants.ClassStatus status, LocalDate startDate, long activeEnrollments) {
     }
 
     /** Trạng thái lớp được coi là "đang hoạt động" để hiện ở trang chủ - cùng quy tắc {@link CoursesConstants.ClassStatus#isOpen()}. */
@@ -77,10 +81,12 @@ public class CoursesManagement {
 
     private final CourseRepository courses;
     private final ClassRepository classes;
+    private final ClassRosterPort roster;
 
-    CoursesManagement(CourseRepository courses, ClassRepository classes) {
+    CoursesManagement(CourseRepository courses, ClassRepository classes, ClassRosterPort roster) {
         this.courses = courses;
         this.classes = classes;
+        this.roster = roster;
     }
 
     @Transactional(readOnly = true)
@@ -149,14 +155,19 @@ public class CoursesManagement {
 
     @Transactional(readOnly = true)
     public List<ActiveClassSnapshot> listActiveClasses() {
-        return classes.findAllByStatusInOrderByCodeAsc(OPEN_CLASS_STATUSES).stream()
+        var open = classes.findAllByStatusInOrderByCodeAsc(OPEN_CLASS_STATUSES).stream()
                 .filter(cls -> cls.getCourse().isActive())
+                .toList();
+        // Một câu đếm cho cả danh sách, không N câu - trang chủ là trang công khai, tải nhiều nhất.
+        var enrolled = roster.countActiveByClass(open.stream().map(Class::getId).toList());
+        return open.stream()
                 .map(cls -> new ActiveClassSnapshot(cls.getId(), cls.getCode(), cls.getCourse().getId(),
                         cls.getCourse().getName(), cls.getBranchId(), cls.getTeacherId(), cls.getMaxSeats(),
                         cls.getSchedule().stream()
                                 .map(slot -> new WeeklyScheduleSlot(slot.getDayOfWeek(), slot.getStartTime(),
                                         slot.getEndTime()))
-                                .toList()))
+                                .toList(),
+                        cls.getStatus(), cls.getStartDate(), enrolled.getOrDefault(cls.getId(), 0L)))
                 .toList();
     }
 

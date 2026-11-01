@@ -1,7 +1,8 @@
 import { useLandingOverview } from "@/modules/landing/api/use-landing-overview";
-import { useConsultationForm } from "@/modules/landing/hooks/use-consultation-form";
+import { useConsultationForm, type ConsultPrefill } from "@/modules/landing/hooks/use-consultation-form";
 import { useLandingCatalogFilter } from "@/modules/landing/hooks/use-landing-catalog-filter";
 import { useTuitionCalculator } from "@/modules/landing/hooks/use-tuition-calculator";
+import { appliedDiscountPercent, GROUP_SIZE_LIMITS } from "@/modules/landing/model/tuition-calculator-rules";
 import {
   LANDING_SECTION_ID,
   LANDING_TAB,
@@ -108,7 +109,7 @@ export function useLandingController() {
     el?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleConsultClick = (options?: { courseId?: string; branchId?: string }) => {
+  const handleConsultClick = (options?: ConsultPrefill) => {
     if (options) {
       consultationForm.onPrefill(options);
     }
@@ -131,6 +132,7 @@ export function useLandingController() {
     openFaqIndex,
     catalogFilter,
     calculator,
+    groupDiscountPercent: appliedDiscountPercent(GROUP_SIZE_LIMITS.min, overview.comboDiscountTiers),
     consultationForm,
     onSelectTab: handleSelectTab,
     onScrollToSection: handleScrollToSection,

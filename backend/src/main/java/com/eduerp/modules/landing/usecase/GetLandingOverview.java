@@ -135,7 +135,10 @@ public class GetLandingOverview {
                         branchNames.get(cls.branchId()),
                         accountNames.get(cls.teacherId()),
                         cls.maxSeats(),
-                        cls.schedule()))
+                        cls.schedule(),
+                        cls.status(),
+                        cls.startDate(),
+                        (int) Math.max(0, cls.maxSeats() - cls.activeEnrollments())))
                 .toList();
     }
 

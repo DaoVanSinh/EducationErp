@@ -1,97 +1,82 @@
 import type { LandingComboTier, LandingCourse } from "@/modules/landing/model/landing-schema";
+import {
+  CALCULATOR_MODE,
+  calculateGroup,
+  calculateMultiCourse,
+  clampGroupSize,
+  consultationNote,
+  GROUP_SIZE_LIMITS,
+  pricedCourses,
+  type CalculatorMode,
+} from "@/modules/landing/model/tuition-calculator-rules";
 import { useMemo, useState } from "react";
 
-export interface TuitionCalculationResult {
-  readonly selectedCount: number;
-  readonly totalSessions: number;
-  readonly baseTuitionVnd: number;
-  readonly appliedDiscountPercent: number;
-  readonly discountSavedVnd: number;
-  readonly netTuitionVnd: number;
-  readonly costPerSessionVnd: number;
-  readonly nextTierHint: string | null;
+export type { TuitionCalculationResult } from "@/modules/landing/model/tuition-calculator-rules";
+
+/** Gói khách đang xem, để nút "Nhận báo giá" điền sẵn form tư vấn. */
+export interface CalculatorConsultRequest {
+  readonly courseId?: string;
+  readonly notes: string;
 }
 
-function resolveApplicableDiscount(
-  courseCount: number,
-  tiers: readonly LandingComboTier[],
-): { appliedPercent: number; nextHint: string | null } {
-  let appliedPercent = 0;
-  let nextTier: LandingComboTier | null = null;
-
-  for (const tier of tiers) {
-    if (courseCount >= tier.minCourseCount && tier.discountPercent >= appliedPercent) {
-      appliedPercent = tier.discountPercent;
-    } else if (courseCount < tier.minCourseCount && nextTier === null) {
-      nextTier = tier;
-    }
-  }
-
-  const nextHint = nextTier
-    ? `Chọn thêm ${nextTier.minCourseCount - courseCount} khoá để nhận mức ưu đãi Combo -${nextTier.discountPercent}%`
-    : null;
-
-  return { appliedPercent, nextHint };
-}
-
-export function useTuitionCalculator(
-  courses: readonly LandingCourse[],
-  comboTiers: readonly LandingComboTier[],
-) {
+export function useTuitionCalculator(courses: readonly LandingCourse[], comboTiers: readonly LandingComboTier[]) {
+  const priced = useMemo(() => pricedCourses(courses), [courses]);
+  const [mode, setMode] = useState<CalculatorMode>(CALCULATOR_MODE.multiCourse);
   const [customSelectedIds, setCustomSelectedIds] = useState<readonly string[] | null>(null);
-  const [studyMode, setStudyMode] = useState<"standard" | "intensive">("standard");
+  const [groupCourseId, setGroupCourseId] = useState<string | null>(null);
+  const [groupSize, setGroupSize] = useState<number>(GROUP_SIZE_LIMITS.min);
 
-  const defaultSelectedIds = useMemo(
-    () => courses.slice(0, Math.min(2, courses.length)).map((c) => c.id),
-    [courses],
+  const defaultSelectedIds = useMemo(() => priced.slice(0, Math.min(2, priced.length)).map((c) => c.id), [priced]);
+  const selectedCourseIds = customSelectedIds ?? defaultSelectedIds;
+  const selectedGroupCourseId = groupCourseId ?? priced[0]?.id ?? null;
+
+  const chosen = useMemo(() => {
+    if (mode === CALCULATOR_MODE.group) {
+      return priced.filter((course) => course.id === selectedGroupCourseId);
+    }
+    return priced.filter((course) => selectedCourseIds.includes(course.id));
+  }, [mode, priced, selectedCourseIds, selectedGroupCourseId]);
+
+  const calculation = useMemo(
+    () =>
+      mode === CALCULATOR_MODE.group
+        ? calculateGroup(chosen[0], groupSize, comboTiers)
+        : calculateMultiCourse(chosen, comboTiers),
+    [mode, chosen, groupSize, comboTiers],
   );
 
-  const selectedCourseIds = customSelectedIds ?? defaultSelectedIds;
-
-  const toggleCourseSelection = (courseId: string) => {
-    const current = selectedCourseIds;
-    if (current.includes(courseId)) {
-      if (current.length <= 1) return;
-      setCustomSelectedIds(current.filter((id) => id !== courseId));
-    } else {
-      setCustomSelectedIds([...current, courseId]);
+  const onToggleCourse = (courseId: string) => {
+    if (!selectedCourseIds.includes(courseId)) {
+      setCustomSelectedIds([...selectedCourseIds, courseId]);
+      return;
+    }
+    if (selectedCourseIds.length > 1) {
+      setCustomSelectedIds(selectedCourseIds.filter((id) => id !== courseId));
     }
   };
 
-  const selectPresetCount = (count: number) => {
-    const nextIds = courses.slice(0, Math.min(count, courses.length)).map((c) => c.id);
-    setCustomSelectedIds(nextIds);
+  const onSelectPresetCount = (count: number) =>
+    setCustomSelectedIds(priced.slice(0, Math.min(count, priced.length)).map((c) => c.id));
+
+  const consultRequest: CalculatorConsultRequest = {
+    courseId: chosen.length === 1 ? chosen[0]?.id : undefined,
+    notes: consultationNote(calculation, chosen),
   };
-
-  const calculation: TuitionCalculationResult = useMemo(() => {
-    const chosen = courses.filter((c) => selectedCourseIds.includes(c.id));
-    const selectedCount = chosen.length;
-    const totalSessions = chosen.reduce((sum, c) => sum + (c.standardSessionCount ?? 24), 0);
-    const baseTuitionVnd = chosen.reduce((sum, c) => sum + (c.tuitionFee ?? 0), 0);
-
-    const { appliedPercent, nextHint } = resolveApplicableDiscount(selectedCount, comboTiers);
-    const discountSavedVnd = Math.round((baseTuitionVnd * appliedPercent) / 100);
-    const netTuitionVnd = Math.max(0, baseTuitionVnd - discountSavedVnd);
-    const costPerSessionVnd = totalSessions > 0 ? Math.round(netTuitionVnd / totalSessions) : 0;
-
-    return {
-      selectedCount,
-      totalSessions,
-      baseTuitionVnd,
-      appliedDiscountPercent: appliedPercent,
-      discountSavedVnd,
-      netTuitionVnd,
-      costPerSessionVnd,
-      nextTierHint: nextHint,
-    };
-  }, [courses, selectedCourseIds, comboTiers]);
 
   return {
+    mode,
+    pricedCourses: priced,
     selectedCourseIds,
-    studyMode,
+    selectedGroupCourseId,
+    groupSize,
     calculation,
-    onToggleCourse: toggleCourseSelection,
-    onSelectPresetCount: selectPresetCount,
-    onSetStudyMode: setStudyMode,
+    consultRequest,
+    onSetMode: setMode,
+    onToggleCourse,
+    onSelectPresetCount,
+    onSelectGroupCourse: setGroupCourseId,
+    onChangeGroupSize: (people: number) => setGroupSize(clampGroupSize(people)),
   };
 }
+
+export type TuitionCalculator = ReturnType<typeof useTuitionCalculator>;

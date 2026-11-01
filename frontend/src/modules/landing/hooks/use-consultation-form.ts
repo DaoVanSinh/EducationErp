@@ -2,6 +2,13 @@ import { useSubmitConsultation } from "@/modules/landing/api/use-landing-overvie
 import type { ConsultationFormData } from "@/modules/landing/model/landing-schema";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
+/** Điền sẵn form tư vấn từ nơi khách bấm: một lớp, một chi nhánh, hoặc gói đang xem ở công cụ dự toán. */
+export interface ConsultPrefill {
+  readonly courseId?: string;
+  readonly branchId?: string;
+  readonly notes?: string;
+}
+
 export interface ConsultationFormErrors {
   readonly fullName?: string;
   readonly phone?: string;
@@ -58,11 +65,12 @@ export function useConsultationForm() {
     }
   };
 
-  const prefillCourseOrBranch = (options: { courseId?: string; branchId?: string }) => {
+  const prefillCourseOrBranch = (options: ConsultPrefill) => {
     setFormData((prev) => ({
       ...prev,
       targetCourseId: options.courseId ?? prev.targetCourseId,
       targetBranchId: options.branchId ?? prev.targetBranchId,
+      notes: options.notes ?? prev.notes,
     }));
   };
 
