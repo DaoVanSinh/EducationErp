@@ -54,10 +54,11 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
         </button>
       </header>
 
-      {/* Desktop Liquid Glass Sidebar */}
+      {/* Desktop Liquid Glass Sidebar - ghim cao bằng màn hình, cuộn riêng; chỉ <main> cuộn theo trang */}
       <aside
         className={cx(
           "glass hidden flex-col justify-between rounded-none border-y-0 border-l-0 border-r border-white/80 bg-white/70 p-4 backdrop-blur-xl shadow-sm lg:flex transition-all duration-300",
+          "lg:sticky lg:top-0 lg:h-dvh lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:[scrollbar-width:thin]",
           sidebarCollapsed ? "w-20 items-center px-2" : "w-[17.5rem]",
         )}
       >
