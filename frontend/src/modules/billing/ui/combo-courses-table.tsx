@@ -15,8 +15,8 @@ export function ComboCoursesTable({ rows }: ComboCoursesTableProps) {
           key={member.id}
           className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]"
         >
-          <p className="truncate text-sm text-mist-100">Khoá {member.courseId.slice(0, 8)}</p>
-          <Badge tone="neutral">Ghi danh {member.enrollmentId.slice(0, 8)}</Badge>
+          <p className="truncate text-sm text-mist-100">{member.courseName ?? "Khoá học"}</p>
+          <Badge tone="neutral">Lớp {member.classCode ?? "—"}</Badge>
           <p className="text-sm text-mist-100">{formatter.count(member.originalTuitionFee)} đ</p>
         </li>
       ))}

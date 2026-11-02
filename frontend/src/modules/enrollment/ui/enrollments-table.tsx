@@ -1,4 +1,4 @@
-import type { EnrollmentSummary } from "@/entities/enrollment";
+import { enrollmentClassLabel, type EnrollmentSummary } from "@/entities/enrollment";
 import { ENROLLMENT_STATUS, ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Can } from "@/entities/permission";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
@@ -28,8 +28,8 @@ export function EnrollmentsTable({ rows, onWithdraw, onComplete, isMutating }: E
           className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,2fr)_auto_auto_auto]"
         >
           <div className="min-w-0">
-            <p className="truncate text-sm text-mist-100">Học viên {enrollment.studentProfileId.slice(0, 8)}</p>
-            <p className="truncate text-xs text-mist-500">Lớp {enrollment.classId.slice(0, 8)}</p>
+            <p className="truncate text-sm text-mist-100">{enrollment.studentName ?? "Học viên"}</p>
+            <p className="truncate text-xs text-mist-500">{enrollmentClassLabel(enrollment)}</p>
           </div>
           <Badge tone={enrollment.status === ENROLLMENT_STATUS.active ? "positive" : "neutral"}>
             {ENROLLMENT_STATUS_LABEL[enrollment.status]}

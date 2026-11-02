@@ -1,4 +1,5 @@
 import { Can, RequirePermission } from "@/entities/permission";
+import { studentDisplayName } from "@/entities/student";
 import { useEnrollmentsPageController } from "@/modules/enrollment/hooks/use-enrollments-page-controller";
 import { CreateEnrollmentDialog } from "@/modules/enrollment/ui/create-enrollment-dialog";
 import { EnrollmentsTable } from "@/modules/enrollment/ui/enrollments-table";
@@ -43,7 +44,7 @@ export function EnrollmentsPage() {
               <option value="">Mọi học viên</option>
               {(controller.students.data?.items ?? []).map((student) => (
                 <option key={student.id} value={student.id}>
-                  {student.fullName ?? student.email ?? student.id}
+                  {studentDisplayName(student)}
                 </option>
               ))}
             </GlassSelect>

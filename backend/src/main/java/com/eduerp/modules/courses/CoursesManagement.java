@@ -3,6 +3,7 @@ package com.eduerp.modules.courses;
 import com.eduerp.modules.courses.dto.GradeColumnResponse;
 import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
 import com.eduerp.modules.courses.internal.model.Class;
+import com.eduerp.modules.courses.internal.model.Course;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import java.math.BigDecimal;
@@ -156,6 +157,18 @@ public class CoursesManagement {
         return classes.findAllById(classIds).stream()
                 .collect(Collectors.toMap(Class::getId, cls -> new ClassBasicSummary(cls.getId(), cls.getCode(),
                         cls.getCourse().getId(), cls.getCourse().getName())));
+    }
+
+    /**
+     * Tên khóa học theo lô, cho các màn hình hoá đơn và đăng ký nhóm chỉ biết {@code courseId}. Id không
+     * tồn tại chỉ vắng mặt trong map, không ném - mirror {@link #classSummariesOf(Collection)}.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> courseNamesOf(Collection<UUID> courseIds) {
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+        return courses.findAllById(courseIds).stream().collect(Collectors.toMap(Course::getId, Course::getName));
     }
 
     @Transactional(readOnly = true)

@@ -1,3 +1,8 @@
+/** Bản sao của AccessConstants.RoleCodes ở backend. */
+export const ROLE_CODE = {
+  student: "STUDENT",
+} as const;
+
 /** Bản sao của IdentityConstants.Resources ở backend. */
 export const RESOURCE = {
   account: "ACCOUNT",

@@ -1,4 +1,5 @@
 import { MIN_COMBO_ENROLLMENTS } from "@/entities/billing";
+import { studentDisplayName } from "@/entities/student";
 import { useCreateComboController } from "@/modules/billing/hooks/use-create-combo-controller";
 import { formatter } from "@/shared/lib/format";
 import { CheckableRow } from "@/shared/ui/checkable-row";
@@ -43,7 +44,7 @@ export function CreateComboDialog({ open, onClose }: CreateComboDialogProps) {
               .filter((student) => student.active)
               .map((student) => (
                 <option key={student.id} value={student.id}>
-                  {student.fullName ?? student.email ?? student.id}
+                  {studentDisplayName(student)}
                 </option>
               ))}
           </GlassSelect>

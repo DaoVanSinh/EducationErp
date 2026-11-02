@@ -51,9 +51,6 @@ export function RoleItemCard({ role, isSelected, onSelect }: RoleItemCardProps) 
           <div className="flex items-center gap-2">
             <h4 className="truncate text-sm font-bold text-slate-900">{role.name}</h4>
           </div>
-          <p className="mt-0.5 truncate text-xs text-slate-500">
-            ID: <span className="font-mono text-slate-600">{role.id.slice(0, 8)}</span>
-          </p>
         </div>
       </div>
 

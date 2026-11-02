@@ -13,6 +13,11 @@ export const studentProfileSummarySchema = z.object({
 
 export type StudentProfileSummary = z.infer<typeof studentProfileSummarySchema>;
 
+/** Tên hiển thị của học viên trong danh sách chọn - không bao giờ lộ mã hồ sơ ra giao diện. */
+export function studentDisplayName(student: StudentProfileSummary): string {
+  return student.fullName ?? student.email ?? "Học viên chưa có tên";
+}
+
 /**
  * Tạo học viên MỘT bước: tài khoản đăng nhập (email mời + mật khẩu tạm) và hồ sơ học viên cùng lúc.
  * {@code homeBranchId} bị backend bỏ qua với người chỉ có quyền theo chi nhánh (luôn là chi nhánh của họ).

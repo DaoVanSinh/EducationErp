@@ -4,6 +4,7 @@ import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.dto.InvoiceResponse;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.shared.PageResponse;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -18,16 +19,18 @@ public class ListInvoices {
 
     private final BillingBranchGuard branchGuard;
 
-    ListInvoices(InvoiceRepository invoices, BillingBranchGuard branchGuard) {
+    private final InvoiceResponseAssembler assembler;
+
+    ListInvoices(InvoiceRepository invoices, BillingBranchGuard branchGuard, InvoiceResponseAssembler assembler) {
         this.invoices = invoices;
         this.branchGuard = branchGuard;
+        this.assembler = assembler;
     }
 
     @Transactional(readOnly = true)
     public PageResponse<InvoiceResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId, UUID enrollmentId,
             BillingConstants.InvoiceStatus status) {
-        return PageResponse.of(invoices.search(studentProfileId, enrollmentId, status,
-                branchGuard.listFilter(actorAccountId), pageable)
-                .map(CreateInvoice::toResponse));
+        var page = invoices.search(studentProfileId, enrollmentId, status, branchGuard.listFilter(actorAccountId), pageable);
+        return PageResponse.of(page, assembler.toResponses(page.getContent()));
     }
 }

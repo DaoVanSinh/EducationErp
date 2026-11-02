@@ -12,6 +12,7 @@ import com.eduerp.modules.billing.dto.InvoiceResponse;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -42,9 +43,11 @@ public class CreateComboInvoice {
     private final ApplicationEventPublisher events;
 
     private final BillingBranchGuard branchGuard;
+    private final InvoiceResponseAssembler assembler;
 
     CreateComboInvoice(InvoiceRepository invoices, ComboRepository combos,
-            ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard, InvoiceResponseAssembler assembler) {
+        this.assembler = assembler;
         this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.combos = combos;
@@ -78,7 +81,7 @@ public class CreateComboInvoice {
                 combo.getBranchId(), installmentNumber, request.amount(), request.dueDate(), actorAccountId),
                 combo.getId());
         events.publishEvent(new BillingEvents.InvoiceCreated(saved.getId(), actorAccountId, actorBranchId));
-        return CreateInvoice.toResponse(saved);
+        return assembler.toResponse(saved);
     }
 
     /**

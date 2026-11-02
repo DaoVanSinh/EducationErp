@@ -26,7 +26,7 @@ export function CombosTable({ rows }: CombosTableProps) {
           <div className="min-w-0">
             <p className="truncate text-sm text-mist-100">{combo.courseCount} khoá trong combo</p>
             <p className="truncate text-xs text-mist-500">
-              HV {combo.studentProfileId.slice(0, 8)} · hạn {combo.dueDate}
+              {combo.studentName ?? "Học viên"} · hạn {combo.dueDate}
             </p>
           </div>
           <p className="text-xs text-mist-500 line-through">

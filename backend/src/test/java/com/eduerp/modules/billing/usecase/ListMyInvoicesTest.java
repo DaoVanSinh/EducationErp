@@ -12,8 +12,11 @@ import static org.mockito.Mockito.when;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
+import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
+import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,7 +35,8 @@ class ListMyInvoicesTest {
     private final StudentsManagement students = mock(StudentsManagement.class);
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final PaymentRepository payments = mock(PaymentRepository.class);
-    private final ListMyInvoices useCase = new ListMyInvoices(students, invoices, payments);
+    private final ListMyInvoices useCase = new ListMyInvoices(students, invoices, payments,
+            new InvoiceResponseAssembler(mock(ComboRepository.class), mock(CoursesManagement.class), students));
 
     private final UUID accountId = UUID.randomUUID();
     private final UUID profileId = UUID.randomUUID();

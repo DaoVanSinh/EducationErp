@@ -1,5 +1,5 @@
 import { CLASS_STATUS_LABEL, type ClassSummary } from "@/entities/class";
-import type { StudentProfileSummary } from "@/entities/student";
+import { studentDisplayName, type StudentProfileSummary } from "@/entities/student";
 import { useCreateEnrollmentForm } from "@/modules/enrollment/hooks/use-create-enrollment-form";
 import { ScheduleConflictNotice } from "@/modules/enrollment/ui/schedule-conflict-notice";
 import { ErrorNotice } from "@/shared/ui/error-notice";
@@ -43,7 +43,7 @@ export function CreateEnrollmentDialog({ open, onClose, students, classes }: Cre
               .filter((student) => student.active)
               .map((student) => (
                 <option key={student.id} value={student.id}>
-                  {student.fullName ?? student.email ?? student.id}
+                  {studentDisplayName(student)}
                 </option>
               ))}
           </GlassSelect>

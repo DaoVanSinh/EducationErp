@@ -180,13 +180,37 @@ class ComboAdminControllerIT {
         var comboId = createCombo(admin, fixture);
 
         var detail = mockMvc.perform(get(COMBOS + "/" + comboId).cookie(admin)).andReturn();
-        var comboNode = objectMapper.readTree(detail.getResponse().getContentAsString()).get("combo");
+        var detailNode = objectMapper.readTree(detail.getResponse().getContentAsString());
+        var comboNode = detailNode.get("combo");
         assertThat(comboNode.get("totalOriginalAmount").asLong()).isEqualTo(21_000_000L);
         assertThat(comboNode.get("totalDiscountedAmount").asLong()).isEqualTo(17_850_000L);
         assertThat(comboNode.get("courseCount").asInt()).isEqualTo(2);
+        // Tên đi qua facade của students/enrollment/courses - chỉ test có database mới chứng minh được.
+        assertThat(comboNode.get("studentName").asText()).isEqualTo("HV");
+        assertThat(detailNode.get("enrollments")).hasSize(2).allSatisfy(member -> {
+            assertThat(member.get("courseName").asText()).isEqualTo("Khoá");
+            assertThat(member.get("classCode").asText()).startsWith("CMBW-K-");
+        });
 
         assertThat(issueComboInvoice(admin, comboId, "10000000").getResponse().getStatus()).isEqualTo(200);
         assertThat(issueComboInvoice(admin, comboId, "7850000").getResponse().getStatus()).isEqualTo(200);
+
+        var afterInvoices = mockMvc.perform(get(COMBOS + "/" + comboId).cookie(admin)).andReturn();
+        assertThat(objectMapper.readTree(afterInvoices.getResponse().getContentAsString()).get("invoices"))
+                .hasSize(2).allSatisfy(invoice -> {
+                    assertThat(invoice.get("studentName").asText()).isEqualTo("HV");
+                    assertThat(invoice.get("courseNames")).hasSize(2);
+                    assertThat(invoice.get("courseNames").get(0).asText()).isEqualTo("Khoá");
+                });
+
+        var enrollmentPage = mockMvc.perform(get("/api/enrollment/enrollments").cookie(admin)
+                .param("studentProfileId", fixture.studentProfileId().toString())).andReturn();
+        assertThat(objectMapper.readTree(enrollmentPage.getResponse().getContentAsString()).get("items"))
+                .hasSize(2).allSatisfy(enrollment -> {
+                    assertThat(enrollment.get("studentName").asText()).isEqualTo("HV");
+                    assertThat(enrollment.get("courseName").asText()).isEqualTo("Khoá");
+                    assertThat(enrollment.get("classCode").asText()).startsWith("CMBW-K-");
+                });
 
         var tooMuch = issueComboInvoice(admin, comboId, "1");
         assertThat(tooMuch.getResponse().getStatus()).isEqualTo(409);

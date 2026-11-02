@@ -1,4 +1,5 @@
 import { Can, RequirePermission } from "@/entities/permission";
+import { studentDisplayName } from "@/entities/student";
 import { useCombosPageController } from "@/modules/billing/hooks/use-combos-page-controller";
 import { CombosTable } from "@/modules/billing/ui/combos-table";
 import { CreateComboDialog } from "@/modules/billing/ui/create-combo-dialog";
@@ -43,7 +44,7 @@ export function CombosPage() {
               <option value="">Mọi học viên</option>
               {(controller.students.data?.items ?? []).map((student) => (
                 <option key={student.id} value={student.id}>
-                  {student.fullName ?? student.email ?? student.id}
+                  {studentDisplayName(student)}
                 </option>
               ))}
             </GlassSelect>

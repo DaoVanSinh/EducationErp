@@ -34,6 +34,9 @@ export function ComboDetailPage() {
           <>
             <GlassPanel className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm font-semibold text-mist-100">
+                  {controller.detail.data.combo.studentName ?? "Học viên"}
+                </p>
                 <p className="text-sm text-mist-100">
                   {controller.detail.data.combo.courseCount} khoá
                 </p>

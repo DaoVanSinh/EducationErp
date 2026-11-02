@@ -1,6 +1,5 @@
 import { useGroupRegistrations, type GroupRegistration } from "@/entities/billing";
 import { useCourses } from "@/entities/course";
-import { useStudents } from "@/entities/student";
 import { useCancelGroupRegistration } from "@/modules/billing/api/use-billing-mutations";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
 import { useCallback, useMemo, useState } from "react";
@@ -14,20 +13,6 @@ export interface GroupRegistrationRow {
   readonly memberNames: readonly string[];
 }
 
-function useNameMaps() {
-  const students = useStudents(0, REFERENCE_PAGE_SIZE);
-  const courses = useCourses(0, REFERENCE_PAGE_SIZE);
-  return useMemo(() => {
-    const studentNames = new Map<string, string>();
-    (students.data?.items ?? []).forEach((student) =>
-      studentNames.set(student.id, student.fullName ?? student.email ?? student.id.slice(0, 8)),
-    );
-    const courseNames = new Map<string, string>();
-    (courses.data?.items ?? []).forEach((course) => courseNames.set(course.id, `${course.code} · ${course.name}`));
-    return { studentNames, courseNames, courseOptions: courses.data?.items ?? [] };
-  }, [students.data, courses.data]);
-}
-
 /** Toàn bộ state/query/mutation của trang Đăng ký nhóm - ui/* chỉ render (Mandate #2). */
 export function useGroupRegistrationsPageController() {
   const [page, setPage] = useState(0);
@@ -36,19 +21,17 @@ export function useGroupRegistrationsPageController() {
   const [cancelTarget, setCancelTarget] = useState<GroupRegistrationRow | null>(null);
 
   const groups = useGroupRegistrations(page, DEFAULT_PAGE_SIZE, courseFilter.length === 0 ? undefined : courseFilter);
-  const { studentNames, courseNames, courseOptions } = useNameMaps();
+  const courses = useCourses(0, REFERENCE_PAGE_SIZE);
   const cancelGroup = useCancelGroupRegistration();
 
   const rows: readonly GroupRegistrationRow[] = useMemo(
     () =>
       (groups.data?.items ?? []).map((group) => ({
         group,
-        courseName: courseNames.get(group.courseId) ?? group.courseId.slice(0, 8),
-        memberNames: group.members.map(
-          (member) => studentNames.get(member.studentProfileId) ?? member.studentProfileId.slice(0, 8),
-        ),
+        courseName: group.courseName ?? "Khoá học",
+        memberNames: group.members.map((member) => member.studentName ?? "Học viên"),
       })),
-    [groups.data, courseNames, studentNames],
+    [groups.data],
   );
 
   const onSelectCourse = useCallback((courseId: string) => {
@@ -73,7 +56,7 @@ export function useGroupRegistrationsPageController() {
     rows,
     pageInfo: groups.data,
     setPage,
-    courseOptions,
+    courseOptions: courses.data?.items ?? [],
     courseFilter,
     onSelectCourse,
     createDialogOpen,

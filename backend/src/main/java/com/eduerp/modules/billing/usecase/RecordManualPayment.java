@@ -11,6 +11,7 @@ import com.eduerp.modules.billing.dto.RecordManualPaymentRequest;
 import com.eduerp.modules.billing.internal.model.Payment;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.modules.billing.internal.rules.BillingRules;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,9 +29,11 @@ public class RecordManualPayment {
     private final ApplicationEventPublisher events;
 
     private final BillingBranchGuard branchGuard;
+    private final InvoiceResponseAssembler assembler;
 
     RecordManualPayment(InvoiceRepository invoices, PaymentRepository payments,
-            ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard, InvoiceResponseAssembler assembler) {
+        this.assembler = assembler;
         this.branchGuard = branchGuard;
         this.invoices = invoices;
         this.payments = payments;
@@ -54,6 +57,6 @@ public class RecordManualPayment {
         payments.save(Payment.offline(invoice, amount, request.method(), request.note(), actorAccountId));
         invoice.applyPayment(amount);
         events.publishEvent(new BillingEvents.PaymentReceived(invoiceId, actorAccountId, actorBranchId));
-        return CreateInvoice.toResponse(invoice);
+        return assembler.toResponse(invoice);
     }
 }

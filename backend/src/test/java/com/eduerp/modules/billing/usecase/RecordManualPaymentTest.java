@@ -16,8 +16,12 @@ import com.eduerp.modules.billing.InvoiceNotPayableException;
 import com.eduerp.modules.billing.dto.RecordManualPaymentRequest;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
+import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
+import com.eduerp.modules.courses.CoursesManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -31,7 +35,9 @@ class RecordManualPaymentTest {
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final PaymentRepository payments = mock(PaymentRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final RecordManualPayment useCase = new RecordManualPayment(invoices, payments, events, mock(BillingBranchGuard.class));
+    private final RecordManualPayment useCase = new RecordManualPayment(invoices, payments, events, mock(BillingBranchGuard.class),
+            new InvoiceResponseAssembler(mock(ComboRepository.class), mock(CoursesManagement.class),
+                    mock(StudentsManagement.class)));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

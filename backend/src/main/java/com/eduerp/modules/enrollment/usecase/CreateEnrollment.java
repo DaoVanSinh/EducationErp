@@ -14,6 +14,7 @@ import com.eduerp.modules.enrollment.StudentNotActiveException;
 import com.eduerp.modules.enrollment.StudentProfileNotFoundException;
 import com.eduerp.modules.enrollment.dto.CreateEnrollmentRequest;
 import com.eduerp.modules.enrollment.dto.EnrollmentResponse;
+import com.eduerp.modules.enrollment.internal.EnrollmentResponseAssembler;
 import com.eduerp.modules.enrollment.internal.ScheduleConflictChecker;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
@@ -36,9 +37,12 @@ public class CreateEnrollment {
     private final AccessManagement access;
     private final ScheduleConflictChecker scheduleConflicts;
     private final ApplicationEventPublisher events;
+    private final EnrollmentResponseAssembler assembler;
 
     CreateEnrollment(EnrollmentRepository enrollments, StudentsManagement students, CoursesManagement courses,
-            AccessManagement access, ScheduleConflictChecker scheduleConflicts, ApplicationEventPublisher events) {
+            AccessManagement access, ScheduleConflictChecker scheduleConflicts, ApplicationEventPublisher events,
+            EnrollmentResponseAssembler assembler) {
+        this.assembler = assembler;
         this.enrollments = enrollments;
         this.students = students;
         this.courses = courses;
@@ -98,13 +102,6 @@ public class CreateEnrollment {
             events.publishEvent(
                     new EnrollmentEvents.ScheduleConflictAccepted(saved.getId(), actorAccountId, actorBranchId));
         }
-        return toResponse(saved);
-    }
-
-    /** Dùng lại ở WithdrawEnrollment/CompleteEnrollment/ListEnrollments - một chỗ map duy nhất. */
-    static EnrollmentResponse toResponse(Enrollment enrollment) {
-        return new EnrollmentResponse(enrollment.getId(), enrollment.getStudentProfileId(), enrollment.getClassId(),
-                enrollment.getCourseId(), enrollment.getBranchId(), enrollment.getStatus(),
-                enrollment.getEnrolledAt(), enrollment.getWithdrawnAt());
+        return assembler.toResponse(saved);
     }
 }

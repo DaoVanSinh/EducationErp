@@ -1,4 +1,4 @@
-import type { EnrollmentSummary } from "@/entities/enrollment";
+import { enrollmentFullLabel, type EnrollmentSummary } from "@/entities/enrollment";
 import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
 import { useCreateInvoice } from "@/modules/billing/api/use-billing-mutations";
 import { createInvoiceFormSchema } from "@/modules/billing/model/billing-forms";
@@ -53,7 +53,7 @@ export function CreateInvoiceDialog({ open, onClose, enrollments }: CreateInvoic
               .filter((enrollment) => enrollment.status === ENROLLMENT_STATUS.active)
               .map((enrollment) => (
                 <option key={enrollment.id} value={enrollment.id}>
-                  {enrollment.id.slice(0, 8)} — HV {enrollment.studentProfileId.slice(0, 8)}
+                  {enrollmentFullLabel(enrollment)}
                 </option>
               ))}
           </GlassSelect>

@@ -28,6 +28,7 @@ import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -51,7 +52,7 @@ class CreateComboTest {
     private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
     private final CreateCombo useCase =
             new CreateCombo(combos, tiers, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class),
-                    discounts);
+                    discounts, mock(StudentsManagement.class));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

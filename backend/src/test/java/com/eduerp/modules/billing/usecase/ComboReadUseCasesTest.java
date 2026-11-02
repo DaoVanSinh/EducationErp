@@ -3,7 +3,10 @@ package com.eduerp.modules.billing.usecase;
 import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.eduerp.modules.billing.ComboNotFoundException;
@@ -12,9 +15,17 @@ import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
+import com.eduerp.modules.courses.CoursesManagement;
+import com.eduerp.modules.enrollment.EnrollmentConstants;
+import com.eduerp.modules.enrollment.EnrollmentManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -28,8 +39,13 @@ class ComboReadUseCasesTest {
 
     private final ComboRepository combos = mock(ComboRepository.class);
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
-    private final ListCombos listCombos = new ListCombos(combos, mock(BillingBranchGuard.class));
-    private final GetComboDetail getComboDetail = new GetComboDetail(combos, invoices, mock(BillingBranchGuard.class));
+    private final StudentsManagement students = mock(StudentsManagement.class);
+    private final ListCombos listCombos = new ListCombos(combos, mock(BillingBranchGuard.class), students);
+    private final EnrollmentManagement enrollments = mock(EnrollmentManagement.class);
+    private final CoursesManagement courses = mock(CoursesManagement.class);
+    private final GetComboDetail getComboDetail =
+            new GetComboDetail(combos, invoices, mock(BillingBranchGuard.class), students, enrollments, courses,
+                    new InvoiceResponseAssembler(combos, courses, students));
 
     private final UUID comboId = UUID.randomUUID();
     private final UUID studentProfileId = UUID.randomUUID();
@@ -63,6 +79,84 @@ class ComboReadUseCasesTest {
             assertThat(item.totalDiscountedAmount()).isEqualByComparingTo(new BigDecimal("17850000"));
             // courseCount trả sẵn để màn hình danh sách không phải tải danh sách con chỉ để đếm.
             assertThat(item.courseCount()).isEqualTo(2);
+        });
+    }
+
+    @Test
+    void listLooksUpStudentNamesOnceForTheWholePage() {
+        var pageable = PageRequest.of(0, 20);
+        when(combos.search(null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of(comboWithTwoCourses(), comboWithTwoCourses()), pageable, 2));
+        when(students.displayNamesOf(List.of(studentProfileId))).thenReturn(Map.of(studentProfileId, "Nguyễn Văn A"));
+
+        var page = listCombos.execute(null, pageable, null);
+
+        assertThat(page.items()).hasSize(2).allSatisfy(item -> assertThat(item.studentName()).isEqualTo("Nguyễn Văn A"));
+        verify(students, times(1)).displayNamesOf(List.of(studentProfileId));
+    }
+
+    @Test
+    void listLeavesTheNameNullWhenTheStudentCannotBeResolved() {
+        var pageable = PageRequest.of(0, 20);
+        when(combos.search(null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of(comboWithTwoCourses()), pageable, 1));
+        when(students.displayNamesOf(List.of(studentProfileId))).thenReturn(Map.of());
+
+        assertThat(listCombos.execute(null, pageable, null).items())
+                .singleElement().satisfies(item -> assertThat(item.studentName()).isNull());
+    }
+
+    @Test
+    void detailIncludesTheStudentName() {
+        when(combos.findById(comboId)).thenReturn(Optional.of(comboWithTwoCourses()));
+        when(invoices.findAllByComboId(comboId)).thenReturn(List.of());
+        when(students.displayNamesOf(List.of(studentProfileId))).thenReturn(Map.of(studentProfileId, "Nguyễn Văn A"));
+
+        assertThat(getComboDetail.execute(null, comboId).combo().studentName()).isEqualTo("Nguyễn Văn A");
+    }
+
+    private EnrollmentManagement.StudentEnrollmentEntry enrollmentIn(UUID enrollmentId, UUID classId, UUID courseId) {
+        return new EnrollmentManagement.StudentEnrollmentEntry(enrollmentId, classId, courseId,
+                EnrollmentConstants.EnrollmentStatus.ACTIVE, Instant.now(), null);
+    }
+
+    @Test
+    void detailNamesEachCourseAndClassAndIgnoresEnrollmentsOutsideTheCombo() {
+        var mathsClassId = UUID.randomUUID();
+        var englishClassId = UUID.randomUUID();
+        var otherClassId = UUID.randomUUID();
+        when(combos.findById(comboId)).thenReturn(Optional.of(comboWithTwoCourses()));
+        when(invoices.findAllByComboId(comboId)).thenReturn(List.of());
+        when(enrollments.listEnrollmentsByStudent(studentProfileId)).thenReturn(List.of(
+                enrollmentIn(mathsEnrollmentId, mathsClassId, mathsCourseId),
+                enrollmentIn(englishEnrollmentId, englishClassId, englishCourseId),
+                enrollmentIn(UUID.randomUUID(), otherClassId, UUID.randomUUID())));
+        when(courses.classSummariesOf(any())).thenAnswer(call -> {
+            assertThat(call.<Collection<UUID>>getArgument(0)).containsExactlyInAnyOrder(mathsClassId, englishClassId);
+            return Map.of(
+                    mathsClassId, new CoursesManagement.ClassBasicSummary(mathsClassId, "TOAN-01", mathsCourseId, "Toán"),
+                    englishClassId, new CoursesManagement.ClassBasicSummary(englishClassId, "ANH-01", englishCourseId, "Anh"));
+        });
+
+        var members = getComboDetail.execute(null, comboId).enrollments();
+
+        assertThat(members).extracting(ComboEnrollmentResponse::courseName).containsExactly("Toán", "Anh");
+        assertThat(members).extracting(ComboEnrollmentResponse::classCode).containsExactly("TOAN-01", "ANH-01");
+    }
+
+    @Test
+    void detailLeavesNamesNullWhenTheClassCannotBeResolved() {
+        when(combos.findById(comboId)).thenReturn(Optional.of(comboWithTwoCourses()));
+        when(invoices.findAllByComboId(comboId)).thenReturn(List.of());
+        when(enrollments.listEnrollmentsByStudent(studentProfileId)).thenReturn(List.of(
+                enrollmentIn(mathsEnrollmentId, UUID.randomUUID(), mathsCourseId)));
+        when(courses.classSummariesOf(any())).thenReturn(Map.of());
+
+        var members = getComboDetail.execute(null, comboId).enrollments();
+
+        assertThat(members).hasSize(2).allSatisfy(member -> {
+            assertThat(member.courseName()).isNull();
+            assertThat(member.classCode()).isNull();
         });
     }
 

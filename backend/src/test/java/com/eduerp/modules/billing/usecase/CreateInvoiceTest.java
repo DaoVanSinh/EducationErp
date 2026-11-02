@@ -20,10 +20,13 @@ import com.eduerp.modules.billing.InvoiceAmountExceedsTuitionException;
 import com.eduerp.modules.billing.dto.CreateInvoiceRequest;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
+import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -46,7 +49,8 @@ class CreateInvoiceTest {
     private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
     private final CreateInvoice useCase =
             new CreateInvoice(invoices, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class),
-                    discounts);
+                    discounts, new InvoiceResponseAssembler(mock(ComboRepository.class), coursesManagement,
+                            mock(StudentsManagement.class)));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

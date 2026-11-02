@@ -1,4 +1,5 @@
 import { INVOICE_STATUS, INVOICE_STATUS_LABEL } from "@/entities/billing";
+import { enrollmentFullLabel } from "@/entities/enrollment";
 import { Can, RequirePermission } from "@/entities/permission";
 import { useInvoicesPageController } from "@/modules/billing/hooks/use-invoices-page-controller";
 import { CreateInvoiceDialog } from "@/modules/billing/ui/create-invoice-dialog";
@@ -46,7 +47,7 @@ export function InvoicesPage() {
               <option value="">Mọi ghi danh</option>
               {(controller.enrollments.data?.items ?? []).map((enrollment) => (
                 <option key={enrollment.id} value={enrollment.id}>
-                  {enrollment.id.slice(0, 8)} — HV {enrollment.studentProfileId.slice(0, 8)}
+                  {enrollmentFullLabel(enrollment)}
                 </option>
               ))}
             </GlassSelect>

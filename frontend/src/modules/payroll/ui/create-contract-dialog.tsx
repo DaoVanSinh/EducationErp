@@ -1,5 +1,6 @@
 import { CONTRACT_TYPE, CONTRACT_TYPE_LABEL } from "@/entities/payroll";
 import { useCreateContract } from "@/modules/payroll/api/use-contracts-mutations";
+import { useContractAccountOptions } from "@/modules/payroll/hooks/use-contract-account-options";
 import { createContractFormSchema } from "@/modules/payroll/model/payroll-forms";
 import { AllowancesFieldList } from "@/modules/payroll/ui/allowances-field-list";
 import { useZodForm } from "@/shared/lib/use-zod-form";
@@ -18,6 +19,7 @@ export interface CreateContractDialogProps {
 
 export function CreateContractDialog({ open, onClose }: CreateContractDialogProps) {
   const createContract = useCreateContract();
+  const accountOptions = useContractAccountOptions();
   const [file, setFile] = useState<File | null>(null);
 
   const form = useZodForm({
@@ -46,9 +48,17 @@ export function CreateContractDialog({ open, onClose }: CreateContractDialogProp
       <form id="create-contract-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
 
-        <FormField label="Mã tài khoản nhân viên (UUID)" htmlFor="contract-account-id" error={form.fieldErrors.accountId}>
-          <GlassInput id="contract-account-id" value={form.values.accountId}
-            onChange={(event) => form.setValue("accountId", event.target.value)} />
+        {accountOptions.error ? <ErrorNotice error={accountOptions.error} /> : null}
+
+        <FormField label="Nhân viên" htmlFor="contract-account-id" error={form.fieldErrors.accountId}>
+          <GlassSelect id="contract-account-id" className="w-full" containerClassName="w-full"
+            value={form.values.accountId} invalid={form.fieldErrors.accountId !== undefined}
+            onChange={(event) => form.setValue("accountId", event.target.value)}>
+            <option value="">Chọn nhân viên</option>
+            {accountOptions.options.map((option) => (
+              <option key={option.id} value={option.id}>{option.label}</option>
+            ))}
+          </GlassSelect>
         </FormField>
 
         <FormField label="Loại hợp đồng" htmlFor="contract-type">

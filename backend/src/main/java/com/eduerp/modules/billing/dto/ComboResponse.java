@@ -8,9 +8,11 @@ import java.util.UUID;
 /**
  * Tên field là hợp đồng với Zod schema ở frontend (entities/billing) - đổi tên là breaking.
  * {@code courseCount} là số khoá trong combo, trả sẵn để danh sách không phải tải cả danh sách con
- * chỉ để đếm.
+ * chỉ để đếm. {@code studentName} là họ tên tra qua {@code StudentsManagement.displayNamesOf}, null
+ * khi hồ sơ hoặc tài khoản không tra được tên.
  */
-public record ComboResponse(UUID id, UUID studentProfileId, UUID branchId, BigDecimal totalOriginalAmount,
+public record ComboResponse(UUID id, UUID studentProfileId, String studentName, UUID branchId,
+        BigDecimal totalOriginalAmount,
         BigDecimal discountPercent, BigDecimal totalDiscountedAmount, LocalDate dueDate, Instant createdAt,
         int courseCount) {
 }

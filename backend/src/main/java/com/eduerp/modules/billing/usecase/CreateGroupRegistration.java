@@ -25,10 +25,12 @@ import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
 import com.eduerp.modules.enrollment.EnrollmentManagement.EnrollmentSummaryResponse;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -53,10 +55,13 @@ public class CreateGroupRegistration {
     private final CoursesManagement coursesManagement;
     private final ApplicationEventPublisher events;
     private final BillingBranchGuard branchGuard;
+    private final StudentsManagement students;
 
     CreateGroupRegistration(GroupRegistrationRepository groups, ComboDiscountTierRepository tiers,
             InvoiceRepository invoices, EnrollmentDiscounts discounts, EnrollmentManagement enrollmentManagement,
-            CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard) {
+            CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard,
+            StudentsManagement students) {
+        this.students = students;
         this.groups = groups;
         this.tiers = tiers;
         this.invoices = invoices;
@@ -91,7 +96,10 @@ public class CreateGroupRegistration {
 
         var saved = save(group, enrollmentIds);
         events.publishEvent(new BillingEvents.GroupRegistrationCreated(saved.getId(), actorAccountId, actorBranchId));
-        return toResponse(saved);
+        var studentNames = students.displayNamesOf(
+                members.stream().map(EnrollmentSummaryResponse::studentProfileId).toList());
+        var courseName = coursesManagement.courseNamesOf(List.of(first.courseId())).get(first.courseId());
+        return toResponse(saved, courseName, studentNames);
     }
 
     private EnrollmentSummaryResponse loadActiveEnrollment(UUID enrollmentId) {
@@ -142,14 +150,15 @@ public class CreateGroupRegistration {
         }
     }
 
-    /** Một chỗ map duy nhất, dùng lại ở {@code ListGroupRegistrations}. */
-    static GroupRegistrationResponse toResponse(GroupRegistration group) {
+    /** Một chỗ map duy nhất, dùng lại ở {@code ListGroupRegistrations}. Tên do nơi gọi tra theo lô rồi truyền vào. */
+    static GroupRegistrationResponse toResponse(GroupRegistration group, String courseName,
+            Map<UUID, String> studentNames) {
         var members = group.getMembers().stream()
                 .map(member -> new GroupRegistrationMemberResponse(member.getEnrollmentId(),
-                        member.getStudentProfileId(), member.getOriginalTuitionFee(),
-                        member.getDiscountedTuitionFee()))
+                        member.getStudentProfileId(), studentNames.get(member.getStudentProfileId()),
+                        member.getOriginalTuitionFee(), member.getDiscountedTuitionFee()))
                 .toList();
-        return new GroupRegistrationResponse(group.getId(), group.getCourseId(), group.getBranchId(),
+        return new GroupRegistrationResponse(group.getId(), group.getCourseId(), courseName, group.getBranchId(),
                 group.getDiscountPercent(), group.getCreatedAt(), members);
     }
 }

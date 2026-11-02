@@ -11,8 +11,12 @@ import com.eduerp.modules.billing.InvoiceNotFoundException;
 import com.eduerp.modules.billing.PaymentNotFoundException;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
+import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
+import com.eduerp.modules.courses.CoursesManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,8 +30,11 @@ class BillingReadUseCasesTest {
 
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final PaymentRepository payments = mock(PaymentRepository.class);
-    private final ListInvoices listInvoices = new ListInvoices(invoices, mock(BillingBranchGuard.class));
-    private final GetInvoiceDetail getInvoiceDetail = new GetInvoiceDetail(invoices, payments, mock(BillingBranchGuard.class));
+    private final InvoiceResponseAssembler assembler = new InvoiceResponseAssembler(mock(ComboRepository.class),
+            mock(CoursesManagement.class), mock(StudentsManagement.class));
+    private final ListInvoices listInvoices = new ListInvoices(invoices, mock(BillingBranchGuard.class), assembler);
+    private final GetInvoiceDetail getInvoiceDetail = new GetInvoiceDetail(invoices, payments, mock(BillingBranchGuard.class),
+            assembler);
     private final GetPaymentStatus getPaymentStatus = new GetPaymentStatus(payments);
 
     private Invoice invoiceOf(String amount) {

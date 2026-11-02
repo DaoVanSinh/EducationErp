@@ -6,6 +6,7 @@ import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.model.Payment;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.modules.students.StudentsManagement;
 import java.util.Comparator;
 import java.util.List;
@@ -30,8 +31,11 @@ public class ListMyInvoices {
     private final StudentsManagement students;
     private final InvoiceRepository invoices;
     private final PaymentRepository payments;
+    private final InvoiceResponseAssembler assembler;
 
-    ListMyInvoices(StudentsManagement students, InvoiceRepository invoices, PaymentRepository payments) {
+    ListMyInvoices(StudentsManagement students, InvoiceRepository invoices, PaymentRepository payments,
+            InvoiceResponseAssembler assembler) {
+        this.assembler = assembler;
         this.students = students;
         this.invoices = invoices;
         this.payments = payments;
@@ -55,10 +59,9 @@ public class ListMyInvoices {
                 .collect(Collectors.groupingBy(payment -> payment.getInvoice().getId(),
                         Collectors.mapping(ListMyInvoices::toPaymentResponse, Collectors.toList())));
 
-        return mine.stream()
-                .sorted(Comparator.comparing(Invoice::getIssuedAt).reversed())
-                .map(invoice -> new InvoiceDetailResponse(CreateInvoice.toResponse(invoice),
-                        history.getOrDefault(invoice.getId(), List.of())))
+        var newestFirst = mine.stream().sorted(Comparator.comparing(Invoice::getIssuedAt).reversed()).toList();
+        return assembler.toResponses(newestFirst).stream()
+                .map(invoice -> new InvoiceDetailResponse(invoice, history.getOrDefault(invoice.id(), List.of())))
                 .toList();
     }
 

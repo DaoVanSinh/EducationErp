@@ -26,6 +26,7 @@ import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +46,7 @@ class CreateGroupRegistrationTest {
     private final CoursesManagement coursesManagement = mock(CoursesManagement.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final CreateGroupRegistration useCase = new CreateGroupRegistration(groups, tiers, invoices, discounts,
-            enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class));
+            enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class), mock(StudentsManagement.class));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID branchId = UUID.randomUUID();

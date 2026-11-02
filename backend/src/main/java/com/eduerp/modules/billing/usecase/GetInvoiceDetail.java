@@ -8,6 +8,7 @@ import com.eduerp.modules.billing.dto.PaymentResponse;
 import com.eduerp.modules.billing.internal.model.Payment;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.repository.PaymentRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +22,14 @@ public class GetInvoiceDetail {
 
     private final BillingBranchGuard branchGuard;
 
-    GetInvoiceDetail(InvoiceRepository invoices, PaymentRepository payments, BillingBranchGuard branchGuard) {
+    private final InvoiceResponseAssembler assembler;
+
+    GetInvoiceDetail(InvoiceRepository invoices, PaymentRepository payments, BillingBranchGuard branchGuard,
+            InvoiceResponseAssembler assembler) {
         this.invoices = invoices;
         this.payments = payments;
         this.branchGuard = branchGuard;
+        this.assembler = assembler;
     }
 
     @Transactional(readOnly = true)
@@ -34,7 +39,7 @@ public class GetInvoiceDetail {
         // Thứ tự createdAt DESC do chính query quyết định - không sort lại ở đây.
         var history = payments.findAllByInvoice_IdOrderByCreatedAtDesc(invoiceId).stream()
                 .map(GetInvoiceDetail::toPaymentResponse).toList();
-        return new InvoiceDetailResponse(CreateInvoice.toResponse(invoice), history);
+        return new InvoiceDetailResponse(assembler.toResponse(invoice), history);
     }
 
     /** Dùng lại ở {@code GetPaymentStatus} - một chỗ map duy nhất cho Payment. */

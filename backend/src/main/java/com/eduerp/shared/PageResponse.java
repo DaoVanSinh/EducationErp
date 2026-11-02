@@ -16,4 +16,10 @@ public record PageResponse<T>(List<T> items, int page, int size, long totalItems
         return new PageResponse<>(page.getContent(), page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages());
     }
+
+    /** Thông tin phân trang của {@code page}, dữ liệu là {@code items} đã chuyển đổi theo lô từ trang đó. */
+    public static <T> PageResponse<T> of(Page<?> page, List<T> items) {
+        return new PageResponse<>(items, page.getNumber(), page.getSize(), page.getTotalElements(),
+                page.getTotalPages());
+    }
 }

@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
+import com.eduerp.modules.enrollment.internal.EnrollmentResponseAssembler;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
+import com.eduerp.modules.students.StudentsManagement;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -17,7 +20,8 @@ import org.springframework.data.domain.PageRequest;
 class ListEnrollmentsTest {
 
     private final EnrollmentRepository enrollments = mock(EnrollmentRepository.class);
-    private final ListEnrollments useCase = new ListEnrollments(enrollments, TestAccess.organizationWide());
+    private final ListEnrollments useCase = new ListEnrollments(enrollments, TestAccess.organizationWide(),
+            new EnrollmentResponseAssembler(mock(StudentsManagement.class), mock(CoursesManagement.class)));
 
     @Test
     void passesAllThreeOptionalFiltersStraightToTheRepositoryAndMapsThePage() {

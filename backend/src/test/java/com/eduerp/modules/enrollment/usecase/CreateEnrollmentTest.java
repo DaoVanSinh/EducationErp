@@ -25,6 +25,7 @@ import com.eduerp.modules.enrollment.ScheduleConflictException;
 import com.eduerp.modules.enrollment.StudentNotActiveException;
 import com.eduerp.modules.enrollment.StudentProfileNotFoundException;
 import com.eduerp.modules.enrollment.dto.CreateEnrollmentRequest;
+import com.eduerp.modules.enrollment.internal.EnrollmentResponseAssembler;
 import com.eduerp.modules.enrollment.internal.ScheduleConflictChecker;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
@@ -53,7 +54,7 @@ class CreateEnrollmentTest {
     private final ScheduleConflictChecker scheduleConflicts = new ScheduleConflictChecker(enrollments, courses,
             Clock.fixed(Instant.parse("2026-05-01T00:00:00Z"), ZoneOffset.UTC));
     private final CreateEnrollment useCase = new CreateEnrollment(enrollments, students, courses,
-            TestAccess.organizationWide(), scheduleConflicts, events);
+            TestAccess.organizationWide(), scheduleConflicts, events, new EnrollmentResponseAssembler(students, courses));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();
@@ -260,7 +261,8 @@ class CreateEnrollmentTest {
     @Test
     void branchStaffCannotAcceptAConflictAndIsToldToContactTheAdmin() {
         var branchStaffUseCase = new CreateEnrollment(enrollments, students, courses,
-                TestAccess.withScope(AccessConstants.PermissionScope.BRANCH, classBranchId), scheduleConflicts, events);
+                TestAccess.withScope(AccessConstants.PermissionScope.BRANCH, classBranchId), scheduleConflicts, events,
+                new EnrollmentResponseAssembler(students, courses));
         stubActiveStudent();
         stubOneSessionConflict();
         stubSeatsTaken(0);

@@ -19,6 +19,9 @@ import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
+import com.eduerp.modules.courses.CoursesManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -38,7 +41,8 @@ class CreateComboInvoiceTest {
     private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final ComboRepository combos = mock(ComboRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final CreateComboInvoice useCase = new CreateComboInvoice(invoices, combos, events, mock(BillingBranchGuard.class));
+    private final CreateComboInvoice useCase = new CreateComboInvoice(invoices, combos, events, mock(BillingBranchGuard.class),
+            new InvoiceResponseAssembler(combos, mock(CoursesManagement.class), mock(StudentsManagement.class)));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

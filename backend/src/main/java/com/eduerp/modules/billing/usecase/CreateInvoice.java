@@ -16,6 +16,7 @@ import com.eduerp.modules.billing.dto.InvoiceResponse;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
+import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
@@ -41,10 +42,12 @@ public class CreateInvoice {
 
     private final BillingBranchGuard branchGuard;
     private final EnrollmentDiscounts discounts;
+    private final InvoiceResponseAssembler assembler;
 
     CreateInvoice(InvoiceRepository invoices, EnrollmentManagement enrollmentManagement,
             CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard,
-            EnrollmentDiscounts discounts) {
+            EnrollmentDiscounts discounts, InvoiceResponseAssembler assembler) {
+        this.assembler = assembler;
         this.branchGuard = branchGuard;
         this.discounts = discounts;
         this.invoices = invoices;
@@ -87,7 +90,7 @@ public class CreateInvoice {
                 enrollment.courseId(), enrollment.branchId(), installmentNumber, request.amount(),
                 request.dueDate(), actorAccountId), request.enrollmentId());
         events.publishEvent(new BillingEvents.InvoiceCreated(saved.getId(), actorAccountId, actorBranchId));
-        return toResponse(saved);
+        return assembler.toResponse(saved);
     }
 
     /**
@@ -121,13 +124,5 @@ public class CreateInvoice {
             throw new InstallmentLimitExceededException(enrollmentId,
                     BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT);
         }
-    }
-
-    /** Dùng lại ở mọi usecase billing khác - một chỗ map duy nhất (mirror CreateEnrollment.toResponse). */
-    static InvoiceResponse toResponse(Invoice invoice) {
-        return new InvoiceResponse(invoice.getId(), invoice.getEnrollmentId(), invoice.getComboId(),
-                invoice.getStudentProfileId(), invoice.getCourseId(), invoice.getBranchId(),
-                invoice.getInstallmentNumber(), invoice.getAmount(), invoice.getAmountPaid(),
-                invoice.getStatus(), invoice.getDueDate(), invoice.getIssuedAt());
     }
 }

@@ -18,17 +18,15 @@ function toneOf(status: InvoiceSummary["status"]): "positive" | "neutral" {
 
 /**
  * Một hoá đơn neo vào combo hoặc vào ghi danh, không bao giờ cả hai (CHECK constraint ở backend).
- * Nhánh cuối không bao giờ chạy trong dữ liệu hợp lệ, nhưng vẫn phải trả về một chuỗi: hiển thị
- * "Không rõ nguồn" tốt hơn là để trang trắng vì một ô dữ liệu lạ.
+ * Combo không có cột tên nên tên ghép từ các khoá trong combo. Tên khoá không tra được thì vẫn hiện
+ * một nhãn chung, không bao giờ lộ mã ra giao diện.
  */
 function sourceLabelOf(invoice: InvoiceSummary): string {
+  const courses = invoice.courseNames.join(" + ");
   if (invoice.comboId !== null) {
-    return `Combo ${invoice.comboId.slice(0, 8)}`;
+    return courses.length === 0 ? "Combo khoá học" : `Combo ${courses}`;
   }
-  if (invoice.enrollmentId !== null) {
-    return `Ghi danh ${invoice.enrollmentId.slice(0, 8)}`;
-  }
-  return "Không rõ nguồn";
+  return courses.length === 0 ? "Khoá học" : courses;
 }
 
 export function InvoicesTable({ rows }: InvoicesTableProps) {
@@ -44,7 +42,9 @@ export function InvoicesTable({ rows }: InvoicesTableProps) {
         >
           <div className="min-w-0">
             <p className="truncate text-sm text-mist-100">Đợt {invoice.installmentNumber}</p>
-            <p className="truncate text-xs text-mist-500">{sourceLabelOf(invoice)}</p>
+            <p className="truncate text-xs text-mist-500">
+              {invoice.studentName ?? "Học viên"} · {sourceLabelOf(invoice)}
+            </p>
           </div>
           <p className="text-sm text-mist-100">{formatter.count(invoice.amount)} đ</p>
           <p className="text-xs text-mist-500">Đã thu {formatter.count(invoice.amountPaid)} đ</p>

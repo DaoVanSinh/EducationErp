@@ -5,8 +5,12 @@ import { z } from "zod";
 export const enrollmentSummarySchema = z.object({
   id: z.string().uuid(),
   studentProfileId: z.string().uuid(),
+  /** Ba trường tên dưới đây null khi backend không tra được. */
+  studentName: z.string().nullable(),
   classId: z.string().uuid(),
+  classCode: z.string().nullable(),
   courseId: z.string().uuid(),
+  courseName: z.string().nullable(),
   branchId: z.string().uuid(),
   status: z.enum([ENROLLMENT_STATUS.active, ENROLLMENT_STATUS.withdrawn, ENROLLMENT_STATUS.completed]),
   enrolledAt: z.string(),

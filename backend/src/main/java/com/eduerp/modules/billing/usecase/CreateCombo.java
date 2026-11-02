@@ -13,17 +13,16 @@ import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
 import com.eduerp.modules.billing.MinimumComboSizeException;
 import com.eduerp.modules.billing.StudentMismatchInComboException;
-import com.eduerp.modules.billing.dto.ComboEnrollmentResponse;
 import com.eduerp.modules.billing.dto.ComboResponse;
 import com.eduerp.modules.billing.dto.CreateComboRequest;
 import com.eduerp.modules.billing.internal.model.Combo;
-import com.eduerp.modules.billing.internal.model.ComboEnrollment;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboDiscountTierRepository;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
+import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,10 +53,13 @@ public class CreateCombo {
 
     private final BillingBranchGuard branchGuard;
     private final EnrollmentDiscounts discounts;
+    private final StudentsManagement students;
 
     CreateCombo(ComboRepository combos, ComboDiscountTierRepository tiers,
             EnrollmentManagement enrollmentManagement, CoursesManagement coursesManagement,
-            ApplicationEventPublisher events, BillingBranchGuard branchGuard, EnrollmentDiscounts discounts) {
+            ApplicationEventPublisher events, BillingBranchGuard branchGuard, EnrollmentDiscounts discounts,
+            StudentsManagement students) {
+        this.students = students;
         this.branchGuard = branchGuard;
         this.discounts = discounts;
         this.combos = combos;
@@ -100,7 +102,8 @@ public class CreateCombo {
 
         var saved = save(combo, enrollmentIds);
         events.publishEvent(new BillingEvents.ComboCreated(saved.getId(), actorAccountId, actorBranchId));
-        return toResponse(saved);
+        var studentName = students.displayNamesOf(List.of(request.studentProfileId())).get(request.studentProfileId());
+        return toResponse(saved, studentName);
     }
 
     private EnrollmentManagement.EnrollmentSummaryResponse loadActiveEnrollment(UUID enrollmentId) {
@@ -151,21 +154,11 @@ public class CreateCombo {
     }
 
     /** Dùng lại ở {@code ListCombos}/{@code GetComboDetail} - một chỗ map duy nhất cho Combo
-     * (mirror {@code CreateInvoice.toResponse}). */
-    static ComboResponse toResponse(Combo combo) {
-        return new ComboResponse(combo.getId(), combo.getStudentProfileId(), combo.getBranchId(),
+     * (mirror {@code CreateInvoice.toResponse}). Tên do nơi gọi truyền vào: danh sách tra tên theo lô
+     * một lần cho cả trang, nên method map này không được tự gọi sang module students (tránh N+1). */
+    static ComboResponse toResponse(Combo combo, String studentName) {
+        return new ComboResponse(combo.getId(), combo.getStudentProfileId(), studentName, combo.getBranchId(),
                 combo.getTotalOriginalAmount(), combo.getDiscountPercent(), combo.getTotalDiscountedAmount(),
                 combo.getDueDate(), combo.getCreatedAt(), combo.getEnrollments().size());
-    }
-
-    /**
-     * Tên khác {@code toResponse} một cách cố ý: hai static method cùng tên, một nhận {@code Combo}
-     * một nhận {@code ComboEnrollment}, sẽ biến mọi method reference {@code CreateCombo::toResponse}
-     * thành một bài toán suy luận overload - đặt tên riêng thì người đọc và trình biên dịch đều khỏi
-     * phải đoán.
-     */
-    static ComboEnrollmentResponse toEnrollmentResponse(ComboEnrollment member) {
-        return new ComboEnrollmentResponse(member.getId(), member.getEnrollmentId(), member.getCourseId(),
-                member.getOriginalTuitionFee());
     }
 }

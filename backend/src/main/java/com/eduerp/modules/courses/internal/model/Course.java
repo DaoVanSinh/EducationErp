@@ -28,6 +28,8 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(name = "courses")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+// Gộp lazy-load của Class.course thành một câu IN khi CoursesManagement.classSummariesOf đọc tên khoá theo lô.
+@BatchSize(size = 50)
 public class Course {
 
     @Id

@@ -8,12 +8,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentEvents;
 import com.eduerp.modules.enrollment.EnrollmentNotActiveException;
 import com.eduerp.modules.enrollment.EnrollmentNotFoundException;
+import com.eduerp.modules.enrollment.internal.EnrollmentResponseAssembler;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
+import com.eduerp.modules.students.StudentsManagement;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -25,7 +28,8 @@ class EnrollmentTransitionsTest {
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final WithdrawEnrollment withdraw = new WithdrawEnrollment(enrollments, events, TestAccess.organizationWide());
     private final CompleteEnrollment complete = new CompleteEnrollment(enrollments, events, TestAccess.organizationWide());
-    private final GetEnrollment get = new GetEnrollment(enrollments, TestAccess.organizationWide());
+    private final GetEnrollment get = new GetEnrollment(enrollments, TestAccess.organizationWide(),
+            new EnrollmentResponseAssembler(mock(StudentsManagement.class), mock(CoursesManagement.class)));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();

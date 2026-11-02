@@ -1,6 +1,6 @@
 import { useComboDiscountTiers, type CreateComboPayload } from "@/entities/billing";
 import { useCourses } from "@/entities/course";
-import { useEnrollments } from "@/entities/enrollment";
+import { enrollmentClassLabel, useEnrollments } from "@/entities/enrollment";
 import { useStudents } from "@/entities/student";
 import { ENROLLMENT_STATUS } from "@/shared/api/schemas";
 import { useCreateCombo } from "@/modules/billing/api/use-billing-mutations";
@@ -68,7 +68,7 @@ export function useCreateComboController(onCreated: () => void) {
     () =>
       (enrollments.data?.items ?? []).map((enrollment) => ({
         enrollmentId: enrollment.id,
-        label: `Lớp ${enrollment.classId.slice(0, 8)} — khoá ${enrollment.courseId.slice(0, 8)}`,
+        label: enrollmentClassLabel(enrollment),
         tuitionFee: tuitionByCourseId.get(enrollment.courseId) ?? null,
       })),
     [enrollments.data, tuitionByCourseId],

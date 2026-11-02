@@ -91,7 +91,11 @@ export const invoiceSummarySchema = z.object({
   enrollmentId: z.string().uuid().nullable(),
   comboId: z.string().uuid().nullable(),
   studentProfileId: z.string().uuid(),
+  /** Null khi backend không tra được họ tên. */
+  studentName: z.string().nullable(),
   courseId: z.string().uuid().nullable(),
+  /** Một tên với hoá đơn ghi danh, nhiều tên với hoá đơn combo, rỗng khi không tra được. */
+  courseNames: z.array(z.string()),
   branchId: z.string().uuid(),
   installmentNumber: z.number().int(),
   amount: z.number(),
@@ -152,6 +156,8 @@ export const payUrlSchema = z.object({
 export const comboSchema = z.object({
   id: z.string().uuid(),
   studentProfileId: z.string().uuid(),
+  /** Null khi backend không tra được họ tên của hồ sơ này. */
+  studentName: z.string().nullable(),
   branchId: z.string().uuid(),
   totalOriginalAmount: z.number(),
   /** % giảm, scale 2 ở backend (NUMERIC(5,2)) - snapshot lúc tạo, không đổi khi bậc giảm giá đổi. */
@@ -169,6 +175,9 @@ export const comboEnrollmentSchema = z.object({
   id: z.string().uuid(),
   enrollmentId: z.string().uuid(),
   courseId: z.string().uuid(),
+  /** Null khi backend không tra được lớp của ghi danh này. */
+  courseName: z.string().nullable(),
+  classCode: z.string().nullable(),
   originalTuitionFee: z.number(),
 });
 
@@ -201,6 +210,7 @@ export const MIN_GROUP_MEMBERS = 2;
 export const groupRegistrationMemberSchema = z.object({
   enrollmentId: z.string().uuid(),
   studentProfileId: z.string().uuid(),
+  studentName: z.string().nullable(),
   originalTuitionFee: z.number(),
   /** Trần tổng hoá đơn của ghi danh này sau giảm nhóm. */
   discountedTuitionFee: z.number(),
@@ -212,6 +222,7 @@ export type GroupRegistrationMember = z.infer<typeof groupRegistrationMemberSche
 export const groupRegistrationSchema = z.object({
   id: z.string().uuid(),
   courseId: z.string().uuid(),
+  courseName: z.string().nullable(),
   branchId: z.string().uuid(),
   discountPercent: z.number(),
   createdAt: z.string(),

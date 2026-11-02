@@ -2,7 +2,6 @@ import { useComboDiscountTiers } from "@/entities/billing";
 import { useClasses } from "@/entities/class";
 import { useCourses } from "@/entities/course";
 import { useEnrollments } from "@/entities/enrollment";
-import { useStudents } from "@/entities/student";
 import { useCreateGroupRegistration } from "@/modules/billing/api/use-billing-mutations";
 import { createGroupRegistrationFormSchema } from "@/modules/billing/model/billing-forms";
 import { previewDiscountedTotal, resolveDiscountPercent } from "@/modules/billing/model/combo-pricing";
@@ -19,17 +18,6 @@ export interface GroupCandidate {
   readonly label: string;
 }
 
-function useStudentNames() {
-  const students = useStudents(0, REFERENCE_PAGE_SIZE);
-  return useMemo(() => {
-    const map = new Map<string, string>();
-    (students.data?.items ?? []).forEach((student) =>
-      map.set(student.id, student.fullName ?? student.email ?? student.id.slice(0, 8)),
-    );
-    return map;
-  }, [students.data]);
-}
-
 /**
  * Toàn bộ state/query/mutation của dialog lập nhóm. Trình tự: chọn lớp → nạp ghi danh đang học của lớp →
  * tick ≥ 2 học viên → xem trước % giảm và học phí mỗi người → tạo. Con số chốt do backend tính.
@@ -39,7 +27,6 @@ export function useCreateGroupRegistrationController(onCreated: () => void) {
   const classes = useClasses(0, REFERENCE_PAGE_SIZE, { openOnly: true });
   const courses = useCourses(0, REFERENCE_PAGE_SIZE);
   const tiers = useComboDiscountTiers();
-  const studentNames = useStudentNames();
 
   const form = useZodForm({
     schema: createGroupRegistrationFormSchema,
@@ -68,9 +55,9 @@ export function useCreateGroupRegistrationController(onCreated: () => void) {
     () =>
       (enrollments.data?.items ?? []).map((enrollment) => ({
         enrollmentId: enrollment.id,
-        label: studentNames.get(enrollment.studentProfileId) ?? enrollment.studentProfileId.slice(0, 8),
+        label: enrollment.studentName ?? "Học viên",
       })),
-    [enrollments.data, studentNames],
+    [enrollments.data],
   );
 
   const selectedIds = form.values.enrollmentIds;
