@@ -7,6 +7,7 @@ export const ERROR_CODE = {
   invalidCredentials: "IDENTITY_INVALID_CREDENTIALS",
   tokenInvalid: "IDENTITY_TOKEN_INVALID",
   accountNotFound: "IDENTITY_ACCOUNT_NOT_FOUND",
+  enrollmentScheduleConflict: "ENROLLMENT_SCHEDULE_CONFLICT",
   /** Mã mà client tự sinh khi không nhận được phản hồi nào (mất mạng, server chưa chạy). */
   networkUnreachable: "CLIENT_NETWORK_UNREACHABLE",
   /** Phiên đã hết và refresh cũng không cứu được. */

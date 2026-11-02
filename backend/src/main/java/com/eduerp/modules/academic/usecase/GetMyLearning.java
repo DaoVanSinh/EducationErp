@@ -85,6 +85,7 @@ public class GetMyLearning {
                         .map(CoursesManagement.ClassInfoResponse::teacherId).distinct().toList()),
                 scoresByEnrollment(entries),
                 new HashMap<>(),
+                enrollments.describeScheduleConflicts(profile.studentProfileId()),
                 clock.instant());
 
         return entries.stream()
@@ -98,6 +99,7 @@ public class GetMyLearning {
             Map<UUID, IdentityManagement.AccountBasicInfo> teachers,
             Map<UUID, Map<UUID, BigDecimal>> scores,
             Map<UUID, List<GradeColumnResponse>> columnsByCourse,
+            Map<UUID, String> scheduleConflicts,
             Instant now) {
     }
 
@@ -132,7 +134,15 @@ public class GetMyLearning {
                 entry.status(), entry.enrolledAt(), classInfo.schedule(), grades,
                 GradeRules.finalScore(columns, scores), elapsed, classInfo.standardSessionCount(),
                 ProgressRules.progressPercent(elapsed, classInfo.standardSessionCount()), classInfo.status(),
-                classInfo.startDate(), classInfo.endDate());
+                classInfo.startDate(), classInfo.endDate(), scheduleConflictOf(entry, context));
+    }
+
+    /** Đã rút hoặc đã hoàn tất thì không còn buổi nào phải đi học, dù lớp đó vẫn đang mở với học viên khác. */
+    private static String scheduleConflictOf(EnrollmentManagement.StudentEnrollmentEntry entry, Context context) {
+        if (entry.status() != EnrollmentConstants.EnrollmentStatus.ACTIVE) {
+            return null;
+        }
+        return context.scheduleConflicts().get(entry.classId());
     }
 
     /** Mirror {@code GetStudentAcademicSummary.endMarkOf}: rút khỏi lớp thì tiến trình đóng băng. */

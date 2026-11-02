@@ -11,6 +11,10 @@ public final class EnrollmentEvents {
     public record EnrollmentCreated(UUID enrollmentId, UUID actorAccountId, UUID actorBranchId) {
     }
 
+    /** Nhân viên đã thấy cảnh báo trùng lịch và vẫn xác nhận ghi danh - audit lưu lại ai quyết định. */
+    public record ScheduleConflictAccepted(UUID enrollmentId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
     public record EnrollmentWithdrawn(UUID enrollmentId, UUID actorAccountId, UUID actorBranchId) {
     }
 

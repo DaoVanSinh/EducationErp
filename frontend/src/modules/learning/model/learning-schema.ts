@@ -36,6 +36,8 @@ export const myLearningClassSchema = z.object({
   classStatus: classStatusSchema,
   classStartDate: z.string(),
   classEndDate: z.string().nullable(),
+  /** Mô tả chỗ trùng với lớp khác học viên đang học; null nếu không trùng. */
+  scheduleConflict: z.string().nullable(),
 });
 
 export type MyLearningClass = z.infer<typeof myLearningClassSchema>;

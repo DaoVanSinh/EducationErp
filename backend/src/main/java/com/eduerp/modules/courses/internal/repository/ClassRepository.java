@@ -46,4 +46,8 @@ public interface ClassRepository extends JpaRepository<Class, UUID>, JpaSpecific
     /** Lớp hiển thị ở trang chủ: các lớp còn mở (đang tuyển sinh hoặc đang học). */
     @EntityGraph(attributePaths = "course")
     List<Class> findAllByStatusInOrderByCodeAsc(Collection<CoursesConstants.ClassStatus> statuses);
+
+    /** Lớp còn mở của một khóa - để gợi ý lớp thay thế khi học viên bị trùng lịch. */
+    @EntityGraph(attributePaths = "course")
+    List<Class> findAllByCourse_IdAndStatusIn(UUID courseId, Collection<CoursesConstants.ClassStatus> statuses);
 }

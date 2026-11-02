@@ -60,6 +60,22 @@ class EnrollmentExceptionTest {
     }
 
     @Test
+    void scheduleConflictIsConflictAndCarriesTheDescription() {
+        var ex = ScheduleConflictException.acceptable("Trùng lịch với lớp HE-TOAN");
+        assertThat(ex.getErrorCode()).isEqualTo("ENROLLMENT_SCHEDULE_CONFLICT");
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(ex.getMessage()).contains("HE-TOAN").doesNotContain("liên hệ quản trị viên");
+    }
+
+    @Test
+    void scheduleConflictForBranchStaffTellsThemToContactTheAdmin() {
+        var ex = ScheduleConflictException.requiresAdmin("Trùng lịch với lớp HE-TOAN.");
+        assertThat(ex.getErrorCode()).isEqualTo("ENROLLMENT_SCHEDULE_CONFLICT_CONTACT_ADMIN");
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(ex.getMessage()).contains("HE-TOAN", "liên hệ quản trị viên để được tư vấn đổi lịch");
+    }
+
+    @Test
     void enrollmentNotActiveIsConflict() {
         var ex = new EnrollmentNotActiveException(UUID.randomUUID());
         assertThat(ex.getErrorCode()).isEqualTo("ENROLLMENT_NOT_ACTIVE");

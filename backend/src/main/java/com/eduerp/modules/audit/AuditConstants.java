@@ -28,6 +28,7 @@ public final class AuditConstants {
         public static final String CONTRACT_TERMINATE = "CONTRACT_TERMINATE";
         public static final String PAYROLL_RUN_APPROVE = "PAYROLL_RUN_APPROVE";
         public static final String ENROLLMENT_CREATE = "ENROLLMENT_CREATE";
+        public static final String ENROLLMENT_ACCEPT_SCHEDULE_CONFLICT = "ENROLLMENT_ACCEPT_SCHEDULE_CONFLICT";
         public static final String ENROLLMENT_WITHDRAW = "ENROLLMENT_WITHDRAW";
         public static final String ENROLLMENT_COMPLETE = "ENROLLMENT_COMPLETE";
         public static final String INVOICE_CREATE = "INVOICE_CREATE";

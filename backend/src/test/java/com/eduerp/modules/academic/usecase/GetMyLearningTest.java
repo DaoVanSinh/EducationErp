@@ -87,6 +87,30 @@ class GetMyLearningTest {
         verifyNoInteractions(enrollments, gradeEntries);
     }
 
+    @Test
+    void reportsTheScheduleConflictOfAnActiveEnrollment() {
+        stubOneEnrollment();
+        when(enrollments.describeScheduleConflicts(profileId)).thenReturn(Map.of(classId, "lớp HE-TOAN (Toán hè): 1 buổi"));
+
+        var result = useCaseAt(at(2026, 1, 20, 23)).execute(accountId);
+
+        assertThat(result.get(0).scheduleConflict()).isEqualTo("lớp HE-TOAN (Toán hè): 1 buổi");
+    }
+
+    /** Đã rút khỏi lớp thì không còn phải đi học, không được báo trùng dù lớp đó vẫn mở với người khác. */
+    @Test
+    void doesNotReportAConflictForAWithdrawnEnrollment() {
+        stubOneEnrollment();
+        when(enrollments.listEnrollmentsByStudent(profileId)).thenReturn(List.of(
+                new EnrollmentManagement.StudentEnrollmentEntry(enrollmentId, classId, courseId,
+                        EnrollmentConstants.EnrollmentStatus.WITHDRAWN, at(2026, 1, 1, 8), at(2026, 1, 10, 8))));
+        when(enrollments.describeScheduleConflicts(profileId)).thenReturn(Map.of(classId, "lớp HE-TOAN (Toán hè): 1 buổi"));
+
+        var result = useCaseAt(at(2026, 1, 20, 23)).execute(accountId);
+
+        assertThat(result.get(0).scheduleConflict()).isNull();
+    }
+
     /** Thiếu một cột điểm thì tổng kết null, nhưng cột đã chấm vẫn phải hiện điểm. */
     @Test
     void showsScoredColumnsAndLeavesFinalScoreEmptyUntilEveryColumnIsScored() {

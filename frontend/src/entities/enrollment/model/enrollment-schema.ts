@@ -18,4 +18,6 @@ export type EnrollmentSummary = z.infer<typeof enrollmentSummarySchema>;
 export interface CreateEnrollmentPayload {
   readonly studentProfileId: string;
   readonly classId: string;
+  /** Nhân viên đã xem cảnh báo trùng lịch và vẫn muốn ghi danh. */
+  readonly acceptScheduleConflict?: boolean;
 }

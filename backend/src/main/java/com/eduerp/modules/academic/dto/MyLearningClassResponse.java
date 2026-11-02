@@ -19,10 +19,14 @@ import java.util.UUID;
  *
  * <p>{@code classStatus}/{@code classStartDate}: lớp đang tuyển sinh thì học viên thấy "khai giảng ngày ..."
  * thay vì một lịch học chưa bắt đầu.
+ *
+ * <p>{@code scheduleConflict}: mô tả chỗ trùng với lớp khác học viên đang học, {@code null} nếu không trùng hoặc
+ * ghi danh này không còn đang học.
  */
 public record MyLearningClassResponse(UUID enrollmentId, UUID classId, String classCode, UUID courseId,
         String courseName, String teacherName, EnrollmentConstants.EnrollmentStatus status, Instant enrolledAt,
         List<WeeklyScheduleSlot> schedule, List<MyGradeItem> grades, BigDecimal finalScore,
         int elapsedSessions, Integer standardSessionCount, Integer progressPercent,
-        CoursesConstants.ClassStatus classStatus, LocalDate classStartDate, LocalDate classEndDate) {
+        CoursesConstants.ClassStatus classStatus, LocalDate classStartDate, LocalDate classEndDate,
+        String scheduleConflict) {
 }

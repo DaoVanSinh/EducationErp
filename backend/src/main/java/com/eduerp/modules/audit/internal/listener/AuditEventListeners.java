@@ -185,6 +185,12 @@ class AuditEventListeners {
     }
 
     @ApplicationModuleListener
+    void on(EnrollmentEvents.ScheduleConflictAccepted event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ENROLLMENT_ACCEPT_SCHEDULE_CONFLICT,
+                AuditConstants.EntityTypes.ENROLLMENT, event.enrollmentId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
     void on(EnrollmentEvents.EnrollmentWithdrawn event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ENROLLMENT_WITHDRAW,
                 AuditConstants.EntityTypes.ENROLLMENT, event.enrollmentId().toString(), event.actorBranchId()));

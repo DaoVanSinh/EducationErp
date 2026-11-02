@@ -36,6 +36,7 @@ export function LearningClassCard({ item, today }: LearningClassCardProps) {
       </header>
 
       <ClassTimelineNote item={item} today={today} />
+      <ScheduleConflictNote item={item} />
 
       <div className="flex flex-col gap-2 text-sm text-mist-100">
         <p className="flex items-center gap-2">
@@ -82,6 +83,18 @@ function ClassTimelineNote({ item, today }: LearningClassCardProps) {
     <p className="text-xs text-mist-400">
       Khai giảng {formatter.date(item.classStartDate)}
       {item.classEndDate ? ` · kết thúc ${formatter.date(item.classEndDate)}` : ""}
+    </p>
+  );
+}
+
+/** Học viên không tự đổi được lớp, nên ngoài chỗ trùng còn phải biết cần liên hệ ai. */
+function ScheduleConflictNote({ item }: ItemProps) {
+  if (item.scheduleConflict === null) {
+    return null;
+  }
+  return (
+    <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+      Lớp này trùng lịch với {item.scheduleConflict}. Vui lòng liên hệ quản trị viên để được tư vấn đổi lịch.
     </p>
   );
 }

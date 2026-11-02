@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.access.AccessManagement;
+import com.eduerp.modules.courses.CoursesConstants;
 import com.eduerp.modules.courses.internal.model.Class;
 import com.eduerp.modules.courses.internal.model.Course;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
@@ -26,6 +27,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 import jakarta.servlet.http.Cookie;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -180,6 +183,41 @@ class EnrollmentAdminControllerIT {
 
         assertThat(overflow.getResponse().getStatus()).isEqualTo(409);
         assertThat(overflow.getResponse().getContentAsString()).contains("ENROLLMENT_CLASS_FULL");
+    }
+
+    private UUID newClassOnTuesdayEvening() {
+        var branchId = branches.save(new Branch("ENRW-" + shortId(), "Chi nhánh", null)).getId();
+        var course = courses.save(new Course("ENRW-C-" + shortId(), "Khoá", null, 24, new BigDecimal("9000000")));
+        var teacherId = accounts.save(new Account("enr-web-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
+                .getId();
+        var cls = ClassFixtures.enrolling(course, "ENRW-K-" + shortId(), branchId, teacherId, 10);
+        cls.addSchedule(CoursesConstants.DayOfWeek.TUE, LocalTime.of(18, 0), LocalTime.of(20, 0));
+        return classes.save(cls).getId();
+    }
+
+    /** Lần đầu bị chặn 409 kèm tên lớp; nhân viên xác nhận thì lần sau ghi danh được. */
+    @Test
+    void blocksAScheduleConflictUntilTheStaffAcceptsIt() throws Exception {
+        var admin = signIn("enr-admin-conflict@eduerp.local", AccessConstants.RoleCodes.ADMIN);
+        var studentProfileId = newStudentProfileId();
+        var conflictingClassId = newClassOnTuesdayEvening();
+        createEnrollment(admin, studentProfileId, newClassOnTuesdayEvening());
+
+        var blocked = mockMvc.perform(post(ENROLLMENTS).cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"studentProfileId\":\"" + studentProfileId + "\",\"classId\":\""
+                                + conflictingClassId + "\"}"))
+                .andReturn();
+        assertThat(blocked.getResponse().getStatus()).isEqualTo(409);
+        assertThat(blocked.getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .contains("ENROLLMENT_SCHEDULE_CONFLICT", "ENRW-K-");
+
+        var accepted = mockMvc.perform(post(ENROLLMENTS).cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CreateEnrollmentRequest(studentProfileId, conflictingClassId, true))))
+                .andReturn();
+        assertThat(accepted.getResponse().getStatus()).isEqualTo(200);
     }
 
     @Test

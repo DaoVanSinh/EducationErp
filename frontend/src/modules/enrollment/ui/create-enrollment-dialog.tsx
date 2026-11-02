@@ -1,8 +1,7 @@
 import { CLASS_STATUS_LABEL, type ClassSummary } from "@/entities/class";
 import type { StudentProfileSummary } from "@/entities/student";
-import { useCreateEnrollment } from "@/modules/enrollment/api/use-enrollment-mutations";
-import { createEnrollmentFormSchema } from "@/modules/enrollment/model/enrollment-forms";
-import { useZodForm } from "@/shared/lib/use-zod-form";
+import { useCreateEnrollmentForm } from "@/modules/enrollment/hooks/use-create-enrollment-form";
+import { ScheduleConflictNotice } from "@/modules/enrollment/ui/schedule-conflict-notice";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -17,27 +16,18 @@ export interface CreateEnrollmentDialogProps {
 }
 
 export function CreateEnrollmentDialog({ open, onClose, students, classes }: CreateEnrollmentDialogProps) {
-  const createEnrollment = useCreateEnrollment();
-
-  const form = useZodForm({
-    schema: createEnrollmentFormSchema,
-    initialValues: { studentProfileId: "", classId: "" },
-    onSubmit: async (values) => {
-      await createEnrollment.mutateAsync(values);
-      form.reset();
-      onClose();
-    },
-  });
+  const { form, cancel, conflictMessage } = useCreateEnrollmentForm(onClose);
 
   return (
     <GlassModal
       open={open}
-      onClose={onClose}
+      onClose={cancel}
       title="Ghi danh học viên"
-      description="Một học viên chỉ có một ghi danh đang học cho mỗi lớp. Lớp đã đủ chỗ sẽ bị từ chối."
+      description="Một học viên chỉ có một ghi danh đang học cho mỗi lớp. Lớp đã đủ chỗ sẽ bị từ chối, lớp trùng lịch sẽ được cảnh báo."
     >
       <form id="create-enrollment-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
+        {conflictMessage ? <ScheduleConflictNotice message={conflictMessage} /> : null}
 
         <FormField label="Học viên" htmlFor="enrollment-student" error={form.fieldErrors.studentProfileId}>
           <GlassSelect
@@ -85,11 +75,11 @@ export function CreateEnrollmentDialog({ open, onClose, students, classes }: Cre
       </form>
 
       <footer className="flex justify-end gap-2">
-        <GlassButton variant="ghost" onClick={onClose}>
+        <GlassButton variant="ghost" onClick={cancel}>
           Huỷ
         </GlassButton>
         <GlassButton type="submit" form="create-enrollment-form" loading={form.isSubmitting}>
-          Ghi danh
+          {conflictMessage ? "Vẫn ghi danh" : "Ghi danh"}
         </GlassButton>
       </footer>
     </GlassModal>

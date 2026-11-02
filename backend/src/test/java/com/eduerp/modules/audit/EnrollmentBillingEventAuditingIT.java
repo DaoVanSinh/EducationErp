@@ -85,6 +85,16 @@ class EnrollmentBillingEventAuditingIT {
     }
 
     @Test
+    void auditsAnAcceptedScheduleConflict() {
+        var enrollmentId = UUID.randomUUID();
+        events.publish(new EnrollmentEvents.ScheduleConflictAccepted(enrollmentId, UUID.randomUUID(),
+                UUID.randomUUID()));
+
+        assertAudited(AuditConstants.EntityTypes.ENROLLMENT, AuditConstants.Actions.ENROLLMENT_ACCEPT_SCHEDULE_CONFLICT,
+                enrollmentId);
+    }
+
+    @Test
     void auditsEnrollmentWithdrawn() {
         var enrollmentId = UUID.randomUUID();
         events.publish(new EnrollmentEvents.EnrollmentWithdrawn(enrollmentId, UUID.randomUUID(),

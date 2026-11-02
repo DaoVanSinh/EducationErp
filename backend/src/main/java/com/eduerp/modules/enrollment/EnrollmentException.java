@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 public sealed class EnrollmentException extends AppException
         permits EnrollmentNotFoundException, StudentProfileNotFoundException, StudentNotActiveException,
         ClassNotFoundException, ClassNotActiveException, ClassFullException, DuplicateActiveEnrollmentException,
-        EnrollmentNotActiveException, StudentHasActiveEnrollmentsException {
+        EnrollmentNotActiveException, StudentHasActiveEnrollmentsException, ScheduleConflictException {
 
     protected EnrollmentException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);

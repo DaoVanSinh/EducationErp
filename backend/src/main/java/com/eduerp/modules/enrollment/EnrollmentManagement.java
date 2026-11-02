@@ -1,8 +1,10 @@
 package com.eduerp.modules.enrollment;
 
+import com.eduerp.modules.enrollment.internal.ScheduleConflictChecker;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -44,9 +46,20 @@ public class EnrollmentManagement {
     }
 
     private final EnrollmentRepository enrollments;
+    private final ScheduleConflictChecker scheduleConflicts;
 
-    EnrollmentManagement(EnrollmentRepository enrollments) {
+    EnrollmentManagement(EnrollmentRepository enrollments, ScheduleConflictChecker scheduleConflicts) {
         this.enrollments = enrollments;
+        this.scheduleConflicts = scheduleConflicts;
+    }
+
+    /**
+     * Mô tả chỗ trùng lịch của từng lớp học viên đang học, theo id lớp - {@code modules.academic} hiện ở cổng học
+     * tập. Lớp không trùng thì không có trong kết quả.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> describeScheduleConflicts(UUID studentProfileId) {
+        return scheduleConflicts.describeCurrentConflicts(studentProfileId);
     }
 
     @Transactional(readOnly = true)

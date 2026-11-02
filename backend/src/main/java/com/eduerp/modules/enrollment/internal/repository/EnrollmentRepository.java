@@ -22,6 +22,9 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
     List<Enrollment> findAllByClassIdAndStatus(UUID classId, EnrollmentConstants.EnrollmentStatus status);
 
+    List<Enrollment> findAllByStudentProfileIdAndStatus(UUID studentProfileId,
+            EnrollmentConstants.EnrollmentStatus status);
+
     /** Sĩ số đang học của nhiều lớp trong MỘT truy vấn - cho danh sách lớp và tác vụ tự khai giảng. */
     @Query("""
             SELECT e.classId AS classId, COUNT(e) AS total FROM Enrollment e

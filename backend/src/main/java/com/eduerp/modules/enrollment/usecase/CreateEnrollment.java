@@ -9,10 +9,12 @@ import com.eduerp.modules.enrollment.ClassNotFoundException;
 import com.eduerp.modules.enrollment.DuplicateActiveEnrollmentException;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentEvents;
+import com.eduerp.modules.enrollment.ScheduleConflictException;
 import com.eduerp.modules.enrollment.StudentNotActiveException;
 import com.eduerp.modules.enrollment.StudentProfileNotFoundException;
 import com.eduerp.modules.enrollment.dto.CreateEnrollmentRequest;
 import com.eduerp.modules.enrollment.dto.EnrollmentResponse;
+import com.eduerp.modules.enrollment.internal.ScheduleConflictChecker;
 import com.eduerp.modules.enrollment.internal.model.Enrollment;
 import com.eduerp.modules.enrollment.internal.repository.EnrollmentRepository;
 import com.eduerp.modules.students.StudentsManagement;
@@ -21,7 +23,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Thứ tự kiểm tra đúng theo spec mục 4: học viên → lớp → sĩ số → trùng ghi danh → lưu → publish. */
+/**
+ * Thứ tự kiểm tra đúng theo spec mục 4: học viên → lớp → trùng ghi danh → sĩ số → trùng lịch → lưu → publish.
+ * Trùng lịch kiểm sau sĩ số: gợi ý đổi lớp không có nghĩa nếu lớp đã hết chỗ ngay từ đầu.
+ */
 @Service
 public class CreateEnrollment {
 
@@ -29,14 +34,16 @@ public class CreateEnrollment {
     private final StudentsManagement students;
     private final CoursesManagement courses;
     private final AccessManagement access;
+    private final ScheduleConflictChecker scheduleConflicts;
     private final ApplicationEventPublisher events;
 
     CreateEnrollment(EnrollmentRepository enrollments, StudentsManagement students, CoursesManagement courses,
-            AccessManagement access, ApplicationEventPublisher events) {
+            AccessManagement access, ScheduleConflictChecker scheduleConflicts, ApplicationEventPublisher events) {
         this.enrollments = enrollments;
         this.students = students;
         this.courses = courses;
         this.access = access;
+        this.scheduleConflicts = scheduleConflicts;
         this.events = events;
     }
 
@@ -51,8 +58,9 @@ public class CreateEnrollment {
         var classInfo = courses.getClassInfo(request.classId())
                 .orElseThrow(() -> new ClassNotFoundException(request.classId()));
         // Lớp 2 (spec 6.4): người chỉ có quyền theo chi nhánh chỉ ghi danh vào lớp của chi nhánh mình.
-        access.dataScopeOf(actorAccountId, AccessConstants.Resources.ENROLLMENT, AccessConstants.Actions.CREATE)
-                .requireCovers(classInfo.branchId());
+        var scope = access.dataScopeOf(actorAccountId, AccessConstants.Resources.ENROLLMENT,
+                AccessConstants.Actions.CREATE);
+        scope.requireCovers(classInfo.branchId());
         // Nhận ghi danh khi lớp đang tuyển sinh hoặc đang học (vào học muộn); đã kết thúc/huỷ thì không.
         if (!classInfo.acceptsEnrollment()) {
             throw new ClassNotActiveException(request.classId());
@@ -74,9 +82,22 @@ public class CreateEnrollment {
             throw new ClassFullException(request.classId(), classInfo.maxSeats());
         }
 
+        // Chỉ quản trị viên (quyền toàn tổ chức) được chấp nhận trùng lịch; nhân viên chi nhánh gửi cờ cũng không qua.
+        var conflict = scheduleConflicts.describeConflicts(request.studentProfileId(), classInfo);
+        if (conflict.isPresent() && !scope.isOrganizationWide()) {
+            throw ScheduleConflictException.requiresAdmin(conflict.get());
+        }
+        if (conflict.isPresent() && !request.acceptScheduleConflict()) {
+            throw ScheduleConflictException.acceptable(conflict.get());
+        }
+
         var saved = enrollments.save(new Enrollment(request.studentProfileId(), request.classId(),
                 classInfo.courseId(), classInfo.branchId(), actorAccountId));
         events.publishEvent(new EnrollmentEvents.EnrollmentCreated(saved.getId(), actorAccountId, actorBranchId));
+        if (conflict.isPresent()) {
+            events.publishEvent(
+                    new EnrollmentEvents.ScheduleConflictAccepted(saved.getId(), actorAccountId, actorBranchId));
+        }
         return toResponse(saved);
     }
 

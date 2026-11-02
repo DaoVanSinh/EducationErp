@@ -104,6 +104,23 @@ public class CoursesManagement {
         return classes.findById(classId).map(CoursesManagement::toClassInfo);
     }
 
+    /** Giống {@link #getClassInfo(UUID)} nhưng theo lô; id không tồn tại chỉ vắng mặt trong kết quả, không ném. */
+    @Transactional(readOnly = true)
+    public List<ClassInfoResponse> classInfosOf(Collection<UUID> classIds) {
+        if (classIds.isEmpty()) {
+            return List.of();
+        }
+        return classes.findAllById(classIds).stream().map(CoursesManagement::toClassInfo).toList();
+    }
+
+    /** Các lớp còn mở của một khóa - {@code modules.enrollment} dùng để gợi ý lớp thay thế khi trùng lịch. */
+    @Transactional(readOnly = true)
+    public List<ClassInfoResponse> listOpenClassesOfCourse(UUID courseId) {
+        return classes.findAllByCourse_IdAndStatusIn(courseId, OPEN_CLASS_STATUSES).stream()
+                .map(CoursesManagement::toClassInfo)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public Optional<CourseTuitionResponse> getCourseTuition(UUID courseId) {
         return courses.findById(courseId)
