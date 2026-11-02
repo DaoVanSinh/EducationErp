@@ -74,7 +74,7 @@ class ClassGradeAccessGuardTest {
 
         assertThatThrownBy(() -> guard.requireAccessToClass(otherTeacherId, classId, AccessConstants.Actions.UPDATE))
                 .isInstanceOf(NotAssignedToClassException.class)
-                .hasMessageContaining(classId.toString());
+                .hasMessageContaining("không được phân công");
     }
 
     /** Spec 6.4 lớp 2: quản lý chi nhánh (scope BRANCH) thao tác được lớp của CHI NHÁNH MÌNH. */

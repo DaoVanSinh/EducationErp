@@ -26,7 +26,7 @@ public sealed class IdentityException extends AppException
     public static final class AccountNeverActivated extends IdentityException {
         public AccountNeverActivated(java.util.UUID accountId) {
             super(IdentityConstants.ErrorCodes.ACCOUNT_NEVER_ACTIVATED, HttpStatus.CONFLICT,
-                    "Tài khoản " + accountId + " chưa từng kích hoạt - hãy dùng Gửi lại lời mời");
+                    "Tài khoản chưa từng kích hoạt - hãy dùng Gửi lại lời mời");
         }
     }
 }

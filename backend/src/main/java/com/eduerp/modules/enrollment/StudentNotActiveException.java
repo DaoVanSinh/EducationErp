@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 public final class StudentNotActiveException extends EnrollmentException {
     public StudentNotActiveException(UUID studentProfileId) {
         super("ENROLLMENT_STUDENT_NOT_ACTIVE", HttpStatus.CONFLICT,
-                "Hồ sơ học viên " + studentProfileId + " đã bị vô hiệu hoá");
+                "Hồ sơ học viên đã bị vô hiệu hoá");
     }
 }

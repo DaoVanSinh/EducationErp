@@ -11,6 +11,6 @@ import org.springframework.http.HttpStatus;
 public final class PayrollRunEmptyException extends PayrollException {
     public PayrollRunEmptyException(UUID payrollRunId) {
         super("PAYROLL_RUN_EMPTY", HttpStatus.CONFLICT,
-                "Kỳ lương " + payrollRunId + " chưa có phiếu lương nào, không thể gửi duyệt");
+                "Kỳ lương chưa có phiếu lương nào, không thể gửi duyệt");
     }
 }

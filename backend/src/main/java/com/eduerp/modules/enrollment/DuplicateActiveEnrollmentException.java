@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 public final class DuplicateActiveEnrollmentException extends EnrollmentException {
     public DuplicateActiveEnrollmentException(UUID studentProfileId, UUID classId) {
         super("ENROLLMENT_DUPLICATE_ACTIVE", HttpStatus.CONFLICT,
-                "Học viên " + studentProfileId + " đã ghi danh lớp " + classId + " và còn đang học");
+                "Học viên đã ghi danh lớp này và còn đang học");
     }
 }

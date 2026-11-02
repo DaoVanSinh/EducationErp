@@ -27,7 +27,7 @@ public sealed class AttendanceException extends AppException
     public static final class NotAssignedToClass extends AttendanceException {
         public NotAssignedToClass(UUID actorAccountId, UUID classId) {
             super("ATTENDANCE_NOT_ASSIGNED_TO_CLASS", HttpStatus.FORBIDDEN,
-                    "Tài khoản " + actorAccountId + " không được phân công dạy lớp " + classId);
+                    "Bạn không được phân công dạy lớp này");
         }
     }
 
@@ -49,7 +49,7 @@ public sealed class AttendanceException extends AppException
     public static final class ClassNotInProgress extends AttendanceException {
         public ClassNotInProgress(UUID classId) {
             super("ATTENDANCE_CLASS_NOT_IN_PROGRESS", HttpStatus.CONFLICT,
-                    "Lớp " + classId + " không ở trạng thái đang học, không điểm danh được");
+                    "Lớp không ở trạng thái đang học, không điểm danh được");
         }
     }
 

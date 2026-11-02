@@ -12,6 +12,6 @@ public final class NotAssignedToClassException extends AcademicException {
 
     public NotAssignedToClassException(UUID actorAccountId, UUID classId) {
         super("ACADEMIC_NOT_ASSIGNED_TO_CLASS", HttpStatus.FORBIDDEN,
-                "Tài khoản " + actorAccountId + " không được phân công dạy lớp " + classId);
+                "Bạn không được phân công dạy lớp này");
     }
 }

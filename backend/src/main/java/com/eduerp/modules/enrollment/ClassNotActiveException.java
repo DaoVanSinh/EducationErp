@@ -7,6 +7,6 @@ import org.springframework.http.HttpStatus;
 public final class ClassNotActiveException extends EnrollmentException {
     public ClassNotActiveException(UUID classId) {
         super("ENROLLMENT_CLASS_NOT_ACTIVE", HttpStatus.CONFLICT,
-                "Lớp học " + classId + " đã kết thúc hoặc đã huỷ, không còn nhận ghi danh");
+                "Lớp học đã kết thúc hoặc đã huỷ, không còn nhận ghi danh");
     }
 }

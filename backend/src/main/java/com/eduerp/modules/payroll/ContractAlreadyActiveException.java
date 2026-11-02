@@ -7,6 +7,6 @@ import org.springframework.http.HttpStatus;
 public final class ContractAlreadyActiveException extends PayrollException {
     public ContractAlreadyActiveException(UUID accountId) {
         super("PAYROLL_CONTRACT_ALREADY_ACTIVE", HttpStatus.CONFLICT,
-                "Tài khoản " + accountId + " đã có hợp đồng đang hiệu lực");
+                "Tài khoản này đã có hợp đồng đang hiệu lực");
     }
 }

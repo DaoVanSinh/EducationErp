@@ -63,7 +63,7 @@ public sealed class ClassLifecycleException extends CoursesException
     public static final class TeacherHasOpenClasses extends ClassLifecycleException {
         public TeacherHasOpenClasses(UUID teacherId, long openClasses) {
             super(CoursesConstants.ErrorCodes.TEACHER_HAS_OPEN_CLASSES,
-                    "Tài khoản " + teacherId + " còn dạy " + openClasses + " lớp đang mở - hãy đổi giáo viên của các lớp đó trước");
+                    "Người này còn " + openClasses + " lớp đang mở - hãy đổi giáo viên của các lớp đó trước");
         }
     }
 }

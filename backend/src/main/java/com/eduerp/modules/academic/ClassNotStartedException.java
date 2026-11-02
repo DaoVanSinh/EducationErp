@@ -7,6 +7,6 @@ import org.springframework.http.HttpStatus;
 public final class ClassNotStartedException extends AcademicException {
     public ClassNotStartedException(UUID classId) {
         super("ACADEMIC_CLASS_NOT_STARTED", HttpStatus.CONFLICT,
-                "Lớp " + classId + " chưa khai giảng hoặc đã huỷ, chưa nhập điểm được");
+                "Lớp chưa khai giảng hoặc đã huỷ, chưa nhập điểm được");
     }
 }

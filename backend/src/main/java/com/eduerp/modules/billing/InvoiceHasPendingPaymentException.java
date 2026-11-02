@@ -8,6 +8,6 @@ import org.springframework.http.HttpStatus;
 public final class InvoiceHasPendingPaymentException extends BillingException {
     public InvoiceHasPendingPaymentException(UUID invoiceId) {
         super("BILLING_INVOICE_HAS_PENDING_PAYMENT", HttpStatus.CONFLICT,
-                "Hoá đơn " + invoiceId + " đang có giao dịch online chờ xác nhận, không thể huỷ");
+                "Hoá đơn đang có giao dịch online chờ xác nhận, không thể huỷ");
     }
 }

@@ -29,14 +29,14 @@ public sealed class AssessmentException extends AppException
     public static final class ClassClosed extends AssessmentException {
         public ClassClosed(UUID classId) {
             super("ASSESSMENT_CLASS_CLOSED", HttpStatus.CONFLICT,
-                    "Lớp " + classId + " đã kết thúc hoặc đã huỷ, không giao bài mới được");
+                    "Lớp đã kết thúc hoặc đã huỷ, không giao bài mới được");
         }
     }
 
     public static final class NotAssignedToClass extends AssessmentException {
         public NotAssignedToClass(UUID actorAccountId, UUID classId) {
             super("ASSESSMENT_NOT_ASSIGNED_TO_CLASS", HttpStatus.FORBIDDEN,
-                    "Tài khoản " + actorAccountId + " không được phân công dạy lớp " + classId);
+                    "Bạn không được phân công dạy lớp này");
         }
     }
 
@@ -97,7 +97,7 @@ public sealed class AssessmentException extends AppException
     public static final class NotEnrolledInClass extends AssessmentException {
         public NotEnrolledInClass(UUID classId) {
             super("ASSESSMENT_NOT_ENROLLED_IN_CLASS", HttpStatus.FORBIDDEN,
-                    "Bạn không học lớp " + classId + " nên không thể làm mini-task này");
+                    "Bạn không học lớp này nên không thể làm mini-task này");
         }
     }
 

@@ -9,6 +9,6 @@ import org.springframework.http.HttpStatus;
 public final class ComboHasInvoicesException extends BillingException {
     public ComboHasInvoicesException(UUID comboId) {
         super("BILLING_COMBO_HAS_INVOICES", HttpStatus.CONFLICT,
-                "Combo " + comboId + " đã phát hành hoá đơn, không huỷ được");
+                "Combo đã phát hành hoá đơn, không huỷ được");
     }
 }

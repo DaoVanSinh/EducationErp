@@ -7,6 +7,6 @@ import org.springframework.http.HttpStatus;
 public final class EnrollmentNotActiveForBillingException extends BillingException {
     public EnrollmentNotActiveForBillingException(UUID enrollmentId) {
         super("BILLING_ENROLLMENT_NOT_ACTIVE", HttpStatus.CONFLICT,
-                "Ghi danh " + enrollmentId + " không còn đang học, không phát hành thêm đợt thu");
+                "Ghi danh này không còn đang học, không phát hành thêm đợt thu");
     }
 }

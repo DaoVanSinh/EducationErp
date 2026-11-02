@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public final class ContractAlreadyTerminatedException extends PayrollException {
     public ContractAlreadyTerminatedException(UUID contractId) {
-        super("PAYROLL_CONTRACT_ALREADY_TERMINATED", HttpStatus.CONFLICT, "Hợp đồng " + contractId + " đã kết thúc");
+        super("PAYROLL_CONTRACT_ALREADY_TERMINATED", HttpStatus.CONFLICT, "Hợp đồng này đã kết thúc");
     }
 }
