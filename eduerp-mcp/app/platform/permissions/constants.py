@@ -22,9 +22,10 @@ class PermissionConstants:
         EXPORT = "EXPORT"
 
     class Resources:
+        """Must match com.eduerp.modules.access.AccessConstants.Resources (seeded in `permissions`)."""
+
         ACCOUNT = "ACCOUNT"
         ROLE = "ROLE"
-        PERMISSION = "PERMISSION"
         BRANCH = "BRANCH"
         COURSE = "COURSE"
         CLASS = "CLASS"
@@ -32,11 +33,15 @@ class PermissionConstants:
         STUDENT = "STUDENT"
         ENROLLMENT = "ENROLLMENT"
         INVOICE = "INVOICE"
-        COMBO = "COMBO"
         GRADE = "GRADE"
-        CONTRACT = "CONTRACT"
         PAYROLL = "PAYROLL"
-        REPORT = "REPORT"
+        DASHBOARD = "DASHBOARD"
+        PERMISSION_GROUP = "PERMISSION_GROUP"
+        TEACHING = "TEACHING"
+        LEARNING = "LEARNING"
+        ATTENDANCE = "ATTENDANCE"
+        ASSIGNMENT = "ASSIGNMENT"
+        PRACTICE = "PRACTICE"
 
     class ErrorCodes:
         PERMISSION_DENIED = "access.permission_denied"

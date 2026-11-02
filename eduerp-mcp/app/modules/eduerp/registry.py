@@ -1,40 +1,47 @@
-"""Curated EduERP endpoint registry with exact RBAC (resource, action, min_scope) requirements."""
+"""Curated EduERP endpoint registry with exact RBAC (resource, action, min_scope) requirements.
+
+Not exposed on purpose: credential flows (login, password change/reset, invite completion), so an
+AI client never handles a password; binary downloads and uploads (exports, avatar, contract scans);
+the notification SSE stream; and the VNPay server-to-server callbacks.
+
+Every entry mirrors one Spring controller method: same HTTP method and path, the same
+`@PreAuthorize(AccessConstants.AccessRules.X)` resource/action/minimum scope, the same
+`@RequestParam` names and the same request-record field names. The backend re-checks every
+call, so a mismatch here never grants extra access - it only makes a tool fail for users who
+should be allowed (or advertise a tool they cannot really use). Keep both sides in sync.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from app.modules.eduerp.constants import EduErpModuleConstants as C
+from app.modules.eduerp.endpoint_spec import PAGING as _PAGING
+from app.modules.eduerp.endpoint_spec import EndpointSpec
+from app.modules.eduerp.registry_admin import (
+    ACADEMIC_ADMIN_ENDPOINTS,
+    FINANCE_ADMIN_ENDPOINTS,
+    PAYROLL_ADMIN_ENDPOINTS,
+    SYSTEM_ADMIN_ENDPOINTS,
+)
+from app.modules.eduerp.registry_portals import (
+    SELF_SERVICE_ENDPOINTS,
+    STUDENT_ENDPOINTS,
+    TEACHER_ENDPOINTS,
+)
 
-
-@dataclass(frozen=True)
-class EndpointSpec:
-    endpoint_id: str
-    domain: str
-    method: str  # "GET" | "POST" | "PATCH"
-    path_template: str
-    resource: str
-    action: str
-    min_scope: str
-    summary: str
-    path_params: tuple[str, ...] = ()
-    query_params: tuple[str, ...] = ()
-    body_fields: tuple[str, ...] = ()
-
-
-EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
-    # Dashboard & Reports
+_CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
+    # Dashboard - DashboardController (READ_DASHBOARD = DASHBOARD:READ@BRANCH)
     EndpointSpec(
         endpoint_id="dashboard.stats",
         domain="dashboard",
         method="GET",
         path_template="/api/dashboard/stats",
-        resource=C.Resources.REPORT,
+        resource=C.Resources.DASHBOARD,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Xem tổng quan chỉ số vận hành EduERP (học viên, lớp học, doanh thu, công nợ).",
+        summary="Thống kê tổng quan: số tài khoản theo vai trò và các lần đăng nhập gần đây.",
+        query_params=("branchId",),
     ),
-    # Organization — Branches
+    # Organization - BranchAdminController (BRANCH:*@ORGANIZATION)
     EndpointSpec(
         endpoint_id="branches.list",
         domain="organization",
@@ -42,9 +49,9 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/organization/branches",
         resource=C.Resources.BRANCH,
         action=C.Actions.READ,
-        min_scope=C.Scopes.BRANCH,
-        summary="Danh sách cơ sở đào tạo (phân trang, tìm kiếm theo từ khóa/trạng thái).",
-        query_params=("page", "size", "search", "status"),
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Danh sách chi nhánh (phân trang).",
+        query_params=_PAGING,
     ),
     EndpointSpec(
         endpoint_id="branches.create",
@@ -54,10 +61,10 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.BRANCH,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.ORGANIZATION,
-        summary="Tạo cơ sở đào tạo mới.",
-        body_fields=("code", "name", "address", "phone"),
+        summary="Tạo chi nhánh mới (code, name bắt buộc).",
+        body_fields=("code", "name", "address"),
     ),
-    # Academic — Courses & Classes
+    # Courses - CourseAdminController (READ_COURSE@BRANCH, CREATE_COURSE@ORGANIZATION)
     EndpointSpec(
         endpoint_id="courses.list",
         domain="academic",
@@ -66,8 +73,8 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.COURSE,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách khóa học (mã khóa học, học phí chuẩn, số buổi, trạng thái).",
-        query_params=("page", "size", "search", "status"),
+        summary="Danh sách khóa học (mã, tên, học phí, số buổi chuẩn, cột điểm).",
+        query_params=_PAGING,
     ),
     EndpointSpec(
         endpoint_id="courses.create",
@@ -77,9 +84,13 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.COURSE,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.ORGANIZATION,
-        summary="Tạo khóa học mới.",
-        body_fields=("code", "name", "description", "totalSessions", "tuitionFee"),
+        summary=(
+            "Tạo khóa học mới. gradeColumns là danh sách {name, weightPercent, maxScore, "
+            "displayOrder}, tổng weightPercent phải bằng 100."
+        ),
+        body_fields=("code", "name", "description", "standardSessionCount", "tuitionFee", "gradeColumns"),
     ),
+    # Classes - ClassAdminController (CLASS:*@BRANCH)
     EndpointSpec(
         endpoint_id="classes.list",
         domain="academic",
@@ -87,9 +98,9 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/courses/classes",
         resource=C.Resources.CLASS,
         action=C.Actions.READ,
-        min_scope=C.Scopes.PERSONAL,
-        summary="Danh sách lớp học theo cơ sở/khóa học/trạng thái.",
-        query_params=("page", "size", "search", "branchId", "courseId", "status"),
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách lớp học, lọc theo giáo viên, chi nhánh; openOnly=true chỉ lấy lớp đang tuyển sinh.",
+        query_params=(*_PAGING, "teacherId", "branchId", "openOnly"),
     ),
     EndpointSpec(
         endpoint_id="classes.create",
@@ -99,20 +110,23 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.CLASS,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Mở lớp học mới tại cơ sở.",
+        summary=(
+            "Mở lớp học mới. schedule là danh sách {dayOfWeek, startTime, endTime} "
+            "(dayOfWeek: MON, TUE, WED, THU, FRI, SAT, SUN; giờ dạng HH:mm)."
+        ),
         body_fields=(
-            "code",
-            "name",
             "courseId",
+            "code",
             "branchId",
             "teacherId",
-            "maxCapacity",
+            "maxSeats",
+            "minSeats",
             "startDate",
             "endDate",
-            "scheduleText",
+            "schedule",
         ),
     ),
-    # Teachers
+    # Teachers - TeacherAdminController (READ_TEACHER@BRANCH, CREATE_TEACHER@ORGANIZATION)
     EndpointSpec(
         endpoint_id="teachers.list",
         domain="teacher",
@@ -120,9 +134,9 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/teachers/profiles",
         resource=C.Resources.TEACHER,
         action=C.Actions.READ,
-        min_scope=C.Scopes.PERSONAL,
-        summary="Danh sách hồ sơ giáo viên và thông tin chuyên môn.",
-        query_params=("page", "size", "search", "branchId", "status"),
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách hồ sơ giáo viên và môn dạy.",
+        query_params=_PAGING,
     ),
     EndpointSpec(
         endpoint_id="teachers.create",
@@ -131,11 +145,11 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/teachers/profiles",
         resource=C.Resources.TEACHER,
         action=C.Actions.CREATE,
-        min_scope=C.Scopes.BRANCH,
-        summary="Thêm hồ sơ giáo viên mới.",
-        body_fields=("employeeCode", "fullName", "email", "phone", "specialization", "homeBranchId"),
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Tạo giáo viên mới kèm tài khoản; hệ thống gửi email mời tới địa chỉ email.",
+        body_fields=("email", "fullName", "homeBranchId", "subjects", "phone", "bio"),
     ),
-    # Admissions — Students & Enrollments
+    # Students - StudentAdminController (STUDENT:*@BRANCH)
     EndpointSpec(
         endpoint_id="students.list",
         domain="admission",
@@ -144,8 +158,8 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.STUDENT,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách học viên theo cơ sở, tìm kiếm theo mã/họ tên/SĐT.",
-        query_params=("page", "size", "search", "branchId", "status"),
+        summary="Danh sách hồ sơ học viên trong phạm vi chi nhánh được phép.",
+        query_params=_PAGING,
     ),
     EndpointSpec(
         endpoint_id="students.create",
@@ -155,17 +169,10 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.STUDENT,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Tạo hồ sơ học viên mới.",
-        body_fields=(
-            "studentCode",
-            "fullName",
-            "email",
-            "phone",
-            "guardianName",
-            "guardianPhone",
-            "branchId",
-        ),
+        summary="Tạo học viên mới kèm tài khoản; hệ thống gửi email mời tới địa chỉ email.",
+        body_fields=("email", "fullName", "homeBranchId", "dateOfBirth", "phone", "sourceChannel"),
     ),
+    # Enrollment - EnrollmentAdminController (ENROLLMENT:*@BRANCH)
     EndpointSpec(
         endpoint_id="enrollments.list",
         domain="admission",
@@ -174,8 +181,8 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.ENROLLMENT,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách bản ghi ghi danh học viên vào lớp học.",
-        query_params=("page", "size", "studentId", "classId", "status"),
+        summary="Danh sách ghi danh; status: ACTIVE, WITHDRAWN, COMPLETED.",
+        query_params=(*_PAGING, "studentProfileId", "classId", "status"),
     ),
     EndpointSpec(
         endpoint_id="enrollments.create",
@@ -185,10 +192,15 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.ENROLLMENT,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Ghi danh học viên vào lớp học.",
-        body_fields=("studentId", "classId", "notes"),
+        summary=(
+            "Ghi danh một học viên vào một lớp (chặn ghi danh trùng, lớp đủ sĩ số và trùng lịch). Nếu trả về "
+            "ENROLLMENT_SCHEDULE_CONFLICT, hãy đọc nguyên văn thông báo; chỉ gửi lại với "
+            "acceptScheduleConflict=true khi quản trị viên đã xác nhận rõ. Nếu trả về "
+            "ENROLLMENT_SCHEDULE_CONFLICT_CONTACT_ADMIN, hãy hướng dẫn liên hệ quản trị viên."
+        ),
+        body_fields=("studentProfileId", "classId", "acceptScheduleConflict"),
     ),
-    # Finance — Invoices & Combos
+    # Billing - InvoiceAdminController / ComboAdminController (INVOICE:*@BRANCH)
     EndpointSpec(
         endpoint_id="invoices.list",
         domain="finance",
@@ -197,8 +209,8 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.INVOICE,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách hóa đơn học phí và trạng thái thanh toán.",
-        query_params=("page", "size", "search", "branchId", "status"),
+        summary="Danh sách hóa đơn học phí; status: UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED.",
+        query_params=(*_PAGING, "studentProfileId", "enrollmentId", "status"),
     ),
     EndpointSpec(
         endpoint_id="invoices.create",
@@ -208,8 +220,8 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.INVOICE,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Phát hành hóa đơn học phí mới cho học viên.",
-        body_fields=("enrollmentId", "studentId", "branchId", "totalAmount", "discountAmount", "dueDate", "note"),
+        summary="Phát hành một đợt học phí cho một ghi danh (tối đa 3 đợt, tổng không vượt học phí).",
+        body_fields=("enrollmentId", "amount", "dueDate"),
     ),
     EndpointSpec(
         endpoint_id="invoices.manual_payment",
@@ -219,22 +231,22 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.INVOICE,
         action=C.Actions.UPDATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Ghi nhận giao dịch thanh toán thủ công cho hóa đơn.",
+        summary="Ghi nhận khoản thu tại trung tâm cho hóa đơn; method: CASH hoặc BANK_TRANSFER.",
         path_params=("invoiceId",),
-        body_fields=("amount", "paymentMethod", "referenceCode", "note"),
+        body_fields=("amount", "method", "note"),
     ),
     EndpointSpec(
         endpoint_id="combos.list",
         domain="finance",
         method="GET",
         path_template="/api/billing/combos",
-        resource=C.Resources.COMBO,
+        resource=C.Resources.INVOICE,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách gói combo khóa học và ưu đãi học phí.",
-        query_params=("page", "size", "search", "status"),
+        summary="Danh sách combo nhiều khóa học và mức giảm giá đã áp dụng.",
+        query_params=(*_PAGING, "studentProfileId"),
     ),
-    # Learning — Gradebook & Progress
+    # Academic - GradeAdminController (GRADE:* without minimum scope; class guard in use case)
     EndpointSpec(
         endpoint_id="grades.class_gradebook",
         domain="learning",
@@ -243,7 +255,7 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.GRADE,
         action=C.Actions.READ,
         min_scope=C.Scopes.PERSONAL,
-        summary="Tra cứu sổ điểm của một lớp học.",
+        summary="Sổ điểm của một lớp (giáo viên chỉ xem được lớp mình được phân công).",
         path_params=("classId",),
     ),
     EndpointSpec(
@@ -252,22 +264,22 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         method="POST",
         path_template="/api/academic/grades",
         resource=C.Resources.GRADE,
-        action=C.Actions.CREATE,
+        action=C.Actions.UPDATE,
         min_scope=C.Scopes.PERSONAL,
-        summary="Nhập hoặc cập nhật điểm một cột điểm cho học viên trong lớp.",
-        body_fields=("classId", "enrollmentId", "courseGradeColumnId", "score", "comment"),
+        summary="Nhập hoặc sửa điểm một cột điểm cho một học viên trong lớp.",
+        body_fields=("classId", "enrollmentId", "courseGradeColumnId", "score"),
     ),
-    # HR & Payroll — Contracts, Payroll Runs & Personal Payslips
+    # Payroll - ContractAdminController / PayrollRunAdminController (PAYROLL:*@ORGANIZATION)
     EndpointSpec(
         endpoint_id="contracts.list",
         domain="payroll",
         method="GET",
         path_template="/api/payroll/contracts",
-        resource=C.Resources.CONTRACT,
+        resource=C.Resources.PAYROLL,
         action=C.Actions.READ,
-        min_scope=C.Scopes.PERSONAL,
-        summary="Danh sách hợp đồng lao động / giảng dạy.",
-        query_params=("page", "size", "teacherId", "status"),
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Danh sách hợp đồng lao động, lọc theo tài khoản nhân sự.",
+        query_params=(*_PAGING, "accountId"),
     ),
     EndpointSpec(
         endpoint_id="payroll_runs.list",
@@ -276,22 +288,24 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/payroll/runs",
         resource=C.Resources.PAYROLL,
         action=C.Actions.READ,
-        min_scope=C.Scopes.BRANCH,
-        summary="Danh sách kỳ tính lương theo tháng/năm và cơ sở.",
-        query_params=("page", "size", "branchId", "status"),
+        min_scope=C.Scopes.ORGANIZATION,
+        summary="Danh sách kỳ lương theo tháng.",
+        query_params=_PAGING,
     ),
+    # PayrollSelfServiceController has no @PreAuthorize: any signed-in account sees only its own
+    # payslips. ACCOUNT:READ@PERSONAL is the baseline every system role holds.
     EndpointSpec(
         endpoint_id="payroll.my_payslips",
         domain="payroll",
         method="GET",
         path_template="/api/payroll/me/payslips",
-        resource=C.Resources.PAYROLL,
+        resource=C.Resources.ACCOUNT,
         action=C.Actions.READ,
         min_scope=C.Scopes.PERSONAL,
-        summary="Xem phiếu lương cá nhân của chính tài khoản đang đăng nhập.",
-        query_params=("page", "size"),
+        summary="Phiếu lương của chính tài khoản đang kết nối.",
+        query_params=_PAGING,
     ),
-    # Administration — Accounts & RBAC
+    # Identity - AccountAdminController (READ_ACCOUNT = ACCOUNT:READ@BRANCH)
     EndpointSpec(
         endpoint_id="accounts.list",
         domain="identity",
@@ -299,30 +313,33 @@ EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/rbac/accounts",
         resource=C.Resources.ACCOUNT,
         action=C.Actions.READ,
-        min_scope=C.Scopes.ORGANIZATION,
-        summary="Danh sách tài khoản người dùng hệ thống EduERP.",
-        query_params=("page", "size", "search", "status"),
+        min_scope=C.Scopes.BRANCH,
+        summary="Danh sách tài khoản người dùng, lọc theo chi nhánh.",
+        query_params=(*_PAGING, "branchId"),
     ),
+    # Access - RbacAdminController (READ_ROLE = ROLE:READ@ORGANIZATION). The catalog already
+    # returns roles, permission groups, branches and permissions; there is no GET /api/rbac/roles.
     EndpointSpec(
-        endpoint_id="roles.list",
-        domain="access",
-        method="GET",
-        path_template="/api/rbac/roles",
-        resource=C.Resources.ROLE,
-        action=C.Actions.READ,
-        min_scope=C.Scopes.ORGANIZATION,
-        summary="Danh sách vai trò (Role) trong hệ thống phân quyền RBAC.",
-    ),
-    EndpointSpec(
-        endpoint_id="permissions.catalog",
+        endpoint_id="rbac.catalog",
         domain="access",
         method="GET",
         path_template="/api/rbac/catalog",
-        resource=C.Resources.PERMISSION,
+        resource=C.Resources.ROLE,
         action=C.Actions.READ,
         min_scope=C.Scopes.ORGANIZATION,
-        summary="Danh mục toàn bộ quyền hạn (Resource + Action) của EduERP.",
+        summary="Danh mục phân quyền: vai trò, nhóm quyền, chi nhánh và toàn bộ quyền (resource + action).",
     ),
+)
+
+EDUERP_ENDPOINTS: tuple[EndpointSpec, ...] = (
+    *_CORE_ENDPOINTS,
+    *SELF_SERVICE_ENDPOINTS,
+    *STUDENT_ENDPOINTS,
+    *TEACHER_ENDPOINTS,
+    *ACADEMIC_ADMIN_ENDPOINTS,
+    *FINANCE_ADMIN_ENDPOINTS,
+    *PAYROLL_ADMIN_ENDPOINTS,
+    *SYSTEM_ADMIN_ENDPOINTS,
 )
 
 ENDPOINTS_BY_ID: dict[str, EndpointSpec] = {spec.endpoint_id: spec for spec in EDUERP_ENDPOINTS}

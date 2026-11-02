@@ -16,6 +16,7 @@ from app.modules.eduerp.public import EduErpMcpToolService, build_eduerp_mcp_spe
 from app.platform.audit.public import AuditService
 from app.platform.catalog.public import McpCatalogService
 from app.platform.identity.public import IdentityService
+from app.platform.oauth.constants import OAuthConstants
 from app.platform.oauth.public import (
     HubTokenVerifier,
     OAuthHttpEndpoints,
@@ -76,6 +77,7 @@ def build_container(
         sealer=sealer,
         store=oauth_store,
         identity=identity,
+        resource_url=f"{cfg.public_url.rstrip('/')}{OAuthConstants.Routes.MCP_RESOURCE}",
     )
     oauth_http = OAuthHttpEndpoints(
         public_url=cfg.public_url,

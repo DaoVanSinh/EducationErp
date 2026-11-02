@@ -106,6 +106,17 @@ class OAuthHttpEndpoints:
                 self.protected_resource_metadata,
                 methods=["GET"],
             ),
+            # RFC 9728: client MCP tìm metadata theo đường dẫn của resource trước, rồi mới tới đường dẫn gốc.
+            Route(
+                f"{OAuthConstants.Routes.WELL_KNOWN_PROTECTED_RESOURCE}{OAuthConstants.Routes.MCP_RESOURCE}",
+                self.protected_resource_metadata,
+                methods=["GET"],
+            ),
+            Route(
+                f"{OAuthConstants.Routes.WELL_KNOWN_PROTECTED_RESOURCE}{OAuthConstants.Routes.MCP_RESOURCE}/",
+                self.protected_resource_metadata,
+                methods=["GET"],
+            ),
             Route(
                 OAuthConstants.Routes.LOGO,
                 self.logo_get,
@@ -155,13 +166,14 @@ class OAuthHttpEndpoints:
                 "token_endpoint_auth_methods_supported": ["client_secret_post", "none"],
                 "code_challenge_methods_supported": [OAuthConstants.CODE_CHALLENGE_METHOD_S256],
                 "scopes_supported": [OAuthConstants.DEFAULT_SCOPE],
+                "authorization_response_iss_parameter_supported": True,
             }
         )
 
     async def protected_resource_metadata(self, _request: Request) -> JSONResponse:
         return JSONResponse(
             {
-                "resource": f"{self._public_url}/mcp/eduerp",
+                "resource": f"{self._public_url}{OAuthConstants.Routes.MCP_RESOURCE}",
                 "authorization_servers": [self._public_url],
                 "bearer_methods_supported": ["header"],
                 "scopes_supported": [OAuthConstants.DEFAULT_SCOPE],
@@ -295,6 +307,7 @@ class OAuthHttpEndpoints:
                 {
                     "error": OAuthConstants.OAuthErrors.ACCESS_DENIED,
                     "state": params.state,
+                    "iss": self._public_url,
                 },
             )
             return RedirectResponse(denied_url, status_code=303)
@@ -320,7 +333,7 @@ class OAuthHttpEndpoints:
         )
         redirect_to = OAuthRedirectRules.append_query(
             params.redirect_uri,
-            {"code": code, "state": params.state},
+            {"code": code, "state": params.state, "iss": self._public_url},
         )
         return RedirectResponse(redirect_to, status_code=303)
 

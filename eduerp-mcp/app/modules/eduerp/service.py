@@ -235,7 +235,7 @@ class EduErpMcpToolService:
         spec = ENDPOINTS_BY_ID.get(endpoint_id.strip())
         if spec is None:
             raise NotFound(message=f"Không tìm thấy endpoint '{endpoint_id}'.")
-        if spec.method not in ("POST", "PATCH"):
+        if spec.method == "GET":
             raise BadRequestError(
                 message=f"Endpoint '{endpoint_id}' là thao tác đọc (GET); hãy dùng công cụ eduerp_read."
             )
@@ -253,6 +253,7 @@ class EduErpMcpToolService:
             method=spec.method,
             path=path,
             json_body=payload,
+            multipart_part=spec.multipart_part,
         )
         self._audit.record(
             actor=ctx.email or str(ctx.account_id),
@@ -260,8 +261,11 @@ class EduErpMcpToolService:
             target=path,
             detail=f"status={status} scope={granted.scope}",
         )
-        if status >= 400 and status == 403:
-            raise Forbidden(message="Backend EduERP từ chối thao tác do giới hạn phạm vi dữ liệu.")
+        if status == 403:
+            backend_detail = data.get("detail") if isinstance(data, dict) else None
+            raise Forbidden(
+                message=backend_detail or "Backend EduERP từ chối thao tác do giới hạn phạm vi dữ liệu."
+            )
         return {
             "endpointId": spec.endpoint_id,
             "grantedPermission": {

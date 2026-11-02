@@ -59,20 +59,6 @@ erp_role_permission_groups = Table(
     Column("permission_group_id", PG_UUID(as_uuid=True), primary_key=True),
 )
 
-erp_account_groups = Table(
-    "account_groups",
-    public_metadata,
-    Column("account_id", PG_UUID(as_uuid=True), primary_key=True),
-    Column("group_id", PG_UUID(as_uuid=True), primary_key=True),
-)
-
-erp_group_permission_groups = Table(
-    "group_permission_groups",
-    public_metadata,
-    Column("group_id", PG_UUID(as_uuid=True), primary_key=True),
-    Column("permission_group_id", PG_UUID(as_uuid=True), primary_key=True),
-)
-
 erp_permission_group_items = Table(
     "permission_group_items",
     public_metadata,

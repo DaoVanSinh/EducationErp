@@ -22,8 +22,10 @@ class HubTokenVerifier(TokenVerifier):
         sealer: Sealer,
         store: OAuthStore,
         identity: IdentityService,
+        resource_url: str | None = None,
     ) -> None:
-        super().__init__()
+        # Có resource_url thì phản hồi 401 kèm resource_metadata để client MCP tự tìm được máy chủ OAuth.
+        super().__init__(base_url=resource_url)
         self._sealer = sealer
         self._store = store
         self._identity = identity

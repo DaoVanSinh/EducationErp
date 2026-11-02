@@ -14,7 +14,8 @@ const DEV_SERVER = {
   mcpTarget: "http://localhost:8700",
   apiPrefix: "/api",
   mcpApiPrefix: "/api/mcp",
-  mcpPrefix: "/mcp",
+  // Dạng regex: tiền tố "/mcp" sẽ nuốt cả trang SPA /mcp-connector khi tải lại trang.
+  mcpPrefix: "^/mcp(/|$)",
   oauthPrefix: "/oauth",
   wellKnownPrefix: "/.well-known",
 } as const;

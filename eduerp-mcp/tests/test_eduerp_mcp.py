@@ -383,7 +383,7 @@ async def test_mcp_tool_service_live_permission_and_upstream_forwarding() -> Non
     assert len(captured_requests) == 1
     assert captured_requests[0].url.path == "/api/courses/courses"
 
-    # 4. Unpermitted read (e.g. accounts.list requires ACCOUNT:READ ORGANIZATION) is blocked before HTTP
+    # 4. Unpermitted read (accounts.list requires ACCOUNT:READ@BRANCH) is blocked before HTTP
     with pytest.raises(Forbidden):
         await tool_service.execute_read("accounts.list", caller=caller)
     assert len(captured_requests) == 1
@@ -391,7 +391,11 @@ async def test_mcp_tool_service_live_permission_and_upstream_forwarding() -> Non
     # 5. Permitted write succeeds and records an audit log
     write_res = await tool_service.execute_write(
         "students.create",
-        body={"studentCode": "HV001", "fullName": "Tran Thi B", "branchId": str(uuid.uuid4())},
+        body={
+            "email": "hv001@example.com",
+            "fullName": "Tran Thi B",
+            "homeBranchId": str(uuid.uuid4()),
+        },
         caller=caller,
     )
     assert write_res["statusCode"] == 200
@@ -420,3 +424,61 @@ def test_oauth_consent_template_and_logo_render() -> None:
     assert "Yêu cầu không hợp lệ &lt;script&gt;" in err_html
     assert 'class="err"' in err_html
     assert "<form" not in err_html
+
+
+def test_permission_statement_reads_role_tables_only() -> None:
+    """V37 dropped user groups: the DB fallback must only join account -> role -> permission groups."""
+    from sqlalchemy.dialects import postgresql
+
+    stmt = PermissionService.effective_permissions_statement(uuid.uuid4())
+    sql = str(stmt.compile(dialect=postgresql.dialect()))
+    assert "account_roles" in sql
+    assert "role_permission_groups" in sql
+    assert "permission_group_items" in sql
+    assert "account_groups" not in sql
+    assert "group_permission_groups" not in sql
+
+
+def test_registry_mirrors_backend_access_rules() -> None:
+    """Each entry must carry the same resource:action@minScope as the Spring @PreAuthorize rule."""
+    import re
+
+    from app.modules.eduerp.registry import EDUERP_ENDPOINTS
+
+    expected = {
+        "dashboard.stats": ("GET", "DASHBOARD", "READ", "BRANCH"),
+        "branches.list": ("GET", "BRANCH", "READ", "ORGANIZATION"),
+        "branches.create": ("POST", "BRANCH", "CREATE", "ORGANIZATION"),
+        "courses.list": ("GET", "COURSE", "READ", "BRANCH"),
+        "courses.create": ("POST", "COURSE", "CREATE", "ORGANIZATION"),
+        "classes.list": ("GET", "CLASS", "READ", "BRANCH"),
+        "classes.create": ("POST", "CLASS", "CREATE", "BRANCH"),
+        "teachers.list": ("GET", "TEACHER", "READ", "BRANCH"),
+        "teachers.create": ("POST", "TEACHER", "CREATE", "ORGANIZATION"),
+        "students.list": ("GET", "STUDENT", "READ", "BRANCH"),
+        "students.create": ("POST", "STUDENT", "CREATE", "BRANCH"),
+        "enrollments.list": ("GET", "ENROLLMENT", "READ", "BRANCH"),
+        "enrollments.create": ("POST", "ENROLLMENT", "CREATE", "BRANCH"),
+        "invoices.list": ("GET", "INVOICE", "READ", "BRANCH"),
+        "invoices.create": ("POST", "INVOICE", "CREATE", "BRANCH"),
+        "invoices.manual_payment": ("POST", "INVOICE", "UPDATE", "BRANCH"),
+        "combos.list": ("GET", "INVOICE", "READ", "BRANCH"),
+        "grades.class_gradebook": ("GET", "GRADE", "READ", "PERSONAL"),
+        "grades.upsert": ("POST", "GRADE", "UPDATE", "PERSONAL"),
+        "contracts.list": ("GET", "PAYROLL", "READ", "ORGANIZATION"),
+        "payroll_runs.list": ("GET", "PAYROLL", "READ", "ORGANIZATION"),
+        "payroll.my_payslips": ("GET", "ACCOUNT", "READ", "PERSONAL"),
+        "accounts.list": ("GET", "ACCOUNT", "READ", "BRANCH"),
+        "rbac.catalog": ("GET", "ROLE", "READ", "ORGANIZATION"),
+    }
+    actual = {s.endpoint_id: (s.method, s.resource, s.action, s.min_scope) for s in EDUERP_ENDPOINTS}
+    assert actual.items() >= expected.items()
+    assert len(actual) == len(EDUERP_ENDPOINTS), "endpoint_id must be unique"
+
+    known_resources = {
+        v for k, v in vars(PermissionConstants.Resources).items() if not k.startswith("_")
+    }
+    for spec in EDUERP_ENDPOINTS:
+        assert spec.resource in known_resources, spec.endpoint_id
+        placeholders = tuple(re.findall(r"\{(\w+)\}", spec.path_template))
+        assert placeholders == spec.path_params, spec.endpoint_id

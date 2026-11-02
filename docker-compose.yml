@@ -39,7 +39,8 @@ services:
       - eduerp-mcp/.env.docker
     environment:
       EDUERP_API_BASE_URL: http://app:8080
-      PUBLIC_URL: ${MCP_PUBLIC_URL:-http://localhost:8090}
+      # PUBLIC_URL lấy từ eduerp-mcp/.env.docker: nếu đặt ở đây, khởi động thiếu --env-file sẽ về localhost và
+      # ChatGPT/Claude không hoàn tất được OAuth.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

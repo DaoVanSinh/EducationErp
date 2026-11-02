@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import select, union
+from sqlalchemy import Select, select
 
 from app.infrastructure.postgres import PostgresDatabase
 from app.infrastructure.schema import (
-    erp_account_groups,
     erp_account_roles,
-    erp_group_permission_groups,
     erp_permission_group_items,
     erp_permissions,
     erp_role_permission_groups,
@@ -18,7 +16,7 @@ from app.infrastructure.schema import (
 from app.integrations.cache.public import SharedRedisCache
 from app.platform.permissions.constants import PermissionConstants
 from app.runtime.contracts import EffectivePermissionDto
-from app.shared.base.markers import database, facade, rule
+from app.shared.base.markers import database, facade, helper, rule
 from app.shared.exceptions import Forbidden
 
 
@@ -64,8 +62,14 @@ class PermissionService:
         self._db = db
         self._cache = cache
 
-    @database
-    def _load_from_postgres(self, account_id: UUID) -> list[EffectivePermissionDto]:
+    @staticmethod
+    @helper
+    def effective_permissions_statement(account_id: UUID) -> Select:
+        """Account -> its single role -> the role's permission groups -> (resource, action, scope).
+
+        Mirrors com.eduerp.modules.access.internal.permission.PermissionCacheService: since V37
+        removed user groups, permissions come from the account's role only.
+        """
         role_pg_ids = (
             select(erp_role_permission_groups.c.permission_group_id)
             .select_from(
@@ -75,37 +79,26 @@ class PermissionService:
                 )
             )
             .where(erp_account_roles.c.account_id == account_id)
+            .subquery()
         )
-        group_pg_ids = (
-            select(erp_group_permission_groups.c.permission_group_id)
-            .select_from(
-                erp_account_groups.join(
-                    erp_group_permission_groups,
-                    erp_account_groups.c.group_id == erp_group_permission_groups.c.group_id,
-                )
-            )
-            .where(erp_account_groups.c.account_id == account_id)
-        )
-        all_pg_ids = union(role_pg_ids, group_pg_ids).subquery()
-
-        stmt = (
-            select(
-                erp_permissions.c.resource,
-                erp_permissions.c.action,
-                erp_permission_group_items.c.scope,
-            )
-            .select_from(
-                erp_permission_group_items.join(
-                    erp_permissions,
-                    erp_permission_group_items.c.permission_id == erp_permissions.c.id,
-                ).join(
-                    all_pg_ids,
-                    erp_permission_group_items.c.permission_group_id
-                    == all_pg_ids.c.permission_group_id,
-                )
+        return select(
+            erp_permissions.c.resource,
+            erp_permissions.c.action,
+            erp_permission_group_items.c.scope,
+        ).select_from(
+            erp_permission_group_items.join(
+                erp_permissions,
+                erp_permission_group_items.c.permission_id == erp_permissions.c.id,
+            ).join(
+                role_pg_ids,
+                erp_permission_group_items.c.permission_group_id
+                == role_pg_ids.c.permission_group_id,
             )
         )
 
+    @database
+    def _load_from_postgres(self, account_id: UUID) -> list[EffectivePermissionDto]:
+        stmt = self.effective_permissions_statement(account_id)
         with self._db.connect() as conn:
             raw_rows = conn.execute(stmt).all()
 

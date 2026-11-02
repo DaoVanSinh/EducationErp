@@ -38,10 +38,10 @@ export function McpClientGuideCard() {
             <span>2. ChatGPT (chatgpt.com)</span>
           </div>
           <ol className="list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-slate-600">
-            <li>Vào <strong>Settings &rarr; Connectors &rarr; Create Custom MCP Connector</strong>.</li>
-            <li>Dán <strong>MCP Server URL</strong> và chọn phương thức xác thực <strong>OAuth 2.1</strong>.</li>
-            <li>Điền <strong>OAuth Client ID</strong> và <strong>Client Secret</strong> của bạn.</li>
-            <li>Hoàn tất bước đăng nhập &amp; bấm <strong>Cho phép kết nối</strong>.</li>
+            <li>Vào <strong>Settings &rarr; Apps &amp; Connectors</strong>, bật <strong>Developer mode</strong> rồi tạo connector mới.</li>
+            <li>Dán <strong>MCP Server URL</strong> và chọn phương thức xác thực <strong>OAuth</strong>.</li>
+            <li>Điền <strong>OAuth Client ID</strong> và <strong>Client Secret</strong> của chính tài khoản này. Mỗi tài khoản có một bộ riêng.</li>
+            <li>Đăng nhập đúng tài khoản đó &amp; bấm <strong>Cho phép kết nối</strong>. ChatGPT chỉ làm được những gì vai trò của tài khoản được phép.</li>
           </ol>
         </div>
 

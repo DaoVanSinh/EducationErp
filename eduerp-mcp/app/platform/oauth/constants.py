@@ -109,4 +109,5 @@ class OAuthConstants:
         REVOKE = "/oauth/revoke"
         WELL_KNOWN_AUTH_SERVER = "/.well-known/oauth-authorization-server"
         WELL_KNOWN_PROTECTED_RESOURCE = "/.well-known/oauth-protected-resource"
+        MCP_RESOURCE = "/mcp/eduerp"
         LOGIN_REDIRECT_PATH = "/login"
