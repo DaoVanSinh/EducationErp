@@ -200,18 +200,19 @@ INSERT INTO sd_class_src VALUES
  (4,  'KIDS-K01',     5, 3, 4,   'COMPLETED',   -120, ARRAY['SAT','SUN'], '09:00', '10:30', 15, 6, 11, 84),
  (5,  'TOAN10-K01',   8, 2, 5,   'COMPLETED',   -110, ARRAY['MON','FRI'], '19:00', '20:30', 20, 8, 16, 77),
  -- Đang học
- (6,  'GTCB-K02',     1, 1, 101, 'IN_PROGRESS',  -42, ARRAY['MON','WED'], '18:00', '19:30', 18, 8, 13, 126),
- (7,  'IELTSF-K02',   2, 1, 2,   'IN_PROGRESS',  -49, ARRAY['TUE','THU'], '18:00', '20:00', 16, 6, 14, 168),
- (8,  'IELTSI-K01',   3, 3, 11,  'IN_PROGRESS',  -35, ARRAY['TUE','FRI'], '19:00', '21:00', 14, 6, 10, 168),
+ -- Giờ học được chọn để không học viên hay giáo viên nào bị trùng lịch (cuối file có kiểm tra lại).
+ (6,  'GTCB-K02',     1, 1, 101, 'IN_PROGRESS',  -42, ARRAY['MON','WED'], '20:00', '21:30', 18, 8, 13, 126),
+ (7,  'IELTSF-K02',   2, 1, 2,   'IN_PROGRESS',  -49, ARRAY['TUE','THU'], '15:00', '17:00', 16, 6, 14, 168),
+ (8,  'IELTSI-K01',   3, 3, 11,  'IN_PROGRESS',  -35, ARRAY['TUE','FRI'], '19:30', '21:30', 14, 6, 10, 168),
  (9,  'TOEIC-K02',    4, 2, 8,   'IN_PROGRESS',  -28, ARRAY['SAT','SUN'], '08:00', '10:00', 20, 8, 15, 140),
  (10, 'KIDS-K02',     5, 3, 4,   'IN_PROGRESS',  -21, ARRAY['SAT','SUN'], '09:00', '10:30', 15, 6, 12, 112),
- (11, 'HSK1-K01',     6, 1, 6,   'IN_PROGRESS',  -56, ARRAY['TUE','THU'], '19:00', '20:30', 15, 6, 11, 105),
+ (11, 'HSK1-K01',     6, 1, 6,   'IN_PROGRESS',  -56, ARRAY['TUE','THU'], '18:00', '19:30', 15, 6, 11, 105),
  (12, 'JLPT-K01',     7, 3, 7,   'IN_PROGRESS',  -35, ARRAY['MON','THU'], '18:30', '20:00', 15, 6,  9, 140),
  (13, 'TOAN10-K02',   8, 2, 102, 'IN_PROGRESS',  -14, ARRAY['TUE','SAT'], '19:00', '20:30', 20, 8, 17, 105),
  (14, 'GTCB-K03',     1, 3, 12,  'IN_PROGRESS',  -28, ARRAY['WED','FRI'], '18:00', '19:30', 18, 8, 12, 126),
- (15, 'IELTSF-K03',   2, 2, 1,   'IN_PROGRESS',  -21, ARRAY['MON','WED'], '19:00', '21:00', 16, 6, 13, 168),
+ (15, 'IELTSF-K03',   2, 2, 1,   'IN_PROGRESS',  -21, ARRAY['MON','WED'], '15:00', '17:00', 16, 6, 13, 168),
  -- Đang tuyển sinh
- (16, 'GTCB-K04',     1, 1, 9,   'ENROLLING',      7, ARRAY['TUE','THU'], '18:00', '19:30', 18, 6,  7, 126),
+ (16, 'GTCB-K04',     1, 1, 9,   'ENROLLING',      7, ARRAY['TUE','THU'], '17:30', '19:00', 18, 6,  7, 126),
  (17, 'IELTSI-K02',   3, 1, 2,   'ENROLLING',     14, ARRAY['SAT','SUN'], '14:00', '16:00', 14, 6,  5, 168),
  (18, 'HSK1-K02',     6, 3, 6,   'ENROLLING',     10, ARRAY['MON','WED'], '19:00', '20:30', 15, 6,  4, 105),
  (19, 'TOAN10-K03',   8, 1, 10,  'ENROLLING',     21, ARRAY['SAT','SUN'], '08:00', '09:30', 20, 8,  9, 105),
@@ -669,3 +670,25 @@ UNION ALL SELECT 'Bài tập / mini-test', count(*) FROM assignments WHERE id::t
 UNION ALL SELECT 'Kết quả nộp bài', count(*) FROM assignment_results WHERE id::text LIKE 'de30%'
 UNION ALL SELECT 'Mini-task', count(*) FROM mini_tasks WHERE id::text LIKE 'de30%'
 UNION ALL SELECT 'Lượt làm mini-task', count(*) FROM mini_task_attempts WHERE id::text LIKE 'de30%';
+
+-- ---------------------------------------------------------------------------------------------------
+-- Kiểm tra: dữ liệu demo không được có học viên trùng lịch, nếu không mọi thẻ lớp của họ sẽ hiện cảnh báo.
+-- ---------------------------------------------------------------------------------------------------
+DO $$
+DECLARE conflicted bigint;
+BEGIN
+    WITH cur AS (
+        SELECT e.student_profile_id AS sid, c.id AS cid, c.start_date AS sd, c.end_date AS ed,
+               s.day_of_week AS d, s.start_time AS st, s.end_time AS et
+        FROM enrollments e
+        JOIN classes c ON c.id = e.class_id
+        JOIN class_schedules s ON s.class_id = c.id
+        WHERE e.status = 'ACTIVE' AND c.status IN ('ENROLLING', 'IN_PROGRESS')
+    )
+    SELECT count(DISTINCT a.sid) INTO conflicted
+    FROM cur a JOIN cur b ON a.sid = b.sid AND a.cid < b.cid AND a.d = b.d AND a.st < b.et AND b.st < a.et
+        AND (a.ed IS NULL OR b.sd <= a.ed) AND (b.ed IS NULL OR a.sd <= b.ed);
+    IF conflicted > 0 THEN
+        RAISE WARNING 'Dữ liệu demo có % học viên bị trùng lịch - xem lại giờ học trong sd_class_src', conflicted;
+    END IF;
+END $$;
