@@ -36,4 +36,21 @@ public class StudentEnrollmentLocator {
                 .findFirst()
                 .orElseThrow(() -> new AssessmentException.NotEnrolledInClass(classId));
     }
+
+    /**
+     * Chặt hơn {@link #requireEnrollment}: nộp bài được chấm điểm chỉ dành cho ghi danh ĐANG HỌC, ghi danh đã
+     * hoàn tất chỉ còn được ôn luyện mini-task.
+     *
+     * @throws AssessmentException.NotEnrolledInClass không có hồ sơ, hoặc không có ghi danh đang học (403)
+     */
+    public UUID requireActiveEnrollment(UUID accountId, UUID classId) {
+        var profile = students.findProfileByAccountId(accountId)
+                .orElseThrow(() -> new AssessmentException.NotEnrolledInClass(classId));
+        return enrollments.listEnrollmentsByStudent(profile.studentProfileId()).stream()
+                .filter(entry -> entry.classId().equals(classId))
+                .filter(entry -> entry.status() == EnrollmentConstants.EnrollmentStatus.ACTIVE)
+                .map(EnrollmentManagement.StudentEnrollmentEntry::enrollmentId)
+                .findFirst()
+                .orElseThrow(() -> new AssessmentException.NotEnrolledInClass(classId));
+    }
 }

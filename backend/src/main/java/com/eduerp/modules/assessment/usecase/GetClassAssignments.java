@@ -79,7 +79,8 @@ public class GetClassAssignments {
             String studentName, Map<UUID, AssignmentResult> results, List<UUID> activeAssignmentIds) {
         var cells = new HashMap<UUID, AssignmentResponses.ResultCell>();
         results.forEach((assignmentId, result) -> cells.put(assignmentId,
-                new AssignmentResponses.ResultCell(result.getStatus(), result.getScore(), result.getFeedback())));
+                new AssignmentResponses.ResultCell(result.getStatus(), result.getScore(), result.getFeedback(),
+                        result.getSubmissionContent(), result.getSubmittedAt())));
         var submitted = (int) activeAssignmentIds.stream()
                 .filter(id -> results.containsKey(id) && AssessmentRules.isSubmitted(results.get(id).getStatus()))
                 .count();

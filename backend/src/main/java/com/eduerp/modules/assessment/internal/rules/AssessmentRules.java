@@ -3,6 +3,7 @@ package com.eduerp.modules.assessment.internal.rules;
 import com.eduerp.modules.assessment.AssessmentConstants;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +28,19 @@ public final class AssessmentRules {
     /** Chưa nộp thì không thể có điểm - tránh một con số "0 điểm" bị hiểu nhầm là đã chấm. */
     public static boolean allowsScore(AssessmentConstants.SubmissionStatus status, BigDecimal score) {
         return score == null || isSubmitted(status);
+    }
+
+    /** Nộp đến hết ngày hạn vẫn là đúng hạn; bài không đặt hạn thì không bao giờ muộn. */
+    public static AssessmentConstants.SubmissionStatus submissionStatusOn(LocalDate dueDate, LocalDate today) {
+        if (dueDate != null && today.isAfter(dueDate)) {
+            return AssessmentConstants.SubmissionStatus.LATE;
+        }
+        return AssessmentConstants.SubmissionStatus.SUBMITTED;
+    }
+
+    /** Học viên chỉ nộp được khi đang học, bài còn bật và giáo viên chưa chấm điểm. */
+    public static boolean canSubmit(boolean enrollmentActive, boolean assignmentActive, BigDecimal score) {
+        return enrollmentActive && assignmentActive && score == null;
     }
 
     /** Làm tròn {@code part / whole × 100}; mẫu số 0 trả {@code null} - không phải 0%. */

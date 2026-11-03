@@ -47,6 +47,13 @@ public class AssignmentResult {
     @Column(length = AssessmentConstants.Limits.MAX_FEEDBACK_LENGTH)
     private String feedback;
 
+    /** Nội dung học viên nộp trên hệ thống; null khi giáo viên ghi nhận tay bài nộp ngoài hệ thống. */
+    @Column(name = "submission_content", length = AssessmentConstants.Limits.MAX_SUBMISSION_LENGTH)
+    private String submissionContent;
+
+    @Column(name = "submitted_at")
+    private Instant submittedAt;
+
     @Column(name = "updated_by_account_id", nullable = false)
     private UUID updatedByAccountId;
 
@@ -67,5 +74,14 @@ public class AssignmentResult {
         this.feedback = feedback;
         this.updatedByAccountId = updatedByAccountId;
         this.updatedAt = Instant.now();
+    }
+
+    /** Học viên nộp hoặc nộp lại: chỉ đổi nội dung và tình trạng, giữ nguyên nhận xét của giáo viên. */
+    void submit(String content, AssessmentConstants.SubmissionStatus status, UUID studentAccountId) {
+        this.submissionContent = content;
+        this.status = status;
+        this.updatedByAccountId = studentAccountId;
+        this.submittedAt = Instant.now();
+        this.updatedAt = this.submittedAt;
     }
 }

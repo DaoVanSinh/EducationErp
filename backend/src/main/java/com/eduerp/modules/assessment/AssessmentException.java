@@ -13,7 +13,8 @@ public sealed class AssessmentException extends AppException
         AssessmentException.InvalidScore, AssessmentException.ScoreWithoutSubmission,
         AssessmentException.InvalidQuestion, AssessmentException.NotEnrolledInClass,
         AssessmentException.MiniTaskInactive, AssessmentException.AnswerCountMismatch,
-        AssessmentException.ClassClosed {
+        AssessmentException.ClassClosed, AssessmentException.AssignmentInactive,
+        AssessmentException.AssignmentAlreadyGraded, AssessmentException.SubmissionConflict {
 
     protected AssessmentException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);
@@ -93,11 +94,33 @@ public sealed class AssessmentException extends AppException
         }
     }
 
-    /** Học viên chỉ làm được mini-task của lớp mình đang học (không tính lớp đã rút). */
+    /** Học viên chỉ làm được bài của lớp mình đang học (không tính lớp đã rút). */
     public static final class NotEnrolledInClass extends AssessmentException {
         public NotEnrolledInClass(UUID classId) {
             super("ASSESSMENT_NOT_ENROLLED_IN_CLASS", HttpStatus.FORBIDDEN,
-                    "Bạn không học lớp này nên không thể làm mini-task này");
+                    "Bạn không còn học lớp này nên không thể làm bài của lớp");
+        }
+    }
+
+    public static final class AssignmentInactive extends AssessmentException {
+        public AssignmentInactive(UUID assignmentId) {
+            super("ASSESSMENT_ASSIGNMENT_INACTIVE", HttpStatus.CONFLICT, "Bài này đã bị giáo viên tắt");
+        }
+    }
+
+    /** Điểm đã chấm cho đúng nội dung học viên nộp, nên sau khi chấm không được đổi bài nữa. */
+    public static final class AssignmentAlreadyGraded extends AssessmentException {
+        public AssignmentAlreadyGraded(UUID assignmentId) {
+            super("ASSESSMENT_ASSIGNMENT_ALREADY_GRADED", HttpStatus.CONFLICT,
+                    "Bài đã được chấm điểm nên không nộp lại được");
+        }
+    }
+
+    /** Hai request nộp đồng thời cùng tạo dòng kết quả, UNIQUE (assignment_id, enrollment_id) chặn một bên. */
+    public static final class SubmissionConflict extends AssessmentException {
+        public SubmissionConflict(UUID assignmentId) {
+            super("ASSESSMENT_SUBMISSION_CONFLICT", HttpStatus.CONFLICT,
+                    "Bài vừa được nộp ở một phiên khác, vui lòng tải lại trang");
         }
     }
 

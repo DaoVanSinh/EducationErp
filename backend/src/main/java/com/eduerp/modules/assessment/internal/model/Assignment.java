@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -85,6 +86,21 @@ public class Assignment {
         this.dueDate = dueDate;
         this.maxScore = maxScore;
         this.active = active;
+    }
+
+    public Optional<AssignmentResult> resultOf(UUID enrollmentId) {
+        return results.stream().filter(result -> result.getEnrollmentId().equals(enrollmentId)).findFirst();
+    }
+
+    /** Học viên nộp bài. Dòng kết quả có thể đã tồn tại do giáo viên ghi nhận trước hoặc do nộp lại. */
+    public void recordSubmission(UUID enrollmentId, String content, AssessmentConstants.SubmissionStatus status,
+            UUID studentAccountId) {
+        var result = resultOf(enrollmentId).orElseGet(() -> {
+            var created = new AssignmentResult(this, enrollmentId, status, null, null, studentAccountId);
+            results.add(created);
+            return created;
+        });
+        result.submit(content, status, studentAccountId);
     }
 
     /** Upsert kết quả của một học viên - UNIQUE (assignment_id, enrollment_id) của V29. */

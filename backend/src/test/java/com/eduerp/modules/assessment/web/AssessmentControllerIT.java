@@ -208,6 +208,134 @@ class AssessmentControllerIT {
         assertThat(mine.get(0).get("assignments").get(0).get("score").decimalValue()).isEqualByComparingTo("8.5");
     }
 
+    /** Trọn luồng theo vai trò: giáo viên giao, học viên nộp, giáo viên thấy bài và chấm, học viên xem điểm. */
+    @Test
+    void theAssignmentFlowsFromTeacherToStudentAndBack() throws Exception {
+        var teacher = signIn(teacherId, AccessConstants.RoleCodes.TEACHER);
+        var assignmentId = createAssignment(teacher);
+        var student = signIn(studentAccountId, AccessConstants.RoleCodes.STUDENT);
+        var submission = "/api/assessment/me/assignments/" + assignmentId + "/submission";
+
+        var before = getJson("/api/assessment/me/classes", student).get(0).get("assignments").get(0);
+        assertThat(before.get("status").asText()).isEqualTo("NOT_SUBMITTED");
+        assertThat(before.get("canSubmit").asBoolean()).isTrue();
+
+        assertThat(postJson(submission, student, new AssignmentRequests.SubmitAssignmentRequest("Lần một"))
+                .getResponse().getStatus()).isEqualTo(200);
+        assertThat(postJson(submission, student, new AssignmentRequests.SubmitAssignmentRequest("Bài làm cuối"))
+                .getResponse().getStatus()).isEqualTo(200);
+
+        var board = getJson("/api/assessment/classes/" + classId + "/assignments", teacher);
+        var cell = board.get("rows").get(0).get("resultsByAssignmentId").get(assignmentId.toString());
+        assertThat(cell.get("status").asText()).isEqualTo("SUBMITTED");
+        assertThat(cell.get("submissionContent").asText()).isEqualTo("Bài làm cuối");
+        assertThat(cell.get("score").isNull()).isTrue();
+
+        var graded = postJson("/api/assessment/assignments/" + assignmentId + "/results", teacher,
+                result(SubmissionStatus.SUBMITTED, "9"));
+        assertThat(graded.getResponse().getStatus()).isEqualTo(200);
+
+        var after = getJson("/api/assessment/me/classes", student).get(0).get("assignments").get(0);
+        assertThat(after.get("score").decimalValue()).isEqualByComparingTo("9");
+        assertThat(after.get("submissionContent").asText()).isEqualTo("Bài làm cuối");
+        assertThat(after.get("canSubmit").asBoolean()).isFalse();
+
+        var tooLate = postJson(submission, student, new AssignmentRequests.SubmitAssignmentRequest("Sửa sau khi chấm"));
+        assertThat(tooLate.getResponse().getStatus()).isEqualTo(409);
+        assertThat(bodyOf(tooLate).get("errorCode").asText()).isEqualTo("ASSESSMENT_ASSIGNMENT_ALREADY_GRADED");
+    }
+
+    @Test
+    void anAdminOversightsAndGradesButCannotSubmitForAStudent() throws Exception {
+        var assignmentId = createAssignment(signIn(teacherId, AccessConstants.RoleCodes.TEACHER));
+        postJson("/api/assessment/me/assignments/" + assignmentId + "/submission",
+                signIn(studentAccountId, AccessConstants.RoleCodes.STUDENT),
+                new AssignmentRequests.SubmitAssignmentRequest("Bài làm của học viên"));
+        var admin = signIn(newAccount("as-admin", "Quản trị"), AccessConstants.RoleCodes.ADMIN);
+
+        var board = getJson("/api/assessment/classes/" + classId + "/assignments", admin);
+        assertThat(board.get("rows").get(0).get("resultsByAssignmentId").get(assignmentId.toString())
+                .get("submissionContent").asText()).isEqualTo("Bài làm của học viên");
+        assertThat(postJson("/api/assessment/assignments/" + assignmentId + "/results", admin,
+                result(SubmissionStatus.SUBMITTED, "7")).getResponse().getStatus()).isEqualTo(200);
+
+        assertThat(postJson("/api/assessment/me/assignments/" + assignmentId + "/submission", admin,
+                new AssignmentRequests.SubmitAssignmentRequest("Làm hộ")).getResponse().getStatus()).isEqualTo(403);
+    }
+
+    @Test
+    void onlyAnActiveStudentOfTheClassCanSubmitAnAssignment() throws Exception {
+        var teacher = signIn(teacherId, AccessConstants.RoleCodes.TEACHER);
+        var assignmentId = createAssignment(teacher);
+        var submission = "/api/assessment/me/assignments/" + assignmentId + "/submission";
+        var body = new AssignmentRequests.SubmitAssignmentRequest("Bài làm");
+
+        var byTeacher = postJson(submission, teacher, body);
+        var byOutsider = postJson(submission, signIn(outsiderAccountId, AccessConstants.RoleCodes.STUDENT), body);
+
+        assertThat(byTeacher.getResponse().getStatus()).isEqualTo(403);
+        assertThat(byOutsider.getResponse().getStatus()).isEqualTo(403);
+        assertThat(bodyOf(byOutsider).get("errorCode").asText()).isEqualTo("ASSESSMENT_NOT_ENROLLED_IN_CLASS");
+
+        var enrollment = enrollments.findById(studentEnrollmentId).orElseThrow();
+        enrollment.complete();
+        enrollments.saveAndFlush(enrollment);
+        var student = signIn(studentAccountId, AccessConstants.RoleCodes.STUDENT);
+
+        assertThat(postJson(submission, student, body).getResponse().getStatus()).isEqualTo(403);
+        var mine = getJson("/api/assessment/me/classes", student).get(0).get("assignments").get(0);
+        assertThat(mine.get("canSubmit").asBoolean()).isFalse();
+    }
+
+    @Test
+    void aBlankSubmissionIsRejected() throws Exception {
+        var assignmentId = createAssignment(signIn(teacherId, AccessConstants.RoleCodes.TEACHER));
+
+        var submitted = postJson("/api/assessment/me/assignments/" + assignmentId + "/submission",
+                signIn(studentAccountId, AccessConstants.RoleCodes.STUDENT),
+                new AssignmentRequests.SubmitAssignmentRequest("   "));
+
+        assertThat(submitted.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    /** Lỗi đã gặp thật: rút rồi ghi danh lại thì thẻ của lần đã rút mãi "0 lượt", trông như không lưu kết quả. */
+    @Test
+    void aStudentWhoRejoinedTheClassSeesOneCardHoldingTheirAttempts() throws Exception {
+        var miniTaskId = createMiniTask(signIn(teacherId, AccessConstants.RoleCodes.TEACHER));
+        var enrollment = enrollments.findById(studentEnrollmentId).orElseThrow();
+        enrollment.withdraw();
+        enrollments.saveAndFlush(enrollment);
+        var rejoined = enrollments.saveAndFlush(new Enrollment(enrollment.getStudentProfileId(), classId,
+                enrollment.getCourseId(), enrollment.getBranchId(), teacherId));
+        var student = signIn(studentAccountId, AccessConstants.RoleCodes.STUDENT);
+
+        var submitted = postJson("/api/assessment/me/mini-tasks/" + miniTaskId + "/attempts", student,
+                new MiniTaskRequests.SubmitAttemptRequest(List.of(0, 0)));
+        assertThat(submitted.getResponse().getStatus()).isEqualTo(200);
+
+        var mine = getJson("/api/assessment/me/classes", student);
+        assertThat(mine).hasSize(1);
+        assertThat(mine.get(0).get("enrollmentId").asText()).isEqualTo(rejoined.getId().toString());
+        assertThat(mine.get(0).get("miniTasks").get(0).get("attemptCount").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void aStudentWhoLeftTheClassKeepsAReadOnlyCard() throws Exception {
+        var assignmentId = createAssignment(signIn(teacherId, AccessConstants.RoleCodes.TEACHER));
+        var enrollment = enrollments.findById(studentEnrollmentId).orElseThrow();
+        enrollment.withdraw();
+        enrollments.saveAndFlush(enrollment);
+        var student = signIn(studentAccountId, AccessConstants.RoleCodes.STUDENT);
+
+        var mine = getJson("/api/assessment/me/classes", student);
+
+        assertThat(mine).hasSize(1);
+        assertThat(mine.get(0).get("enrollmentStatus").asText()).isEqualTo("WITHDRAWN");
+        assertThat(mine.get(0).get("assignments").get(0).get("canSubmit").asBoolean()).isFalse();
+        assertThat(postJson("/api/assessment/me/assignments/" + assignmentId + "/submission", student,
+                new AssignmentRequests.SubmitAssignmentRequest("Bài làm")).getResponse().getStatus()).isEqualTo(403);
+    }
+
     @Test
     void aScoreAboveTheMaxOfTheAssignmentIsRejected() throws Exception {
         var teacher = signIn(teacherId, AccessConstants.RoleCodes.TEACHER);

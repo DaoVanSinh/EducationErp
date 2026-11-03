@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.eduerp.modules.assessment.AssessmentConstants;
 import com.eduerp.modules.assessment.AssessmentConstants.SubmissionStatus;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,23 @@ class AssessmentRulesTest {
         assertThat(AssessmentRules.blankToNull("   ")).isNull();
         assertThat(AssessmentRules.blankToNull(null)).isNull();
         assertThat(AssessmentRules.blankToNull("  vì 2 > 1 ")).isEqualTo("vì 2 > 1");
+    }
+
+    @Test
+    void submissionIsLateOnlyAfterTheDueDate() {
+        var due = LocalDate.of(2026, 11, 3);
+
+        assertThat(AssessmentRules.submissionStatusOn(due, due)).isEqualTo(SubmissionStatus.SUBMITTED);
+        assertThat(AssessmentRules.submissionStatusOn(due, due.plusDays(1))).isEqualTo(SubmissionStatus.LATE);
+        assertThat(AssessmentRules.submissionStatusOn(null, due)).isEqualTo(SubmissionStatus.SUBMITTED);
+    }
+
+    @Test
+    void onlyAnActiveStudentOnAnUngradedActiveAssignmentCanSubmit() {
+        assertThat(AssessmentRules.canSubmit(true, true, null)).isTrue();
+        assertThat(AssessmentRules.canSubmit(false, true, null)).isFalse();
+        assertThat(AssessmentRules.canSubmit(true, false, null)).isFalse();
+        assertThat(AssessmentRules.canSubmit(true, true, BigDecimal.ONE)).isFalse();
     }
 
     @Test

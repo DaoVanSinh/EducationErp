@@ -43,6 +43,7 @@ export const ASSESSMENT_LIMITS = {
   minPassPercent: 1,
   maxPassPercent: 100,
   defaultPassPercent: 80,
+  maxSubmissionLength: 4000,
 } as const;
 
 const assignmentTypeSchema = z.enum([ASSIGNMENT_TYPE.homework, ASSIGNMENT_TYPE.miniTest]);
@@ -78,6 +79,9 @@ export const resultCellSchema = z.object({
   status: submissionStatusSchema,
   score: z.number().nullable(),
   feedback: z.string().nullable(),
+  /** Null khi giáo viên ghi nhận tay bài nộp ngoài hệ thống. */
+  submissionContent: z.string().nullable(),
+  submittedAt: z.string().nullable(),
 });
 
 export type ResultCell = z.infer<typeof resultCellSchema>;
@@ -160,6 +164,10 @@ export const myAssignmentItemSchema = z.object({
   status: submissionStatusSchema,
   score: z.number().nullable(),
   feedback: z.string().nullable(),
+  submissionContent: z.string().nullable(),
+  submittedAt: z.string().nullable(),
+  /** Backend quyết định: đang học, bài còn bật và chưa được chấm. */
+  canSubmit: z.boolean(),
 });
 
 export type MyAssignmentItem = z.infer<typeof myAssignmentItemSchema>;

@@ -3,6 +3,7 @@ import {
   isMissingWork,
   SUBMISSION_STATUS,
   type Assignment,
+  type ResultCell,
   type StudentAssignmentRow,
   type SubmissionStatus,
 } from "@/entities/assessment";
@@ -27,6 +28,19 @@ export function missingCount(assignment: Assignment, rows: readonly StudentAssig
     (row) =>
       row.enrollmentStatus === ENROLLMENT_STATUS.active &&
       isMissingWork(assignment.dueDate, row.resultsByAssignmentId[assignment.id]?.status, today),
+  ).length;
+}
+
+/** Đã nộp mà chưa có điểm. Bài nộp không xoá khi học viên rút, nên chỉ đếm người đang học. */
+export function isAwaitingGrade(cell: ResultCell | undefined): boolean {
+  return cell !== undefined && cell.status !== SUBMISSION_STATUS.notSubmitted && cell.score === null;
+}
+
+/** Số bài đang chờ giáo viên chấm ở một bài. */
+export function awaitingGradeCount(assignment: Assignment, rows: readonly StudentAssignmentRow[]): number {
+  return rows.filter(
+    (row) =>
+      row.enrollmentStatus === ENROLLMENT_STATUS.active && isAwaitingGrade(row.resultsByAssignmentId[assignment.id]),
   ).length;
 }
 

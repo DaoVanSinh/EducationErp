@@ -1,6 +1,6 @@
 import { Can } from "@/entities/permission";
 import { ASSIGNMENT_TYPE_LABEL, type Assignment, type StudentAssignmentRow } from "@/entities/assessment";
-import { missingCount } from "@/modules/assessment/model/assessment-rules";
+import { awaitingGradeCount, missingCount } from "@/modules/assessment/model/assessment-rules";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { formatter } from "@/shared/lib/format";
 import { Badge } from "@/shared/ui/badge";
@@ -38,11 +38,12 @@ export function AssignmentList({ assignments, rows, today, onRecordResults, onEd
             Đã nộp {assignment.submittedCount}/{assignment.rosterCount} · Điểm trung bình{" "}
             {assignment.averageScore === null ? "chưa có" : assignment.averageScore}
           </p>
+          <AwaitingGradeNotice count={awaitingGradeCount(assignment, rows)} />
           <MissingNotice count={missingCount(assignment, rows, today)} />
           <Can {...ACCESS_RULE.updateAssignment}>
             <div className="flex flex-wrap gap-2">
               <GlassButton size="sm" onClick={() => onRecordResults(assignment)} icon={<ClipboardList size={14} aria-hidden />}>
-                Nhập kết quả
+                Chấm bài
               </GlassButton>
               <GlassButton variant="secondary" size="sm" onClick={() => onEdit(assignment)} icon={<Pencil size={14} aria-hidden />}>
                 Sửa
@@ -52,6 +53,17 @@ export function AssignmentList({ assignments, rows, today, onRecordResults, onEd
         </li>
       ))}
     </ul>
+  );
+}
+
+function AwaitingGradeNotice({ count }: { readonly count: number }) {
+  if (count === 0) {
+    return null;
+  }
+  return (
+    <div>
+      <Badge tone="warning">{count} bài chờ chấm</Badge>
+    </div>
   );
 }
 

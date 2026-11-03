@@ -3,6 +3,7 @@ package com.eduerp.modules.assessment.dto;
 import com.eduerp.modules.assessment.AssessmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -13,10 +14,14 @@ public final class MyAssessmentResponses {
     private MyAssessmentResponses() {
     }
 
-    /** Chưa có kết quả nào được ghi nhận thì {@code status} là NOT_SUBMITTED và {@code score} null. */
+    /**
+     * Chưa có kết quả nào được ghi nhận thì {@code status} là NOT_SUBMITTED và {@code score} null.
+     * {@code canSubmit} do backend quyết định để nút nộp bài ở giao diện luôn khớp luật khi nhận bài.
+     */
     public record MyAssignmentItem(UUID assignmentId, String title, String description,
             AssessmentConstants.AssignmentType type, LocalDate dueDate, BigDecimal maxScore,
-            AssessmentConstants.SubmissionStatus status, BigDecimal score, String feedback) {
+            AssessmentConstants.SubmissionStatus status, BigDecimal score, String feedback,
+            String submissionContent, Instant submittedAt, boolean canSubmit) {
     }
 
     /** {@code passed} = điểm cao nhất đã chạm {@code passPercent} của mini-task. */

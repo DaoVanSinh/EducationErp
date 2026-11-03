@@ -25,6 +25,8 @@ public final class AssessmentConstants {
         public static final int MAX_TITLE_LENGTH = 255;
         public static final int MAX_DESCRIPTION_LENGTH = 2000;
         public static final int MAX_FEEDBACK_LENGTH = 1000;
+        /** Khớp VARCHAR(4000) của {@code assignment_results.submission_content} (V38). */
+        public static final int MAX_SUBMISSION_LENGTH = 4000;
         public static final int MAX_QUESTION_LENGTH = 1000;
         public static final int MAX_OPTION_LENGTH = 500;
         public static final int MAX_EXPLANATION_LENGTH = 1000;
@@ -47,6 +49,14 @@ public final class AssessmentConstants {
 
         public static final BigDecimal MIN_SCORE = BigDecimal.ZERO;
         public static final int SCORE_SCALE = 2;
+    }
+
+    public static final class Deadlines {
+        private Deadlines() {
+        }
+
+        /** Hạn nộp là ngày theo giờ trung tâm, không phải giờ UTC của máy chủ. */
+        public static final String CENTER_ZONE_ID = "Asia/Ho_Chi_Minh";
     }
 
     /** Không cần cache namespace nào - đọc thẳng từ DB. */

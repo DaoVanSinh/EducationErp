@@ -1,3 +1,4 @@
+import { SUBMISSION_STATUS, type MyAssignmentItem } from "@/entities/assessment";
 import { INVOICE_STATUS, type InvoiceDetail, type InvoiceStatus } from "@/entities/billing";
 import { CLASS_STATUS } from "@/entities/class";
 import type { MyLearningClass } from "@/modules/learning/model/learning-schema";
@@ -35,6 +36,29 @@ export function enrollmentTone(status: EnrollmentStatus): Tone {
  */
 export function showsClassStatus(status: EnrollmentStatus): boolean {
   return status === ENROLLMENT_STATUS.active;
+}
+
+/** Ghi danh đã rút chỉ còn xem lại kết quả cũ: backend không nhận bài của lượt ghi danh này. */
+export function isReadOnlyEnrollment(status: EnrollmentStatus): boolean {
+  return status === ENROLLMENT_STATUS.withdrawn;
+}
+
+/** Nhãn nút ở dòng bài tập; null khi chưa có gì để nộp hay để xem. */
+export function assignmentActionLabel(assignment: MyAssignmentItem): string | null {
+  if (assignment.canSubmit) {
+    return assignment.submissionContent === null ? "Nộp bài" : "Nộp lại";
+  }
+  return assignment.submissionContent === null ? null : "Xem bài nộp";
+}
+
+/** Đã nộp mà giáo viên chưa cho điểm. */
+export function isAwaitingGrade(assignment: MyAssignmentItem): boolean {
+  return assignment.status !== SUBMISSION_STATUS.notSubmitted && assignment.score === null;
+}
+
+/** Hạn nộp hết ngày vẫn tính đúng hạn; `today` là "YYYY-MM-DD", so chuỗi ISO là so ngày. */
+export function isPastDue(dueDate: string | null, today: string): boolean {
+  return dueDate !== null && dueDate < today;
 }
 
 export const CLASS_TIMELINE = {

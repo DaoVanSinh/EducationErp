@@ -1,5 +1,5 @@
 import { isMissingWork, SUBMISSION_STATUS_LABEL, type Assignment, type StudentAssignmentRow } from "@/entities/assessment";
-import { percentLabel, percentTone, submissionTone } from "@/modules/assessment/model/assessment-rules";
+import { isAwaitingGrade, percentLabel, percentTone, submissionTone } from "@/modules/assessment/model/assessment-rules";
 import { ENROLLMENT_STATUS_LABEL } from "@/shared/api/schemas";
 import { Badge } from "@/shared/ui/badge";
 
@@ -65,6 +65,7 @@ function ResultCellView({ row, assignment, today }: ResultCellViewProps) {
   return (
     <div className="flex flex-col gap-1" title={cell.feedback ?? undefined}>
       <Badge tone={submissionTone(cell.status)}>{SUBMISSION_STATUS_LABEL[cell.status]}</Badge>
+      {isAwaitingGrade(cell) ? <span className="text-xs text-mist-400">Chờ chấm</span> : null}
       {cell.score === null ? null : <span className="text-xs text-mist-100">{cell.score} điểm</span>}
     </div>
   );

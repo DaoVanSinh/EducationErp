@@ -25,7 +25,9 @@ public final class AssignmentResponses {
             Instant createdAt, int submittedCount, int rosterCount, BigDecimal averageScore) {
     }
 
-    public record ResultCell(AssessmentConstants.SubmissionStatus status, BigDecimal score, String feedback) {
+    /** {@code submissionContent} null khi giáo viên ghi nhận tay bài nộp ngoài hệ thống. */
+    public record ResultCell(AssessmentConstants.SubmissionStatus status, BigDecimal score, String feedback,
+            String submissionContent, Instant submittedAt) {
     }
 
     /**

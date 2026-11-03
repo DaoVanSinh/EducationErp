@@ -58,4 +58,9 @@ export const assessmentApi = {
       await apiClient.post<unknown>(API_ROUTE.assessment.myMiniTaskAttempts(miniTaskId), { answers }),
     );
   },
+
+  /** Học viên nộp hoặc nộp lại bài tập / mini-test; backend từ chối khi bài đã được chấm. */
+  async submitAssignment(assignmentId: string, content: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.assessment.myAssignmentSubmission(assignmentId), { content });
+  },
 } as const;

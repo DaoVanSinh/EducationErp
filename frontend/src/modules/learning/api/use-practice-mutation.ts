@@ -11,3 +11,15 @@ export function useSubmitAttempt(miniTaskId: string) {
     },
   });
 }
+
+/** Nộp bài tập / mini-test; xong thì làm mới trang để thấy tình trạng mới. */
+export function useSubmitAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { readonly assignmentId: string; readonly content: string }) =>
+      assessmentApi.submitAssignment(args.assignmentId, args.content),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: assessmentKeys.mine() });
+    },
+  });
+}

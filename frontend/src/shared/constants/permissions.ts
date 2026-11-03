@@ -80,7 +80,7 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.learning]: "Cổng học tập (lớp, điểm, học phí của tôi)",
   [RESOURCE.attendance]: "Điểm danh",
   [RESOURCE.assignment]: "Bài tập, mini-test & mini-task",
-  [RESOURCE.practice]: "Tự luyện tập (làm mini-task)",
+  [RESOURCE.practice]: "Tự luyện tập và nộp bài (mini-task, bài tập)",
 };
 
 export const ACTION_LABEL: Record<string, string> = {

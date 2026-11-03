@@ -1,11 +1,13 @@
 package com.eduerp.modules.assessment.web;
 
 import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.assessment.dto.AssignmentRequests;
 import com.eduerp.modules.assessment.dto.MiniTaskRequests;
 import com.eduerp.modules.assessment.dto.MiniTaskResponses;
 import com.eduerp.modules.assessment.dto.MyAssessmentResponses;
 import com.eduerp.modules.assessment.usecase.GetMyAssessments;
 import com.eduerp.modules.assessment.usecase.GetMyMiniTask;
+import com.eduerp.modules.assessment.usecase.SubmitAssignment;
 import com.eduerp.modules.assessment.usecase.SubmitMiniTaskAttempt;
 import com.eduerp.shared.AccountPrincipal;
 import jakarta.validation.Valid;
@@ -31,9 +33,11 @@ class AssessmentSelfServiceController {
     private final GetMyAssessments getMyAssessments;
     private final GetMyMiniTask getMyMiniTask;
     private final SubmitMiniTaskAttempt submitMiniTaskAttempt;
+    private final SubmitAssignment submitAssignment;
 
     AssessmentSelfServiceController(GetMyAssessments getMyAssessments, GetMyMiniTask getMyMiniTask,
-            SubmitMiniTaskAttempt submitMiniTaskAttempt) {
+            SubmitMiniTaskAttempt submitMiniTaskAttempt, SubmitAssignment submitAssignment) {
+        this.submitAssignment = submitAssignment;
         this.getMyAssessments = getMyAssessments;
         this.getMyMiniTask = getMyMiniTask;
         this.submitMiniTaskAttempt = submitMiniTaskAttempt;
@@ -58,5 +62,13 @@ class AssessmentSelfServiceController {
     MiniTaskResponses.AttemptResultResponse submit(@AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID miniTaskId, @Valid @RequestBody MiniTaskRequests.SubmitAttemptRequest request) {
         return submitMiniTaskAttempt.execute(principal.accountId(), miniTaskId, request);
+    }
+
+    /** Cùng quyền với làm mini-task: chỉ học viên có, giáo viên và admin không nộp bài thay được. */
+    @PostMapping("/assignments/{assignmentId}/submission")
+    @PreAuthorize(AccessConstants.AccessRules.CREATE_PRACTICE)
+    void submitAssignment(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID assignmentId,
+            @Valid @RequestBody AssignmentRequests.SubmitAssignmentRequest request) {
+        submitAssignment.execute(principal.accountId(), assignmentId, request);
     }
 }

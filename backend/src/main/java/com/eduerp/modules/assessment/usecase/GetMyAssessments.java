@@ -10,8 +10,11 @@ import com.eduerp.modules.assessment.internal.repository.MiniTaskAttemptReposito
 import com.eduerp.modules.assessment.internal.repository.MiniTaskRepository;
 import com.eduerp.modules.assessment.internal.rules.AssessmentRules;
 import com.eduerp.modules.courses.CoursesManagement;
+import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
 import com.eduerp.modules.students.StudentsManagement;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,7 +52,7 @@ public class GetMyAssessments {
         if (profile == null) {
             return List.of();
         }
-        var entries = enrollments.listEnrollmentsByStudent(profile.studentProfileId());
+        var entries = onePerClass(enrollments.listEnrollmentsByStudent(profile.studentProfileId()));
         if (entries.isEmpty()) {
             return List.of();
         }
@@ -65,6 +68,34 @@ public class GetMyAssessments {
         return entries.stream().map(entry -> toResponse(entry, context)).toList();
     }
 
+    /**
+     * Học viên rút rồi ghi danh lại vào cùng một lớp thì chỉ thấy lần còn hiệu lực: bài nộp và lượt làm luôn gắn
+     * vào lần đó, nên thẻ của lần đã rút mãi là "0 lượt" và trông như mất kết quả. Chỉ còn các lần đã rút thì
+     * giữ lần gần nhất để xem lại điểm cũ.
+     */
+    private static List<EnrollmentManagement.StudentEnrollmentEntry> onePerClass(
+            List<EnrollmentManagement.StudentEnrollmentEntry> entries) {
+        return entries.stream()
+                .collect(Collectors.groupingBy(EnrollmentManagement.StudentEnrollmentEntry::classId,
+                        LinkedHashMap::new, Collectors.toList()))
+                .values().stream()
+                .flatMap(sameClass -> effectiveEntries(sameClass).stream())
+                .toList();
+    }
+
+    private static List<EnrollmentManagement.StudentEnrollmentEntry> effectiveEntries(
+            List<EnrollmentManagement.StudentEnrollmentEntry> sameClass) {
+        var effective = sameClass.stream()
+                .filter(entry -> entry.status() != EnrollmentConstants.EnrollmentStatus.WITHDRAWN)
+                .toList();
+        if (!effective.isEmpty()) {
+            return effective;
+        }
+        return sameClass.stream()
+                .max(Comparator.comparing(EnrollmentManagement.StudentEnrollmentEntry::enrolledAt))
+                .stream().toList();
+    }
+
     private record Context(Map<UUID, CoursesManagement.ClassBasicSummary> classSummaries,
             Map<UUID, List<Assignment>> assignmentsByClass, Map<UUID, List<MiniTask>> miniTasksByClass,
             Map<UUID, List<MiniTaskAttempt>> attemptsByEnrollment) {
@@ -73,7 +104,7 @@ public class GetMyAssessments {
     private static MyAssessmentResponses.MyAssessmentClassResponse toResponse(
             EnrollmentManagement.StudentEnrollmentEntry entry, Context context) {
         var items = context.assignmentsByClass().getOrDefault(entry.classId(), List.of()).stream()
-                .map(assignment -> toAssignmentItem(assignment, entry.enrollmentId()))
+                .map(assignment -> toAssignmentItem(assignment, entry))
                 .toList();
         var myAttempts = context.attemptsByEnrollment().getOrDefault(entry.enrollmentId(), List.of());
         var tasks = context.miniTasksByClass().getOrDefault(entry.classId(), List.of()).stream()
@@ -86,19 +117,21 @@ public class GetMyAssessments {
                 entry.status(), items, tasks, submitted, AssessmentRules.percent(submitted, items.size()));
     }
 
-    private static MyAssessmentResponses.MyAssignmentItem toAssignmentItem(Assignment assignment, UUID enrollmentId) {
-        var result = assignment.getResults().stream()
-                .filter(row -> row.getEnrollmentId().equals(enrollmentId))
-                .findFirst()
-                .orElse(null);
+    private static MyAssessmentResponses.MyAssignmentItem toAssignmentItem(Assignment assignment,
+            EnrollmentManagement.StudentEnrollmentEntry entry) {
+        var enrollmentActive = entry.status() == EnrollmentConstants.EnrollmentStatus.ACTIVE;
+        var result = assignment.resultOf(entry.enrollmentId()).orElse(null);
         if (result == null) {
             return new MyAssessmentResponses.MyAssignmentItem(assignment.getId(), assignment.getTitle(),
                     assignment.getDescription(), assignment.getType(), assignment.getDueDate(),
-                    assignment.getMaxScore(), AssessmentConstants.SubmissionStatus.NOT_SUBMITTED, null, null);
+                    assignment.getMaxScore(), AssessmentConstants.SubmissionStatus.NOT_SUBMITTED, null, null, null,
+                    null, AssessmentRules.canSubmit(enrollmentActive, assignment.isActive(), null));
         }
         return new MyAssessmentResponses.MyAssignmentItem(assignment.getId(), assignment.getTitle(),
                 assignment.getDescription(), assignment.getType(), assignment.getDueDate(), assignment.getMaxScore(),
-                result.getStatus(), result.getScore(), result.getFeedback());
+                result.getStatus(), result.getScore(), result.getFeedback(), result.getSubmissionContent(),
+                result.getSubmittedAt(),
+                AssessmentRules.canSubmit(enrollmentActive, assignment.isActive(), result.getScore()));
     }
 
     private static MyAssessmentResponses.MyMiniTaskItem toMiniTaskItem(MiniTask task, List<MiniTaskAttempt> myAttempts) {

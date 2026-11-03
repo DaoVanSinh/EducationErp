@@ -25,7 +25,7 @@ export function ClassAssignmentsPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Bài tập & mini-test"
-          description="Giao bài định kỳ, ghi nhận tình trạng nộp và điểm, theo dõi tỷ lệ hoàn thành của từng học viên."
+          description="Giao bài, đọc bài học viên nộp trên hệ thống rồi chấm điểm. Bài nộp ngoài hệ thống thì ghi nhận tay khi chấm."
           actions={
             <div className="flex gap-2">
               <Link to={buildClassMiniTasksPath(classId)}>

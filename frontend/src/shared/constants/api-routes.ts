@@ -132,6 +132,7 @@ export const API_ROUTE = {
     myClasses: "/api/assessment/me/classes",
     myMiniTask: (miniTaskId: string) => `/api/assessment/me/mini-tasks/${miniTaskId}`,
     myMiniTaskAttempts: (miniTaskId: string) => `/api/assessment/me/mini-tasks/${miniTaskId}/attempts`,
+    myAssignmentSubmission: (assignmentId: string) => `/api/assessment/me/assignments/${assignmentId}/submission`,
   },
   landing: {
     overview: "/api/landing/overview",

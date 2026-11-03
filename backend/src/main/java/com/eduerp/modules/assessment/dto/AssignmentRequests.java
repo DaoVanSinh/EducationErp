@@ -44,4 +44,9 @@ public final class AssignmentRequests {
 
     public record RecordResultsRequest(@NotEmpty List<@Valid @NotNull ResultEntryRequest> entries) {
     }
+
+    /** Học viên nộp bài: câu trả lời hoặc đường dẫn tới bài làm. */
+    public record SubmitAssignmentRequest(
+            @NotBlank @Size(max = AssessmentConstants.Limits.MAX_SUBMISSION_LENGTH) String content) {
+    }
 }
