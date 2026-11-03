@@ -59,7 +59,7 @@ export function LandingConsultationModal({
 
             <p className="mt-2 text-[14px] leading-relaxed text-[#475569]">
               Bộ phận Tuyển sinh của <strong>{brandName}</strong> đã nhận được yêu cầu của bạn trên
-              hệ thống và sẽ liên hệ lại trong vòng 15–30 phút.
+              hệ thống và sẽ sớm liên hệ lại.
             </p>
 
             {hotlineDisplay && (

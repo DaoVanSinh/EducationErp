@@ -1,4 +1,3 @@
-import { useSakuraCanvas } from "@/modules/landing/hooks/use-sakura-canvas";
 import {
   LANDING_SECTION_ID,
   type LandingCenterInfo,
@@ -42,8 +41,6 @@ export function LandingHeroSection({
   onConsultClick,
   onScrollToSection,
 }: LandingHeroSectionProps) {
-  const { canvasRef } = useSakuraCanvas();
-
   const statItems = [
     { label: "Khoá đào tạo", value: stats.activeCourseCount, icon: BookOpen, tone: "bg-[#fff7ed] text-[#ea580c]" },
     { label: "Lớp đang mở", value: stats.activeClassCount, icon: CalendarCheck2, tone: "bg-[#fff1f2] text-[#ff5e62]" },
@@ -53,8 +50,6 @@ export function LandingHeroSection({
 
   return (
     <section className="relative overflow-hidden bg-white pt-9 pb-12">
-      <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-0 h-full w-full" />
-
       <div className="relative z-10 mx-auto max-w-[1380px] px-4 sm:px-8 lg:px-14">
         <div className="grid items-center gap-10 lg:grid-cols-[1.12fr_1fr]">
           <div className="max-w-[640px]">

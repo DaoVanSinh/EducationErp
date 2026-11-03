@@ -148,7 +148,7 @@ export function LandingConsultationCta({
 
               <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-[#64748b]">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                Bảo mật thông tin 100% • Tư vấn viên liên hệ trong 15–30 phút
+                Bảo mật thông tin 100% • Tư vấn viên liên hệ nhanh chóng
               </p>
             </form>
           </div>

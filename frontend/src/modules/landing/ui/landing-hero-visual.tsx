@@ -1,7 +1,5 @@
-import { useTiltCard } from "@/modules/landing/hooks/use-tilt-card";
 import type { LandingCourse, LandingStats } from "@/modules/landing/model/landing-schema";
 import { formatter } from "@/shared/lib/format";
-import { m } from "framer-motion";
 import { GraduationCap, Sparkles } from "lucide-react";
 
 export interface LandingHeroVisualProps {
@@ -15,8 +13,6 @@ export function LandingHeroVisual({
   featuredCourse,
   onExploreCourses,
 }: LandingHeroVisualProps) {
-  const { cardRef, onMouseMove, onMouseEnter, onMouseLeave, rotateX, rotateY, scale } =
-    useTiltCard(8);
   const courseTitle = featuredCourse?.name ?? "Lộ Trình Đào Tạo Chuẩn";
   const courseCode = featuredCourse?.code ?? "KHAI GIẢNG 2026";
   const courseTuition =
@@ -26,26 +22,10 @@ export function LandingHeroVisual({
   const maxDiscount = stats.maxComboDiscountPercent > 0 ? stats.maxComboDiscountPercent : 15;
 
   return (
-    <div
-      className="relative flex min-h-[500px] items-center justify-center"
-      style={{ perspective: "1200px" }}
-    >
-      <m.div
-        ref={cardRef}
-        onMouseMove={onMouseMove}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+    <div className="relative flex min-h-[500px] items-center justify-center">
+      <div
         onClick={onExploreCourses}
-        style={{
-          rotateX,
-          rotateY,
-          scale,
-          transformStyle: "preserve-3d",
-        }}
-        initial={{ opacity: 0, scale: 0.94 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.85 }}
-        className="group relative flex w-full max-w-[540px] cursor-pointer items-center justify-center"
+        className="relative flex w-full max-w-[540px] cursor-pointer items-center justify-center"
       >
         {/* Layer 1: Soft Ambient Pastel Contour Aura & Dashed Orbit */}
         <div
@@ -54,24 +34,19 @@ export function LandingHeroVisual({
           style={{
             background:
               "radial-gradient(circle, rgba(255, 237, 213, 0.72) 0%, rgba(255, 241, 242, 0.52) 50%, transparent 75%)",
-            transform: "translateZ(-30px)",
           }}
         />
         <div
           aria-hidden
           className="pointer-events-none absolute z-0 size-[430px] rounded-full border-[1.5px] border-dashed border-[#fdba74]/45"
-          style={{ transform: "translateZ(-20px)" }}
         />
 
         {/* Layer 2: Cutout Student Model Image (No Background Box) */}
-        <div
-          style={{ transform: "translateZ(0px)" }}
-          className="relative z-10 flex w-full items-center justify-center"
-        >
+        <div className="relative z-10 flex w-full items-center justify-center">
           <img
             src="/images/viet_student_cutout.png"
             alt="Học viên tiêu biểu tại học viện"
-            className="block h-auto max-h-[540px] w-full max-w-[450px] object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+            className="block h-auto max-h-[540px] w-full max-w-[450px] object-contain"
             style={{
               filter:
                 "drop-shadow(0 24px 36px rgba(255, 140, 66, 0.18)) drop-shadow(0 8px 16px rgba(15, 23, 42, 0.06))",
@@ -79,14 +54,9 @@ export function LandingHeroVisual({
           />
         </div>
 
-        {/* Layer 3: Floating 3D VIP Scholarship / Combo Card (Bottom-Right, strictly above model) */}
-        <div
-          style={{ transform: "translateZ(72px)" }}
-          className="absolute -right-2 -bottom-2 z-30"
-        >
-          <m.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+        {/* Layer 3: Scholarship / Combo Card (Bottom-Right, above model) */}
+        <div className="absolute -right-2 -bottom-2 z-30">
+          <div
             style={{
               background:
                 "linear-gradient(135deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 247, 237, 0.95) 100%)",
@@ -123,19 +93,12 @@ export function LandingHeroVisual({
                 <div className="text-[11px] font-bold text-[#1e293b]">{courseTuition}</div>
               </div>
             </div>
-          </m.div>
+          </div>
         </div>
 
-        {/* Layer 4: Floating Mini Course Badge (Middle-Left, strictly above model) */}
-        <div
-          style={{ transform: "translateZ(64px)" }}
-          className="absolute top-[42%] -left-4 z-30"
-        >
-          <m.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-            className="flex max-w-[235px] items-center gap-2.5 rounded-[18px] border-[1.5px] border-[#fed7aa] bg-white/96 px-3.5 py-2.5 shadow-[0_14px_30px_-4px_rgba(255,140,66,0.22)] backdrop-blur-md"
-          >
+        {/* Layer 4: Mini Course Badge (Middle-Left, above model) */}
+        <div className="absolute top-[42%] -left-4 z-30">
+          <div className="flex max-w-[235px] items-center gap-2.5 rounded-[18px] border-[1.5px] border-[#fed7aa] bg-white/96 px-3.5 py-2.5 shadow-[0_14px_30px_-4px_rgba(255,140,66,0.22)] backdrop-blur-md">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#fed7aa] bg-[#fff7ed] text-[#ea580c]">
               <GraduationCap size={19} aria-hidden />
             </div>
@@ -145,28 +108,21 @@ export function LandingHeroVisual({
                 {stats.activeClassCount} lớp mở • {stats.activeBranchCount} cơ sở
               </div>
             </div>
-          </m.div>
+          </div>
         </div>
 
-        {/* Layer 5: Floating Top-Right Mini Pill Badge (strictly above model) */}
-        <div
-          style={{ transform: "translateZ(60px)" }}
-          className="absolute top-3 right-3 z-30"
-        >
-          <m.div
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-            className="flex items-center gap-2 rounded-full border border-[#fed7aa] bg-white/95 px-3.5 py-1.5 shadow-[0_10px_24px_-2px_rgba(255,140,66,0.2)] backdrop-blur-md"
-          >
+        {/* Layer 5: Top-Right Mini Pill Badge (above model) */}
+        <div className="absolute top-3 right-3 z-30">
+          <div className="flex items-center gap-2 rounded-full border border-[#fed7aa] bg-white/95 px-3.5 py-1.5 shadow-[0_10px_24px_-2px_rgba(255,140,66,0.2)] backdrop-blur-md">
             <span className="flex size-4.5 items-center justify-center rounded-full bg-gradient-to-br from-[#ff8c42] to-[#ff5e62] text-[10px] font-extrabold text-white">
               ✓
             </span>
             <span className="text-[11.5px] font-extrabold text-[#1e293b]">
               Cam kết đầu ra <span className="font-bold text-[#ea580c]">• Tuyển sinh mới</span>
             </span>
-          </m.div>
+          </div>
         </div>
-      </m.div>
+      </div>
     </div>
   );
 }
