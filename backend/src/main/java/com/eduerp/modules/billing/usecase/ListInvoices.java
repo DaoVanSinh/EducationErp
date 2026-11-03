@@ -29,8 +29,9 @@ public class ListInvoices {
 
     @Transactional(readOnly = true)
     public PageResponse<InvoiceResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId, UUID enrollmentId,
-            BillingConstants.InvoiceStatus status) {
-        var page = invoices.search(studentProfileId, enrollmentId, status, branchGuard.listFilter(actorAccountId), pageable);
+            BillingConstants.InvoiceStatus status, UUID requestedBranchId) {
+        var page = invoices.search(studentProfileId, enrollmentId, status,
+                branchGuard.listFilter(actorAccountId, requestedBranchId), pageable);
         return PageResponse.of(page, assembler.toResponses(page.getContent()));
     }
 }

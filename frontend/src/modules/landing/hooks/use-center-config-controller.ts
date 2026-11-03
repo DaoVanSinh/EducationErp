@@ -1,3 +1,4 @@
+import { useSelectedBranch } from "@/entities/branch";
 import {
   useLandingAdminConfig,
   useLandingConsultations,
@@ -24,7 +25,8 @@ export type AdminConfigTabId = (typeof ADMIN_CONFIG_TAB)[keyof typeof ADMIN_CONF
 
 export function useCenterConfigController() {
   const configQuery = useLandingAdminConfig();
-  const consultationsQuery = useLandingConsultations();
+  const { selectedBranchId } = useSelectedBranch();
+  const consultationsQuery = useLandingConsultations(selectedBranchId ?? undefined);
   const updateConfigMutation = useUpdateLandingConfig();
   const updateStatusMutation = useUpdateConsultationStatus();
 

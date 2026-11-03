@@ -53,8 +53,9 @@ class EnrollmentAdminController {
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID studentProfileId,
             @RequestParam(required = false) UUID classId,
-            @RequestParam(required = false) EnrollmentConstants.EnrollmentStatus status) {
-        return listEnrollments.execute(principal.accountId(), pageable, studentProfileId, classId, status);
+            @RequestParam(required = false) EnrollmentConstants.EnrollmentStatus status,
+            @RequestParam(required = false) UUID branchId) {
+        return listEnrollments.execute(principal.accountId(), pageable, studentProfileId, classId, status, branchId);
     }
 
     @PostMapping

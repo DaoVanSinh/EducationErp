@@ -34,8 +34,9 @@ public class ListGroupRegistrations {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<GroupRegistrationResponse> execute(UUID actorAccountId, Pageable pageable, UUID courseId) {
-        var page = groups.search(courseId, branchGuard.listFilter(actorAccountId), pageable);
+    public PageResponse<GroupRegistrationResponse> execute(UUID actorAccountId, Pageable pageable, UUID courseId,
+            UUID requestedBranchId) {
+        var page = groups.search(courseId, branchGuard.listFilter(actorAccountId, requestedBranchId), pageable);
         var courseNames = courses.courseNamesOf(page.stream().map(GroupRegistration::getCourseId).distinct().toList());
         var studentNames = students.displayNamesOf(page.stream()
                 .flatMap(group -> group.getMembers().stream())

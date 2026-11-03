@@ -113,7 +113,7 @@ class InvoiceAdminControllerIT {
         var course = courses.save(new Course("BILW-C-" + shortId(), "Khoá", null, 24, tuitionFee));
         var teacherId = accounts.save(new Account("bil-web-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        var classId = classes.save(ClassFixtures.inProgress(course, "BILW-K-" + shortId(), branchId, teacherId, 20)).getId();
+        var classId = classes.save(ClassFixtures.enrolling(course, "BILW-K-" + shortId(), branchId, teacherId, 20)).getId();
         var studentAccountId = accounts
                 .save(new Account("bil-web-hv-" + shortId() + "@eduerp.local", "hash", "HV", null)).getId();
         var studentProfileId = profiles.save(new StudentProfile(studentAccountId, null, null, null)).getId();

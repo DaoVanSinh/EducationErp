@@ -65,7 +65,7 @@ public class CreateEnrollment {
         var scope = access.dataScopeOf(actorAccountId, AccessConstants.Resources.ENROLLMENT,
                 AccessConstants.Actions.CREATE);
         scope.requireCovers(classInfo.branchId());
-        // Nhận ghi danh khi lớp đang tuyển sinh hoặc đang học (vào học muộn); đã kết thúc/huỷ thì không.
+        // Chỉ nhận ghi danh trước khai giảng: vào giữa khoá sẽ mất phần kiến thức đã học; đã đóng lớp càng không.
         if (!classInfo.acceptsEnrollment()) {
             throw new ClassNotActiveException(request.classId());
         }

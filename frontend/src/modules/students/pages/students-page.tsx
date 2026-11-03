@@ -1,3 +1,4 @@
+import { useBranchPaging } from "@/entities/branch";
 import { useStudents, type StudentProfileSummary } from "@/entities/student";
 import { Can, RequirePermission } from "@/entities/permission";
 import { CreateStudentDialog } from "@/modules/students/ui/create-student-dialog";
@@ -16,17 +17,17 @@ import { Plus, Users } from "lucide-react";
 import { useState } from "react";
 
 export function StudentsPage() {
-  const [page, setPage] = useState(0);
+  const { branchId, page, setPage } = useBranchPaging();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editing, setEditing] = useState<StudentProfileSummary | null>(null);
-  const students = useStudents(page, DEFAULT_PAGE_SIZE);
+  const students = useStudents(page, DEFAULT_PAGE_SIZE, branchId);
 
   return (
     <RequirePermission {...ACCESS_RULE.readStudent}>
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Học viên"
-          description="Hồ sơ học viên kèm tài khoản đăng nhập cổng học tập."
+          description="Hồ sơ học viên kèm tài khoản đăng nhập cổng học tập. Khi chọn một cơ sở: học viên có cơ sở chính ở đó hoặc đang học lớp ở đó."
           actions={
             <Can {...ACCESS_RULE.createStudent}>
               <GlassButton onClick={() => setCreateDialogOpen(true)} icon={<Plus size={16} aria-hidden />}>

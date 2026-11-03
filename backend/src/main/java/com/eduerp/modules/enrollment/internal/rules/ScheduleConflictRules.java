@@ -46,7 +46,7 @@ public final class ScheduleConflictRules {
 
     /**
      * Các buổi của {@code target} trùng với {@code other}, sắp theo thời gian. Chỉ tính từ {@code today} trở đi:
-     * học viên vào học muộn không thể bị trùng với những buổi đã qua.
+     * những buổi đã qua không còn trùng với ai được nữa.
      */
     public static List<ConflictingSession> findConflicts(ClassPlan target, ClassPlan other, LocalDate today) {
         var from = Stream.of(today, target.startDate(), other.startDate()).max(Comparator.naturalOrder()).orElseThrow();

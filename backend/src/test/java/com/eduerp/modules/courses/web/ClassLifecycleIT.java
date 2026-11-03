@@ -241,6 +241,37 @@ class ClassLifecycleIT {
     }
 
     @Test
+    void aStartedClassTakesNoNewStudentsAndLocksItsSeatLimits() throws Exception {
+        var admin = admin("locked");
+        var classId = openClass(admin, "LC-LOCK", 1, 2, TODAY);
+        enroll(admin, classId, "lc-lock-s1@eduerp.local");
+        assertThat(action(admin, classId, "start").getResponse().getStatus()).isEqualTo(200);
+        var teacherId = coursesManagement.getClassInfo(classId).orElseThrow().teacherId();
+
+        var late = enroll(admin, classId, "lc-lock-s2@eduerp.local");
+        assertThat(late.getResponse().getStatus()).as("còn chỗ nhưng lớp đã khai giảng").isEqualTo(409);
+        assertThat(late.getResponse().getContentAsString()).contains("ENROLLMENT_CLASS_NOT_ACTIVE");
+
+        var raised = patchClass(admin, classId, new UpdateClassRequest(teacherId, 3, 1, TODAY, null, MON_EVENING));
+        assertThat(raised.getResponse().getStatus()).isEqualTo(400);
+        assertThat(raised.getResponse().getContentAsString()).contains("sĩ số tối đa");
+        var lowered = patchClass(admin, classId, new UpdateClassRequest(teacherId, 1, 1, TODAY, null, MON_EVENING));
+        assertThat(lowered.getResponse().getStatus()).isEqualTo(400);
+        assertThat(coursesManagement.getClassInfo(classId).orElseThrow().maxSeats()).isEqualTo(2);
+
+        var sameSeats = patchClass(admin, classId, new UpdateClassRequest(teacherId, 2, 1, TODAY, TODAY.plusDays(60),
+                MON_EVENING));
+        assertThat(sameSeats.getResponse().getStatus()).as("các trường khác vẫn sửa được").isEqualTo(200);
+    }
+
+    private MvcResult patchClass(Cookie admin, UUID classId, UpdateClassRequest request) throws Exception {
+        return mockMvc.perform(patch("/api/courses/classes/" + classId).cookie(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andReturn();
+    }
+
+    @Test
     void rejectsAPastStartDateAndMaxSeatsBelowTheCurrentHeadcount() throws Exception {
         var admin = admin("rules");
         var course = courses.save(new Course("LC-RULE-MANUAL", "Khoá luật", null, null, null));

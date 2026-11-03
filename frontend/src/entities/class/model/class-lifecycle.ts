@@ -1,8 +1,13 @@
 import { CLASS_STATUS, type ClassStatus, type ClassSummary } from "@/entities/class/model/class-schema";
 
-/** Lớp còn mở: nhận ghi danh, sửa được (đang tuyển sinh hoặc đang học). */
+/** Lớp còn mở: sửa được (đang tuyển sinh hoặc đang học). */
 export function isOpenClass(status: ClassStatus): boolean {
   return status === CLASS_STATUS.enrolling || status === CLASS_STATUS.inProgress;
+}
+
+/** Chỉ nhận học viên trước khai giảng: vào giữa khoá sẽ mất phần kiến thức đã học. Khớp backend. */
+export function acceptsEnrollment(status: ClassStatus): boolean {
+  return status === CLASS_STATUS.enrolling;
 }
 
 /** Đủ sĩ số tối thiểu để khai giảng chưa. */

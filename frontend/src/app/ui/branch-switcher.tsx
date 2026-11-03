@@ -18,7 +18,7 @@ function defaultLabel(session: Session): string {
 }
 
 /**
- * Chi nhánh đang chọn để xem (lọc Tài khoản + Dashboard). Chỉ tài khoản có quyền đọc chi nhánh ở cấp
+ * Chi nhánh đang chọn để xem, lọc mọi danh sách có gắn chi nhánh. Chỉ tài khoản có quyền đọc chi nhánh ở cấp
  * tổ chức mới đổi được - người khác thấy đúng nhãn chi nhánh chính của mình như trước, không bấm được.
  */
 export function BranchSwitcher({ session }: BranchSwitcherProps) {

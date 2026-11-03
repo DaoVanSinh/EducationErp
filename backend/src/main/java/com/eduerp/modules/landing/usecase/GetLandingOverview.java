@@ -58,19 +58,19 @@ public class GetLandingOverview {
     @Transactional(readOnly = true)
     public LandingOverviewResponse execute() {
         var activeCourses = courses.listActiveCourses();
-        var activeClasses = courses.listActiveClasses();
+        var enrollingClasses = courses.listEnrollingClasses();
         var activeBranches = organization.listActiveBranches();
         var activeTeachers = teachers.listActiveTeachers();
         var activeTiers = billing.listActiveComboDiscountTiers();
 
-        var accountNames = resolveAccountFullNames(activeClasses, activeTeachers);
+        var accountNames = resolveAccountFullNames(enrollingClasses, activeTeachers);
         var branchNames = activeBranches.stream()
                 .collect(Collectors.toMap(BranchPublicSummary::id, BranchPublicSummary::name));
-        var openClassCountByCourse = activeClasses.stream()
+        var openClassCountByCourse = enrollingClasses.stream()
                 .collect(Collectors.groupingBy(ActiveClassSnapshot::courseId, Collectors.counting()));
 
         var courseItems = toCourseItems(activeCourses, openClassCountByCourse);
-        var classItems = toClassItems(activeClasses, branchNames, accountNames);
+        var classItems = toClassItems(enrollingClasses, branchNames, accountNames);
         var teacherItems = toTeacherItems(activeTeachers, accountNames);
         var branchItems = toBranchItems(activeBranches);
         var tierItems = toTierItems(activeTiers);
@@ -94,9 +94,9 @@ public class GetLandingOverview {
     }
 
     private Map<UUID, String> resolveAccountFullNames(
-            List<ActiveClassSnapshot> activeClasses, List<ActiveTeacherSnapshot> activeTeachers) {
+            List<ActiveClassSnapshot> enrollingClasses, List<ActiveTeacherSnapshot> activeTeachers) {
         var accountIds = new HashSet<UUID>();
-        for (var cls : activeClasses) {
+        for (var cls : enrollingClasses) {
             accountIds.add(cls.teacherId());
         }
         for (var teacher : activeTeachers) {
@@ -122,10 +122,10 @@ public class GetLandingOverview {
     }
 
     private static List<LandingClassItem> toClassItems(
-            List<ActiveClassSnapshot> activeClasses,
+            List<ActiveClassSnapshot> enrollingClasses,
             Map<UUID, String> branchNames,
             Map<UUID, String> accountNames) {
-        return activeClasses.stream()
+        return enrollingClasses.stream()
                 .map(cls -> new LandingClassItem(
                         cls.id(),
                         cls.code(),

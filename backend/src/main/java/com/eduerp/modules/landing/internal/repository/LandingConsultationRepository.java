@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface LandingConsultationRepository extends JpaRepository<LandingConsultation, UUID> {
 
     List<LandingConsultation> findAllByOrderByCreatedAtDesc();
+
+    List<LandingConsultation> findAllByTargetBranchIdOrderByCreatedAtDesc(UUID targetBranchId);
 }

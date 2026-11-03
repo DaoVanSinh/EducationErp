@@ -99,7 +99,7 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.CLASS,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách lớp học, lọc theo giáo viên, chi nhánh; openOnly=true chỉ lấy lớp đang tuyển sinh.",
+        summary="Danh sách lớp học, lọc theo giáo viên, chi nhánh; openOnly=true lấy lớp đang tuyển sinh và đang học (chỉ lớp đang tuyển sinh mới nhận ghi danh).",
         query_params=(*_PAGING, "teacherId", "branchId", "openOnly"),
     ),
     EndpointSpec(

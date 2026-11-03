@@ -113,7 +113,7 @@ class EnrollmentAdminControllerIT {
         var course = courses.save(new Course("ENRW-C-" + shortId(), "Khoá", null, 24, new BigDecimal("9000000")));
         var teacherId = accounts.save(new Account("enr-web-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        return classes.save(ClassFixtures.inProgress(course, "ENRW-K-" + shortId(), branchId, teacherId, maxSeats)).getId();
+        return classes.save(ClassFixtures.enrolling(course, "ENRW-K-" + shortId(), branchId, teacherId, maxSeats)).getId();
     }
 
     private String createEnrollment(Cookie admin, UUID studentProfileId, UUID classId) throws Exception {

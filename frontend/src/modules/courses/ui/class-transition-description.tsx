@@ -13,7 +13,7 @@ export function ClassTransitionDescription({
     return (
       <p>
         Lớp chuyển sang <strong>Đang học</strong> với {cls.activeEnrollments} học viên. Từ lúc này giáo viên điểm danh,
-        nhập điểm và tiến trình học tập bắt đầu được tính.
+        nhập điểm và tiến trình học tập bắt đầu được tính. Lớp không nhận thêm học viên và không đổi được sĩ số nữa.
       </p>
     );
   }

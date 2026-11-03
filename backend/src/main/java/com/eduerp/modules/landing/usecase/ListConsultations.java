@@ -7,6 +7,7 @@ import com.eduerp.modules.landing.internal.repository.LandingConsultationReposit
 import com.eduerp.modules.organization.OrganizationManagement;
 import com.eduerp.modules.organization.OrganizationManagement.BranchPublicSummary;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +29,16 @@ public class ListConsultations {
     }
 
     @Transactional(readOnly = true)
-    public List<ConsultationItemResponse> execute() {
+    public List<ConsultationItemResponse> execute(UUID branchId) {
         var courseNames = courses.listActiveCourses().stream()
                 .collect(Collectors.toMap(ActiveCourseSnapshot::id, ActiveCourseSnapshot::name));
         var branchNames = organization.listActiveBranches().stream()
                 .collect(Collectors.toMap(BranchPublicSummary::id, BranchPublicSummary::name));
 
-        return consultations.findAllByOrderByCreatedAtDesc().stream()
+        // Yêu cầu chưa chọn cơ sở không thuộc riêng cơ sở nào, nên chỉ hiện khi xem toàn tổ chức.
+        var items = branchId == null ? consultations.findAllByOrderByCreatedAtDesc()
+                : consultations.findAllByTargetBranchIdOrderByCreatedAtDesc(branchId);
+        return items.stream()
                 .map(c -> new ConsultationItemResponse(
                         c.getId(),
                         c.getFullName(),

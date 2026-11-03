@@ -12,9 +12,9 @@ const teacherProfilePageSchema = pageResponseSchema(teacherProfileSummarySchema)
 const createdTeacherProfileIdSchema = z.string().uuid();
 
 export const teacherApi = {
-  async listProfiles(page: number, size: number) {
+  async listProfiles(page: number, size: number, branchId?: string) {
     return teacherProfilePageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.teachers.profiles, { page, size }),
+      await apiClient.get<unknown>(API_ROUTE.teachers.profiles, { page, size, branchId }),
     );
   },
 

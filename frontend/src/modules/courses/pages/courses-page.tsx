@@ -1,3 +1,4 @@
+import { useBranchPaging } from "@/entities/branch";
 import { useCourses, type CourseSummary } from "@/entities/course";
 import { Can, RequirePermission } from "@/entities/permission";
 import { CoursesTable } from "@/modules/courses/ui/courses-table";
@@ -16,17 +17,17 @@ import { BookOpen, Plus } from "lucide-react";
 import { useState } from "react";
 
 export function CoursesPage() {
-  const [page, setPage] = useState(0);
+  const { branchId, page, setPage } = useBranchPaging();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CourseSummary | null>(null);
-  const courses = useCourses(page, DEFAULT_PAGE_SIZE);
+  const courses = useCourses(page, DEFAULT_PAGE_SIZE, branchId);
 
   return (
     <RequirePermission {...ACCESS_RULE.readCourse}>
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Khóa học"
-          description="Danh mục khóa học dùng chung toàn tổ chức. Khóa học chỉ được vô hiệu hoá, không xoá."
+          description="Danh mục khóa học dùng chung toàn tổ chức, chỉ được vô hiệu hoá, không xoá. Khi chọn một cơ sở: chỉ hiện khoá có lớp ở đó, khoá mới chưa có lớp xem ở Toàn tổ chức."
           actions={
             <Can {...ACCESS_RULE.createCourse}>
               <GlassButton onClick={() => setCreateDialogOpen(true)} icon={<Plus size={16} aria-hidden />}>

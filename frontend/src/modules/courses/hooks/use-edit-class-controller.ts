@@ -11,8 +11,8 @@ const COURSE_OPTION_PAGE_SIZE = 100;
 const AUTO_END_DATE_FIELDS: ReadonlySet<string> = new Set(["startDate", "schedule"]);
 
 /**
- * Sửa lớp còn mở. Ngày khai giảng và sĩ số tối thiểu là điều kiện khai giảng - chỉ sửa được khi lớp còn đang
- * tuyển sinh (backend chặn y hệt); khi lớp đã học thì hai ô này khoá lại để người dùng không gửi thứ chắc chắn
+ * Sửa lớp còn mở. Ngày khai giảng và hai mức sĩ số là điều kiện tuyển sinh - chỉ sửa được khi lớp còn đang
+ * tuyển sinh (backend chặn y hệt); khi lớp đã học thì các ô này khoá lại để người dùng không gửi thứ chắc chắn
  * bị từ chối.
  */
 export function useEditClassController({ cls, onClose }: { readonly cls: ClassSummary; readonly onClose: () => void }) {

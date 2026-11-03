@@ -62,8 +62,9 @@ class InvoiceAdminController {
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) UUID studentProfileId,
             @RequestParam(required = false) UUID enrollmentId,
-            @RequestParam(required = false) BillingConstants.InvoiceStatus status) {
-        return listInvoices.execute(principal.accountId(), pageable, studentProfileId, enrollmentId, status);
+            @RequestParam(required = false) BillingConstants.InvoiceStatus status,
+            @RequestParam(required = false) UUID branchId) {
+        return listInvoices.execute(principal.accountId(), pageable, studentProfileId, enrollmentId, status, branchId);
     }
 
     @PostMapping

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Quản trị danh mục khóa học — không có endpoint xoá, chỉ vô hiệu hoá qua {@code active}. */
@@ -40,8 +41,9 @@ class CourseAdminController {
 
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_COURSE)
-    PageResponse<CourseResponse> list(@PageableDefault(size = 20) Pageable pageable) {
-        return listCourses.execute(pageable);
+    PageResponse<CourseResponse> list(@PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) UUID branchId) {
+        return listCourses.execute(pageable, branchId);
     }
 
     @PostMapping

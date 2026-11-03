@@ -1,4 +1,5 @@
 import { useInvoices } from "@/entities/billing";
+import { useBranchPaging } from "@/entities/branch";
 import { useEnrollments } from "@/entities/enrollment";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
 import { useCallback, useState } from "react";
@@ -6,7 +7,7 @@ import { useCallback, useState } from "react";
 const REFERENCE_PAGE_SIZE = 200;
 
 export function useInvoicesPageController() {
-  const [page, setPage] = useState(0);
+  const { branchId, page, setPage } = useBranchPaging();
   const [enrollmentFilter, setEnrollmentFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -17,6 +18,7 @@ export function useInvoicesPageController() {
     enrollmentFilter.length === 0 ? undefined : enrollmentFilter,
     undefined,
     statusFilter.length === 0 ? undefined : statusFilter,
+    branchId,
   );
   const enrollments = useEnrollments(0, REFERENCE_PAGE_SIZE);
 

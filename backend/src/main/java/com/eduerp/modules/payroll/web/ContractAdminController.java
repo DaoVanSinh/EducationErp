@@ -60,8 +60,8 @@ class ContractAdminController {
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_PAYROLL)
     PageResponse<ContractResponse> list(@PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) UUID accountId) {
-        return listContracts.execute(pageable, accountId);
+            @RequestParam(required = false) UUID accountId, @RequestParam(required = false) UUID branchId) {
+        return listContracts.execute(pageable, accountId, branchId);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

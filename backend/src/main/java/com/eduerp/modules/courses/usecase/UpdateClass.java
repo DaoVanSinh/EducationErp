@@ -16,8 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Sửa lớp còn mở (đang tuyển sinh/đang học). Ngày khai giảng và sĩ số tối thiểu là điều kiện khai giảng,
- * nên chỉ đổi được khi lớp chưa khai giảng; sĩ số tối đa không được hạ dưới số học viên đang học.
+ * Sửa lớp còn mở (đang tuyển sinh/đang học). Ngày khai giảng và hai mức sĩ số là điều kiện tuyển sinh, nên chỉ
+ * đổi được khi lớp chưa khai giảng: lớp đã học không nhận thêm ai, đổi sĩ số không còn ý nghĩa gì.
  */
 @Service
 public class UpdateClass {
@@ -44,13 +44,17 @@ public class UpdateClass {
         if (!existing.getTeacherId().equals(request.teacherId())) {
             teacherGuard.requireTeacher(request.teacherId());
         }
+        var enrolling = existing.getStatus() == CoursesConstants.ClassStatus.ENROLLING;
+        if (!enrolling) {
+            requireEnrollmentTermsUnchanged(existing, request);
+        }
         ClassLifecycleRules.requireValidPlan(request.minSeats(), request.maxSeats(), request.startDate(),
                 request.endDate());
-        ClassLifecycleRules.requireSeatsCoverEnrolled(request.maxSeats(), roster.countActive(classId));
-        applyEnrollmentTerms(existing, request);
+        if (enrolling) {
+            applyEnrollmentTerms(classId, existing, request);
+        }
 
         existing.setTeacherId(request.teacherId());
-        existing.setMaxSeats(request.maxSeats());
         existing.setEndDate(request.endDate());
         existing.clearSchedule();
         request.schedule()
@@ -59,21 +63,26 @@ public class UpdateClass {
         events.publishEvent(new CoursesEvents.ClassUpdated(classId, actorAccountId, actorBranchId));
     }
 
-    /** Ngày khai giảng + sĩ số tối thiểu: tự do khi đang tuyển sinh, bất biến khi đã khai giảng. */
-    private void applyEnrollmentTerms(Class existing, UpdateClassRequest request) {
-        if (existing.getStatus() == CoursesConstants.ClassStatus.ENROLLING) {
-            if (!existing.getStartDate().equals(request.startDate())) {
-                ClassLifecycleRules.requireStartDateNotPast(request.startDate(), clock.today());
-            }
-            existing.setStartDate(request.startDate());
-            existing.setMinSeats(request.minSeats());
-            return;
-        }
+    /** Kiểm tra trước luật min/max để lớp đã khai giảng nhận đúng lý do, không phải lỗi của ô đang bị khoá. */
+    private static void requireEnrollmentTermsUnchanged(Class existing, UpdateClassRequest request) {
         if (!existing.getStartDate().equals(request.startDate())) {
             throw new AppValidationException("startDate", "Lớp đã khai giảng, không đổi được ngày khai giảng");
+        }
+        if (existing.getMaxSeats() != request.maxSeats()) {
+            throw new AppValidationException("maxSeats", "Lớp đã khai giảng, không đổi được sĩ số tối đa");
         }
         if (existing.getMinSeats() != request.minSeats()) {
             throw new AppValidationException("minSeats", "Lớp đã khai giảng, không đổi được sĩ số tối thiểu");
         }
+    }
+
+    private void applyEnrollmentTerms(UUID classId, Class existing, UpdateClassRequest request) {
+        ClassLifecycleRules.requireSeatsCoverEnrolled(request.maxSeats(), roster.countActive(classId));
+        if (!existing.getStartDate().equals(request.startDate())) {
+            ClassLifecycleRules.requireStartDateNotPast(request.startDate(), clock.today());
+        }
+        existing.setStartDate(request.startDate());
+        existing.setMinSeats(request.minSeats());
+        existing.setMaxSeats(request.maxSeats());
     }
 }

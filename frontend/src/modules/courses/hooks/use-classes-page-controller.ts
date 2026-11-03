@@ -1,3 +1,4 @@
+import { useBranchPaging } from "@/entities/branch";
 import { useClasses, type ClassSummary } from "@/entities/class";
 import {
   CLASS_TRANSITION,
@@ -25,11 +26,11 @@ export const TRANSITION_COPY: Record<
 
 /** Toàn bộ state của trang Lớp học: phân trang, hộp thoại tạo/sửa, và xác nhận chuyển trạng thái lớp. */
 export function useClassesPageController() {
-  const [page, setPage] = useState(0);
+  const { branchId, page, setPage } = useBranchPaging();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ClassSummary | null>(null);
   const [pending, setPending] = useState<PendingTransition | null>(null);
-  const classes = useClasses(page, DEFAULT_PAGE_SIZE);
+  const classes = useClasses(page, DEFAULT_PAGE_SIZE, { branchId });
   const transition = useClassTransition();
 
   const requestTransition = useCallback(

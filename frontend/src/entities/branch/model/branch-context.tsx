@@ -38,7 +38,7 @@ export interface SelectedBranchProviderProps {
 }
 
 /**
- * Chi nhánh đang được xem trên toàn app (sidebar switcher, lọc danh sách tài khoản/dashboard). Giữ
+ * Chi nhánh đang được xem trên toàn app (sidebar switcher, lọc các danh sách có gắn chi nhánh). Giữ
  * trong localStorage chỉ để refresh trang không mất lựa chọn - không phải state nghiệp vụ dùng chung
  * giữa các thiết bị.
  */

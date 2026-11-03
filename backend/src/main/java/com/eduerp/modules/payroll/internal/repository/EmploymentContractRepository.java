@@ -2,6 +2,7 @@ package com.eduerp.modules.payroll.internal.repository;
 
 import com.eduerp.modules.payroll.PayrollConstants;
 import com.eduerp.modules.payroll.internal.model.EmploymentContract;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,8 @@ public interface EmploymentContractRepository extends JpaRepository<EmploymentCo
     List<EmploymentContract> findAllByStatus(PayrollConstants.ContractStatus status);
 
     Page<EmploymentContract> findAllByAccountId(UUID accountId, Pageable pageable);
+
+    Page<EmploymentContract> findAllByAccountIdIn(Collection<UUID> accountIds, Pageable pageable);
 
     Page<EmploymentContract> findAll(Pageable pageable);
 }

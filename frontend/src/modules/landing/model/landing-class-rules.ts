@@ -1,9 +1,8 @@
-import { CLASS_STATUS } from "@/entities/class";
 import type { LandingClass } from "@/modules/landing/model/landing-schema";
 import { formatter } from "@/shared/lib/format";
 
 export interface LandingClassAvailability {
-  /** "Đang tuyển sinh · khai giảng 20/11/2026" hoặc "Đã khai giảng 16/10/2026". */
+  /** "Đang tuyển sinh · khai giảng 20/11/2026". */
   readonly timeline: string;
   readonly seats: string;
   readonly isFull: boolean;
@@ -11,17 +10,13 @@ export interface LandingClassAvailability {
 }
 
 /**
- * Khách cần biết ba điều trước khi giữ chỗ: lớp đã học chưa, học từ ngày nào, còn chỗ không. Lớp đang học vẫn
- * nhận học viên (nghiệp vụ ghi danh), nhưng phải nói rõ là vào giữa chừng.
+ * Khách cần biết hai điều trước khi giữ chỗ: học từ ngày nào, còn chỗ không. Trang này chỉ nhận lớp đang tuyển
+ * sinh từ backend, vì lớp đã khai giảng không nhận thêm học viên.
  */
 export function landingClassAvailability(cls: LandingClass): LandingClassAvailability {
   const isFull = cls.seatsLeft <= 0;
-  const timeline =
-    cls.status === CLASS_STATUS.enrolling
-      ? `Đang tuyển sinh · khai giảng ${formatter.date(cls.startDate)}`
-      : `Đã khai giảng ${formatter.date(cls.startDate)} · vẫn nhận học viên`;
   return {
-    timeline,
+    timeline: `Đang tuyển sinh · khai giảng ${formatter.date(cls.startDate)}`,
     seats: isFull ? `Đã đủ ${cls.maxSeats} chỗ` : `Còn ${cls.seatsLeft}/${cls.maxSeats} chỗ`,
     isFull,
     reserveLabel: isFull ? "Đăng ký chờ chỗ" : "Giữ chỗ lớp này",

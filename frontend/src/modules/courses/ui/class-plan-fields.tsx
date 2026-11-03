@@ -15,7 +15,7 @@ export interface ClassPlanFieldsProps {
   readonly onChange: (field: keyof ClassPlanValues, value: string) => void;
   /** Ngày khai giảng sớm nhất được chọn (mở lớp mới: hôm nay). */
   readonly minStartDate?: string;
-  /** Lớp đã khai giảng: ngày khai giảng và sĩ số tối thiểu không còn đổi được. */
+  /** Lớp đã khai giảng: ngày khai giảng và hai mức sĩ số không còn đổi được. */
   readonly enrollmentTermsLocked?: boolean;
   readonly minMaxSeats?: number;
   /** Gợi ý dưới ô ngày kết thúc: tự tính từ số buổi chuẩn + lịch tuần, hoặc vì sao chưa tính được. */
@@ -38,11 +38,17 @@ export function ClassPlanFields({
 }: ClassPlanFieldsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <FormField label="Sĩ số tối đa" htmlFor={`${idPrefix}-max-seats`} error={fieldErrors.maxSeats}>
+      <FormField
+        label="Sĩ số tối đa"
+        htmlFor={`${idPrefix}-max-seats`}
+        error={fieldErrors.maxSeats}
+        hint={enrollmentTermsLocked ? "Lớp đã khai giảng, không nhận thêm học viên." : undefined}
+      >
         <GlassInput
           id={`${idPrefix}-max-seats`}
           type="number"
           min={minMaxSeats}
+          disabled={enrollmentTermsLocked}
           value={values.maxSeats}
           invalid={fieldErrors.maxSeats !== undefined}
           onChange={(event) => onChange("maxSeats", event.target.value)}

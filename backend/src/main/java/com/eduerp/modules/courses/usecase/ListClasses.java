@@ -17,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Danh sách lớp cho màn quản trị. Scope BRANCH luôn bị ép về chi nhánh chủ quản (spec 6.4, lớp 2);
- * {@code openOnly} chỉ lấy lớp còn nhận ghi danh (đang tuyển sinh/đang học) - cho ô chọn lớp khi ghi danh.
+ * {@code openOnly} chỉ lấy lớp chưa đóng (đang tuyển sinh/đang học). Lớp nhận ghi danh chỉ là lớp đang tuyển sinh,
+ * nên nơi chọn lớp để ghi danh phải lọc thêm theo {@code status}.
  */
 @Service
 public class ListClasses {

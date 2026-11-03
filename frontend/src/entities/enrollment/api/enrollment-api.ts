@@ -15,6 +15,7 @@ export const enrollmentApi = {
     studentProfileId?: string,
     classId?: string,
     status?: string,
+    branchId?: string,
   ) {
     return enrollmentPageSchema.parse(
       await apiClient.get<unknown>(API_ROUTE.enrollment.enrollments, {
@@ -23,6 +24,7 @@ export const enrollmentApi = {
         studentProfileId,
         classId,
         status,
+        branchId,
       }),
     );
   },

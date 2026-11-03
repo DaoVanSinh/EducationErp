@@ -13,6 +13,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ClassRepository extends JpaRepository<Class, UUID>, JpaSpecificationExecutor<Class> {
     Optional<Class> findByCode(String code);
@@ -43,11 +45,16 @@ public interface ClassRepository extends JpaRepository<Class, UUID>, JpaSpecific
     /** Ứng viên của tác vụ tự khai giảng: đang tuyển sinh và đã tới (hoặc qua) ngày khai giảng. */
     List<Class> findAllByStatusAndStartDateLessThanEqual(CoursesConstants.ClassStatus status, LocalDate date);
 
-    /** Lớp hiển thị ở trang chủ: các lớp còn mở (đang tuyển sinh hoặc đang học). */
+    /** Giáo viên được phân công dạy lớp ở một chi nhánh, trong các trạng thái đã cho. */
+    @Query("SELECT DISTINCT c.teacherId FROM Class c WHERE c.branchId = :branchId AND c.status IN :statuses")
+    List<UUID> findTeacherIdsAtBranch(@Param("branchId") UUID branchId,
+            @Param("statuses") Collection<CoursesConstants.ClassStatus> statuses);
+
+    /** Lớp hiển thị ở trang chủ theo trạng thái (hiện chỉ lớp đang tuyển sinh). */
     @EntityGraph(attributePaths = "course")
     List<Class> findAllByStatusInOrderByCodeAsc(Collection<CoursesConstants.ClassStatus> statuses);
 
-    /** Lớp còn mở của một khóa - để gợi ý lớp thay thế khi học viên bị trùng lịch. */
+    /** Lớp của một khóa theo trạng thái - để gợi ý lớp thay thế khi học viên bị trùng lịch. */
     @EntityGraph(attributePaths = "course")
     List<Class> findAllByCourse_IdAndStatusIn(UUID courseId, Collection<CoursesConstants.ClassStatus> statuses);
 }

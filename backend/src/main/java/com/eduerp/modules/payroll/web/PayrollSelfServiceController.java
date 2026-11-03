@@ -37,7 +37,7 @@ class PayrollSelfServiceController {
     @GetMapping("/contracts")
     PageResponse<ContractResponse> myContracts(@AuthenticationPrincipal AccountPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        return listContracts.execute(pageable, principal.accountId());
+        return listContracts.execute(pageable, principal.accountId(), null);
     }
 
     @GetMapping("/payslips")

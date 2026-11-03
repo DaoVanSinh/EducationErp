@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -56,8 +57,8 @@ class LandingAdminController {
 
     @GetMapping(LandingConstants.Paths.ADMIN_CONSULTATIONS)
     @PreAuthorize(AccessConstants.AccessRules.READ_BRANCH)
-    List<ConsultationItemResponse> listConsultations() {
-        return listConsultations.execute();
+    List<ConsultationItemResponse> listConsultations(@RequestParam(required = false) UUID branchId) {
+        return listConsultations.execute(branchId);
     }
 
     @PatchMapping(LandingConstants.Paths.ADMIN_CONSULTATIONS + "/{consultationId}")

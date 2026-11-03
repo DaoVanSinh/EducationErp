@@ -34,7 +34,7 @@ class ListEnrollmentsTest {
                 .thenReturn(new PageImpl<>(List.of(enrollment), pageable, 1));
 
         var page = useCase.execute(null, pageable, studentProfileId, classId,
-                EnrollmentConstants.EnrollmentStatus.ACTIVE);
+                EnrollmentConstants.EnrollmentStatus.ACTIVE, null);
 
         assertThat(page.totalItems()).isEqualTo(1);
         assertThat(page.items()).singleElement()
@@ -46,7 +46,7 @@ class ListEnrollmentsTest {
         var pageable = PageRequest.of(0, 20);
         when(enrollments.search(null, null, null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(useCase.execute(null, pageable, null, null, null).items()).isEmpty();
+        assertThat(useCase.execute(null, pageable, null, null, null, null).items()).isEmpty();
     }
 
     /** Spec mục 7: thêm filter status KHÔNG đổi hành vi khi để trống - status null vẫn là "mọi
@@ -57,7 +57,7 @@ class ListEnrollmentsTest {
         when(enrollments.search(null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(useCase.execute(null, pageable, null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE).items())
+        assertThat(useCase.execute(null, pageable, null, null, EnrollmentConstants.EnrollmentStatus.ACTIVE, null).items())
                 .isEmpty();
     }
 }

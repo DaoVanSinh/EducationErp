@@ -71,7 +71,7 @@ class ComboReadUseCasesTest {
         when(combos.search(studentProfileId, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(comboWithTwoCourses()), pageable, 1));
 
-        var page = listCombos.execute(null, pageable, studentProfileId);
+        var page = listCombos.execute(null, pageable, studentProfileId, null);
 
         assertThat(page.totalItems()).isEqualTo(1);
         assertThat(page.items()).singleElement().satisfies(item -> {
@@ -89,7 +89,7 @@ class ComboReadUseCasesTest {
                 .thenReturn(new PageImpl<>(List.of(comboWithTwoCourses(), comboWithTwoCourses()), pageable, 2));
         when(students.displayNamesOf(List.of(studentProfileId))).thenReturn(Map.of(studentProfileId, "Nguyễn Văn A"));
 
-        var page = listCombos.execute(null, pageable, null);
+        var page = listCombos.execute(null, pageable, null, null);
 
         assertThat(page.items()).hasSize(2).allSatisfy(item -> assertThat(item.studentName()).isEqualTo("Nguyễn Văn A"));
         verify(students, times(1)).displayNamesOf(List.of(studentProfileId));
@@ -102,7 +102,7 @@ class ComboReadUseCasesTest {
                 .thenReturn(new PageImpl<>(List.of(comboWithTwoCourses()), pageable, 1));
         when(students.displayNamesOf(List.of(studentProfileId))).thenReturn(Map.of());
 
-        assertThat(listCombos.execute(null, pageable, null).items())
+        assertThat(listCombos.execute(null, pageable, null, null).items())
                 .singleElement().satisfies(item -> assertThat(item.studentName()).isNull());
     }
 
@@ -165,7 +165,7 @@ class ComboReadUseCasesTest {
         var pageable = PageRequest.of(0, 20);
         when(combos.search(null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(listCombos.execute(null, pageable, null).items()).isEmpty();
+        assertThat(listCombos.execute(null, pageable, null, null).items()).isEmpty();
     }
 
     @Test

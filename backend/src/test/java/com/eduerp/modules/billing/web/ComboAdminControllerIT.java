@@ -132,7 +132,7 @@ class ComboAdminControllerIT {
         var course = courses.save(new Course("CMBW-C-" + shortId(), "Khoá", null, 24, tuitionFee));
         var teacherId = accounts.save(new Account("cmb-web-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        return classes.save(ClassFixtures.inProgress(course, "CMBW-K-" + shortId(), branchId, teacherId, 20)).getId();
+        return classes.save(ClassFixtures.enrolling(course, "CMBW-K-" + shortId(), branchId, teacherId, 20)).getId();
     }
 
     private ComboFixture newTwoCourseFixture(Cookie admin) throws Exception {

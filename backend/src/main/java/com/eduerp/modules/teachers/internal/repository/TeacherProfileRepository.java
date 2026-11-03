@@ -1,6 +1,7 @@
 package com.eduerp.modules.teachers.internal.repository;
 
 import com.eduerp.modules.teachers.internal.model.TeacherProfile;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +15,8 @@ public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, 
     Optional<TeacherProfile> findByAccountId(UUID accountId);
 
     Page<TeacherProfile> findAll(Pageable pageable);
+
+    Page<TeacherProfile> findByAccountIdIn(Collection<UUID> accountIds, Pageable pageable);
 
     List<TeacherProfile> findAllByActiveTrue();
 }

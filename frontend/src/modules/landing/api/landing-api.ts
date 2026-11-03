@@ -34,8 +34,8 @@ export const landingApi = {
     return landingContentConfigSchema.parse(raw);
   },
 
-  async listConsultations(): Promise<ConsultationItem[]> {
-    const raw = await apiClient.get<unknown>(API_ROUTE.landing.adminConsultations);
+  async listConsultations(branchId?: string): Promise<ConsultationItem[]> {
+    const raw = await apiClient.get<unknown>(API_ROUTE.landing.adminConsultations, { branchId });
     return consultationListSchema.parse(raw);
   },
 

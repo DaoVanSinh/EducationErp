@@ -96,7 +96,7 @@ public class ScheduleConflictChecker {
                 .map(Enrollment::getClassId)
                 .toList();
         return courses.classInfosOf(classIds).stream()
-                .filter(CoursesManagement.ClassInfoResponse::acceptsEnrollment)
+                .filter(CoursesManagement.ClassInfoResponse::isOpen)
                 .toList();
     }
 
@@ -124,10 +124,10 @@ public class ScheduleConflictChecker {
                 .collect(Collectors.joining(", "));
     }
 
-    /** Lớp cùng khóa, cùng chi nhánh, còn chỗ và không đụng lớp nào học viên đang học. */
+    /** Lớp cùng khóa, cùng chi nhánh, đang tuyển sinh, còn chỗ và không đụng lớp nào học viên đang học. */
     private String describeAlternatives(CoursesManagement.ClassInfoResponse target,
             List<CoursesManagement.ClassInfoResponse> currentClasses, LocalDate today) {
-        var candidates = courses.listOpenClassesOfCourse(target.courseId()).stream()
+        var candidates = courses.listEnrollingClassesOfCourse(target.courseId()).stream()
                 .filter(candidate -> !candidate.classId().equals(target.classId()))
                 .filter(candidate -> candidate.branchId().equals(target.branchId()))
                 .filter(candidate -> currentClasses.stream()

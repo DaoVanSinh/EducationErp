@@ -68,7 +68,23 @@ class CoursesManagementIT {
         assertThat(info.branchId()).isEqualTo(branch.getId());
         assertThat(info.maxSeats()).isEqualTo(12);
         assertThat(info.status()).isEqualTo(com.eduerp.modules.courses.CoursesConstants.ClassStatus.IN_PROGRESS);
-        assertThat(info.acceptsEnrollment()).isTrue();
+        assertThat(info.acceptsEnrollment()).as("lớp đã khai giảng không nhận thêm học viên").isFalse();
+        assertThat(info.isOpen()).as("nhưng vẫn còn mở để giao bài").isTrue();
+    }
+
+    @Test
+    void onlyEnrollingClassesAreOfferedToNewStudents() {
+        var course = courses.save(new Course("FACADE-C8", "Khoá facade 8", null, 24, new BigDecimal("9000000")));
+        var branch = branches.save(new Branch("FCD-B8", "Chi nhánh facade 8", null));
+        var teacher = accounts.save(new Account("facade-teacher8@eduerp.local", "hash", "GV Facade", null));
+        var started = classes.save(ClassFixtures.inProgress(course, "FACADE-K8", branch.getId(), teacher.getId(), 12));
+        var enrolling = classes.save(ClassFixtures.enrolling(course, "FACADE-K9", branch.getId(), teacher.getId(), 12));
+
+        assertThat(coursesManagement.getClassInfo(enrolling.getId()).orElseThrow().acceptsEnrollment()).isTrue();
+        assertThat(coursesManagement.listEnrollingClasses()).extracting(CoursesManagement.ActiveClassSnapshot::id)
+                .contains(enrolling.getId()).doesNotContain(started.getId());
+        assertThat(coursesManagement.listEnrollingClassesOfCourse(course.getId()))
+                .extracting(CoursesManagement.ClassInfoResponse::classId).containsExactly(enrolling.getId());
     }
 
     @Test

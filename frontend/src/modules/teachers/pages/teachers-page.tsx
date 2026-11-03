@@ -1,3 +1,4 @@
+import { useBranchPaging } from "@/entities/branch";
 import { useTeachers, type TeacherProfileSummary } from "@/entities/teacher";
 import { Can, RequirePermission } from "@/entities/permission";
 import { CreateTeacherDialog } from "@/modules/teachers/ui/create-teacher-dialog";
@@ -16,17 +17,17 @@ import { GraduationCap, Plus } from "lucide-react";
 import { useState } from "react";
 
 export function TeachersPage() {
-  const [page, setPage] = useState(0);
+  const { branchId, page, setPage } = useBranchPaging();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TeacherProfileSummary | null>(null);
-  const teachers = useTeachers(page, DEFAULT_PAGE_SIZE);
+  const teachers = useTeachers(page, DEFAULT_PAGE_SIZE, branchId);
 
   return (
     <RequirePermission {...ACCESS_RULE.readTeacher}>
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Giáo viên"
-          description="Hồ sơ nghiệp vụ của giáo viên — môn dạy, liên hệ."
+          description="Hồ sơ nghiệp vụ của giáo viên — môn dạy, liên hệ. Khi chọn một cơ sở: giáo viên có cơ sở chính ở đó hoặc đang dạy lớp ở đó."
           actions={
             <Can {...ACCESS_RULE.createTeacher}>
               <GlassButton onClick={() => setCreateDialogOpen(true)} icon={<Plus size={16} aria-hidden />}>

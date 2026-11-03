@@ -34,7 +34,7 @@ public class CreateMiniTask {
             MiniTaskRequests.CreateMiniTaskRequest request) {
         var classInfo = guard.requireAccessToClass(actorAccountId, request.classId(), AccessConstants.Actions.CREATE);
         // Giao bài khi lớp còn mở (kể cả trước khai giảng, để giáo viên chuẩn bị); đóng lớp thì thôi.
-        if (!classInfo.acceptsEnrollment()) {
+        if (!classInfo.isOpen()) {
             throw new AssessmentException.ClassClosed(request.classId());
         }
         var task = new MiniTask(request.classId(), request.title().strip(), request.description(),

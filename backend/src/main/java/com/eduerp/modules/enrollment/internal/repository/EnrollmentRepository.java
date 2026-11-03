@@ -13,6 +13,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
+    /** Học viên có ghi danh ở trạng thái {@code status} tại một chi nhánh. */
+    @Query("SELECT DISTINCT e.studentProfileId FROM Enrollment e WHERE e.branchId = :branchId AND e.status = :status")
+    List<UUID> findStudentProfileIdsAtBranch(@Param("branchId") UUID branchId,
+            @Param("status") EnrollmentConstants.EnrollmentStatus status);
+
     long countByClassIdAndStatus(UUID classId, EnrollmentConstants.EnrollmentStatus status);
 
     boolean existsByStudentProfileIdAndClassIdAndStatus(UUID studentProfileId, UUID classId,

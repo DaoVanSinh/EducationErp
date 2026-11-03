@@ -125,7 +125,7 @@ class GroupRegistrationAdminControllerIT {
         var course = courses.save(new Course("GRP-C-" + shortId(), "Khoá nhóm", null, 24, FEE));
         var teacherId = accounts.save(new Account("grp-gv-" + shortId() + "@eduerp.local", "hash", "GV", null))
                 .getId();
-        return classes.save(ClassFixtures.inProgress(course, "GRP-K-" + shortId(), branchId, teacherId, 20)).getId();
+        return classes.save(ClassFixtures.enrolling(course, "GRP-K-" + shortId(), branchId, teacherId, 20)).getId();
     }
 
     private String enrol(Cookie admin, UUID studentProfileId, UUID classId) throws Exception {

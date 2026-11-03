@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -44,8 +45,8 @@ class StudentAdminController {
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_STUDENT)
     PageResponse<StudentProfileResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
-            @PageableDefault(size = 20) Pageable pageable) {
-        return listStudentProfiles.execute(principal.accountId(), pageable);
+            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID branchId) {
+        return listStudentProfiles.execute(principal.accountId(), pageable, branchId);
     }
 
     @GetMapping("/{profileId}")

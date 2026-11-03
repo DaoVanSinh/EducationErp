@@ -9,12 +9,13 @@ export function useInvoices(
   enrollmentId?: string,
   studentProfileId?: string,
   status?: string,
+  branchId?: string,
 ) {
   return useQuery({
-    queryKey: billingKeys.list(page, size, enrollmentId, studentProfileId, status),
+    queryKey: billingKeys.list(page, size, enrollmentId, studentProfileId, status, branchId),
     staleTime: QUERY_STALE_TIME_MS.list,
     retry: QUERY_RETRY_COUNT,
     placeholderData: keepPreviousData,
-    queryFn: () => billingApi.listInvoices(page, size, enrollmentId, studentProfileId, status),
+    queryFn: () => billingApi.listInvoices(page, size, enrollmentId, studentProfileId, status, branchId),
   });
 }

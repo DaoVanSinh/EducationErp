@@ -1,4 +1,5 @@
 import { useGroupRegistrations, type GroupRegistration } from "@/entities/billing";
+import { useBranchPaging } from "@/entities/branch";
 import { useCourses } from "@/entities/course";
 import { useCancelGroupRegistration } from "@/modules/billing/api/use-billing-mutations";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
@@ -15,12 +16,17 @@ export interface GroupRegistrationRow {
 
 /** Toàn bộ state/query/mutation của trang Đăng ký nhóm - ui/* chỉ render (Mandate #2). */
 export function useGroupRegistrationsPageController() {
-  const [page, setPage] = useState(0);
+  const { branchId, page, setPage } = useBranchPaging();
   const [courseFilter, setCourseFilter] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<GroupRegistrationRow | null>(null);
 
-  const groups = useGroupRegistrations(page, DEFAULT_PAGE_SIZE, courseFilter.length === 0 ? undefined : courseFilter);
+  const groups = useGroupRegistrations(
+    page,
+    DEFAULT_PAGE_SIZE,
+    courseFilter.length === 0 ? undefined : courseFilter,
+    branchId,
+  );
   const courses = useCourses(0, REFERENCE_PAGE_SIZE);
   const cancelGroup = useCancelGroupRegistration();
 
@@ -37,7 +43,7 @@ export function useGroupRegistrationsPageController() {
   const onSelectCourse = useCallback((courseId: string) => {
     setCourseFilter(courseId);
     setPage(0);
-  }, []);
+  }, [setPage]);
 
   const closeCancel = useCallback(() => {
     setCancelTarget(null);

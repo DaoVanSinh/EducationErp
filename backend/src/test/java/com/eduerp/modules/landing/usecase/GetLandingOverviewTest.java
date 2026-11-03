@@ -72,7 +72,7 @@ class GetLandingOverviewTest {
                         List.of(new GradeColumnResponse(columnId, "Giữa kỳ", new BigDecimal("40"),
                                 new BigDecimal("10"), 1)))));
 
-        when(courses.listActiveClasses()).thenReturn(List.of(
+        when(courses.listEnrollingClasses()).thenReturn(List.of(
                 new CoursesManagement.ActiveClassSnapshot(
                         classId,
                         "ENG-IELTS-01",

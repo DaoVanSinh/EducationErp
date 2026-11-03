@@ -23,9 +23,9 @@ public class BillingBranchGuard {
         access.dataScopeOf(actorAccountId, AccessConstants.Resources.INVOICE, action).requireCovers(branchId);
     }
 
-    /** Chi nhánh để lọc danh sách: {@code null} = không lọc (toàn tổ chức). */
-    public UUID listFilter(UUID actorAccountId) {
+    /** Chi nhánh để lọc danh sách: {@code null} = không lọc (toàn tổ chức). Scope BRANCH luôn bị ép về chi nhánh của mình. */
+    public UUID listFilter(UUID actorAccountId, UUID requestedBranchId) {
         return access.dataScopeOf(actorAccountId, AccessConstants.Resources.INVOICE, AccessConstants.Actions.READ)
-                .branchFilter(null);
+                .branchFilter(requestedBranchId);
     }
 }

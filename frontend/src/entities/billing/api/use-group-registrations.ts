@@ -3,12 +3,12 @@ import { billingKeys } from "@/entities/billing/api/billing-keys";
 import { QUERY_RETRY_COUNT, QUERY_STALE_TIME_MS } from "@/shared/constants/query-config";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-export function useGroupRegistrations(page: number, size: number, courseId?: string) {
+export function useGroupRegistrations(page: number, size: number, courseId?: string, branchId?: string) {
   return useQuery({
-    queryKey: billingKeys.groupList(page, size, courseId),
+    queryKey: billingKeys.groupList(page, size, courseId, branchId),
     staleTime: QUERY_STALE_TIME_MS.list,
     retry: QUERY_RETRY_COUNT,
     placeholderData: keepPreviousData,
-    queryFn: () => billingApi.listGroupRegistrations(page, size, courseId),
+    queryFn: () => billingApi.listGroupRegistrations(page, size, courseId, branchId),
   });
 }

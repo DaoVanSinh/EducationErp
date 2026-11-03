@@ -25,7 +25,7 @@ export function DashboardPage() {
   return (
     <RequirePermission {...ACCESS_RULE.readDashboard}>
       <div className="flex flex-col gap-6">
-        <PageHeader title="Tổng quan" description="Tình hình tài khoản và truy cập của toàn hệ thống." />
+        <PageHeader title="Tổng quan" description="Tình hình tài khoản và truy cập. Khi chọn một cơ sở, số tài khoản, vai trò và lượt đăng nhập lọc theo cơ sở đó; tổng số chi nhánh luôn là của toàn hệ thống." />
 
         {isError ? <ErrorNotice error={error} /> : null}
 

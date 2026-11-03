@@ -74,9 +74,9 @@ class CreateEnrollmentTest {
     }
 
     private void stubActiveClass() {
-        when(courses.getClassInfo(classId)).thenReturn(Optional.of(
-                TestClassInfos.of(classId, courseId, classBranchId, classTeacherId,
-                        MAX_SEATS, true, 24, List.of())));
+        when(courses.getClassInfo(classId)).thenReturn(Optional.of(new CoursesManagement.ClassInfoResponse(classId,
+                courseId, classBranchId, classTeacherId, MAX_SEATS, 1, CoursesConstants.ClassStatus.ENROLLING,
+                LocalDate.EPOCH, null, null, null, 24, List.of())));
     }
 
     private void stubSeatsTaken(long taken) {
@@ -120,6 +120,18 @@ class CreateEnrollmentTest {
         when(courses.getClassInfo(classId)).thenReturn(Optional.of(
                 TestClassInfos.of(classId, courseId, classBranchId, classTeacherId,
                         MAX_SEATS, false, 24, List.of())));
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request()))
+                .isInstanceOf(ClassNotActiveException.class);
+    }
+
+    /** Vào giữa khoá sẽ mất phần kiến thức đã học, nên lớp đã khai giảng không nhận thêm ai dù còn chỗ. */
+    @Test
+    void rejectsAClassThatHasAlreadyStartedEvenWithFreeSeats() {
+        stubActiveStudent();
+        when(courses.getClassInfo(classId)).thenReturn(Optional.of(
+                TestClassInfos.of(classId, courseId, classBranchId, classTeacherId,
+                        MAX_SEATS, true, 24, List.of())));
 
         assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request()))
                 .isInstanceOf(ClassNotActiveException.class);
@@ -303,7 +315,7 @@ class CreateEnrollmentTest {
                 MAX_SEATS, 1, CoursesConstants.ClassStatus.ENROLLING, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 1),
                 null, null, 24, List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.TUE, LocalTime.of(18, 0),
                         LocalTime.of(20, 0))));
-        when(courses.listOpenClassesOfCourse(courseId)).thenReturn(List.of(free));
+        when(courses.listEnrollingClassesOfCourse(courseId)).thenReturn(List.of(free));
         when(courses.classSummariesOf(List.of(freeClassId))).thenReturn(Map.of(freeClassId,
                 new CoursesManagement.ClassBasicSummary(freeClassId, "HE-VAN-02", courseId, "Văn hè")));
 

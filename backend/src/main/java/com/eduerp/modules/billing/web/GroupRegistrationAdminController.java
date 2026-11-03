@@ -41,8 +41,9 @@ class GroupRegistrationAdminController {
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_INVOICE)
     PageResponse<GroupRegistrationResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
-            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID courseId) {
-        return listGroups.execute(principal.accountId(), pageable, courseId);
+            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID courseId,
+            @RequestParam(required = false) UUID branchId) {
+        return listGroups.execute(principal.accountId(), pageable, courseId, branchId);
     }
 
     @PostMapping

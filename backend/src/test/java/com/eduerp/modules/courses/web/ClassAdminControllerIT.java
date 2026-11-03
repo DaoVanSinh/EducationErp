@@ -289,7 +289,7 @@ class ClassAdminControllerIT {
         var teacher1 = accounts.save(new Account("teacher-2@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Nam", null));
         var teacher2 = saveTeacher("teacher-3@eduerp.local", "Cô Hoa");
-        var seedClass = ClassFixtures.inProgress(course, "TA-GT3-K1",
+        var seedClass = ClassFixtures.enrolling(course, "TA-GT3-K1",
                 branch.getId(), teacher1.getId(), 15);
         seedClass.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
         seedClass.addSchedule(CoursesConstants.DayOfWeek.WED, LocalTime.of(18, 0), LocalTime.of(20, 0));

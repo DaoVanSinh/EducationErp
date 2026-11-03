@@ -1,3 +1,4 @@
+import { useBranchSelectionGuard } from "@/app/hooks/use-branch-selection-guard";
 import { AppNav } from "@/app/ui/app-nav";
 import { BranchSwitcher } from "@/app/ui/branch-switcher";
 import { SessionCard } from "@/app/ui/session-card";
@@ -16,6 +17,7 @@ export function DashboardLayout({ session }: { readonly session: Session }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  useBranchSelectionGuard();
 
   return (
     <div

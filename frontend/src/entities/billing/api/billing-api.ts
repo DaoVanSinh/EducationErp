@@ -27,9 +27,9 @@ const comboDiscountTierListSchema = z.array(comboDiscountTierSchema);
 const groupRegistrationPageSchema = pageResponseSchema(groupRegistrationSchema);
 
 export const billingApi = {
-  async listGroupRegistrations(page: number, size: number, courseId?: string) {
+  async listGroupRegistrations(page: number, size: number, courseId?: string, branchId?: string) {
     return groupRegistrationPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.billing.groupRegistrations, { page, size, courseId }),
+      await apiClient.get<unknown>(API_ROUTE.billing.groupRegistrations, { page, size, courseId, branchId }),
     );
   },
 
@@ -49,6 +49,7 @@ export const billingApi = {
     enrollmentId?: string,
     studentProfileId?: string,
     status?: string,
+    branchId?: string,
   ) {
     return invoicePageSchema.parse(
       await apiClient.get<unknown>(API_ROUTE.billing.invoices, {
@@ -57,6 +58,7 @@ export const billingApi = {
         enrollmentId,
         studentProfileId,
         status,
+        branchId,
       }),
     );
   },
@@ -85,9 +87,9 @@ export const billingApi = {
     await apiClient.post<void>(API_ROUTE.billing.invoiceCancel(invoiceId));
   },
 
-  async listCombos(page: number, size: number, studentProfileId?: string) {
+  async listCombos(page: number, size: number, studentProfileId?: string, branchId?: string) {
     return comboPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.billing.combos, { page, size, studentProfileId }),
+      await apiClient.get<unknown>(API_ROUTE.billing.combos, { page, size, studentProfileId, branchId }),
     );
   },
 

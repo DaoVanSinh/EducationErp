@@ -9,12 +9,13 @@ export function useEnrollments(
   studentProfileId?: string,
   classId?: string,
   status?: string,
+  branchId?: string,
 ) {
   return useQuery({
-    queryKey: enrollmentKeys.list(page, size, studentProfileId, classId, status),
+    queryKey: enrollmentKeys.list(page, size, studentProfileId, classId, status, branchId),
     staleTime: QUERY_STALE_TIME_MS.list,
     retry: QUERY_RETRY_COUNT,
     placeholderData: keepPreviousData,
-    queryFn: () => enrollmentApi.listEnrollments(page, size, studentProfileId, classId, status),
+    queryFn: () => enrollmentApi.listEnrollments(page, size, studentProfileId, classId, status, branchId),
   });
 }

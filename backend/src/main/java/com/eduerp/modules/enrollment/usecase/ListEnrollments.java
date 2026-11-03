@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Các filter optional dồn vào một query ở repository - usecase không rẽ nhánh nào. Chi nhánh không phải
- * filter của client: scope BRANCH bị ép về chi nhánh chủ quản (spec 6.4, lớp 2), ORGANIZATION không lọc.
+ * Các filter optional dồn vào một query ở repository - usecase không rẽ nhánh nào. Scope BRANCH bị ép về chi
+ * nhánh chủ quản (spec 6.4, lớp 2); ORGANIZATION lọc theo chi nhánh đang chọn, null là toàn tổ chức.
  */
 @Service
 public class ListEnrollments {
@@ -31,9 +31,9 @@ public class ListEnrollments {
 
     @Transactional(readOnly = true)
     public PageResponse<EnrollmentResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId,
-            UUID classId, EnrollmentConstants.EnrollmentStatus status) {
+            UUID classId, EnrollmentConstants.EnrollmentStatus status, UUID requestedBranchId) {
         var branchId = access.dataScopeOf(actorAccountId, AccessConstants.Resources.ENROLLMENT,
-                AccessConstants.Actions.READ).branchFilter(null);
+                AccessConstants.Actions.READ).branchFilter(requestedBranchId);
         var page = enrollments.search(studentProfileId, classId, status, branchId, pageable);
         return PageResponse.of(page, assembler.toResponses(page.getContent()));
     }

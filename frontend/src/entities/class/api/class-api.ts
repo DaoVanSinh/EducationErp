@@ -11,11 +11,12 @@ import { z } from "zod";
 const classPageSchema = pageResponseSchema(classSummarySchema);
 const createdClassIdSchema = z.string().uuid();
 
-/** Bộ lọc tuỳ chọn của danh sách lớp. Chi nhánh không có ở đây: backend tự lọc theo phạm vi quyền. */
+/** Bộ lọc tuỳ chọn của danh sách lớp. Scope chi nhánh luôn bị backend ép về chi nhánh của người dùng. */
 export interface ClassListFilter {
   readonly teacherId?: string;
-  /** Chỉ lớp còn nhận ghi danh (đang tuyển sinh/đang học) - cho ô chọn lớp khi ghi danh. */
+  /** Chỉ lớp chưa đóng (đang tuyển sinh/đang học). Lớp nhận ghi danh xem `acceptsEnrollment`. */
   readonly openOnly?: boolean;
+  readonly branchId?: string;
 }
 
 export const classApi = {
@@ -26,6 +27,7 @@ export const classApi = {
         size,
         teacherId: filter.teacherId,
         openOnly: filter.openOnly,
+        branchId: filter.branchId,
       }),
     );
   },

@@ -43,10 +43,10 @@ export function useUpdateLandingConfig() {
   });
 }
 
-export function useLandingConsultations() {
+export function useLandingConsultations(branchId?: string) {
   return useQuery({
-    queryKey: landingKeys.consultations(),
-    queryFn: () => landingApi.listConsultations(),
+    queryKey: landingKeys.consultationList(branchId),
+    queryFn: () => landingApi.listConsultations(branchId),
   });
 }
 

@@ -52,7 +52,7 @@ export function CreateEnrollmentDialog({ open, onClose, students, classes }: Cre
         <FormField
           label="Lớp học"
           htmlFor="enrollment-class"
-          hint="Chỉ hiện lớp đang hoạt động."
+          hint="Chỉ hiện lớp đang tuyển sinh. Lớp đã khai giảng không nhận thêm học viên."
           error={form.fieldErrors.classId}
         >
           <GlassSelect

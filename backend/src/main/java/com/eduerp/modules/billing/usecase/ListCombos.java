@@ -37,8 +37,9 @@ public class ListCombos {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ComboResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId) {
-        var page = combos.search(studentProfileId, branchGuard.listFilter(actorAccountId), pageable);
+    public PageResponse<ComboResponse> execute(UUID actorAccountId, Pageable pageable, UUID studentProfileId,
+            UUID requestedBranchId) {
+        var page = combos.search(studentProfileId, branchGuard.listFilter(actorAccountId, requestedBranchId), pageable);
         var names = students.displayNamesOf(page.stream().map(Combo::getStudentProfileId).distinct().toList());
         return PageResponse.of(page.map(combo -> CreateCombo.toResponse(combo, names.get(combo.getStudentProfileId()))));
     }

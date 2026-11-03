@@ -3,12 +3,12 @@ import { teacherKeys } from "@/entities/teacher/api/teacher-keys";
 import { QUERY_RETRY_COUNT, QUERY_STALE_TIME_MS } from "@/shared/constants/query-config";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-export function useTeachers(page: number, size: number) {
+export function useTeachers(page: number, size: number, branchId?: string) {
   return useQuery({
-    queryKey: teacherKeys.list(page, size),
+    queryKey: teacherKeys.list(page, size, branchId),
     staleTime: QUERY_STALE_TIME_MS.list,
     retry: QUERY_RETRY_COUNT,
     placeholderData: keepPreviousData,
-    queryFn: () => teacherApi.listProfiles(page, size),
+    queryFn: () => teacherApi.listProfiles(page, size, branchId),
   });
 }

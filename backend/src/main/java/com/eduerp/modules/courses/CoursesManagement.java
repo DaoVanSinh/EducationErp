@@ -9,7 +9,6 @@ import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +41,13 @@ public class CoursesManagement {
             int minSeats, CoursesConstants.ClassStatus status, LocalDate startDate, LocalDate endDate,
             Instant startedAt, Instant endedAt, Integer standardSessionCount, List<WeeklyScheduleSlot> schedule) {
 
-        /** Lớp còn nhận ghi danh: đang tuyển sinh hoặc đang học (cho phép vào học muộn). */
+        /** Chỉ nhận học viên trước khai giảng: vào giữa khoá sẽ mất phần kiến thức của các buổi đã qua. */
         public boolean acceptsEnrollment() {
+            return status == CoursesConstants.ClassStatus.ENROLLING;
+        }
+
+        /** Lớp chưa đóng (đang tuyển sinh hoặc đang học): còn giao bài được, học viên còn buổi học để trùng lịch. */
+        public boolean isOpen() {
             return status.isOpen();
         }
 
@@ -68,17 +72,21 @@ public class CoursesManagement {
     }
 
     /**
-     * Ảnh chụp một lớp đang hoạt động cho trang giới thiệu công khai (Landing Page). {@code status} và
-     * {@code startDate} để khách biết lớp còn tuyển hay đã học; {@code activeEnrollments} để tính chỗ trống.
+     * Ảnh chụp một lớp đang tuyển sinh cho trang giới thiệu công khai (Landing Page). {@code startDate} để khách
+     * biết ngày khai giảng; {@code activeEnrollments} để tính chỗ trống.
      */
     public record ActiveClassSnapshot(UUID id, String code, UUID courseId, String courseName,
             UUID branchId, UUID teacherId, int maxSeats, List<WeeklyScheduleSlot> schedule,
             CoursesConstants.ClassStatus status, LocalDate startDate, long activeEnrollments) {
     }
 
-    /** Trạng thái lớp được coi là "đang hoạt động" để hiện ở trang chủ - cùng quy tắc {@link CoursesConstants.ClassStatus#isOpen()}. */
-    private static final List<CoursesConstants.ClassStatus> OPEN_CLASS_STATUSES = Arrays.stream(
-            CoursesConstants.ClassStatus.values()).filter(CoursesConstants.ClassStatus::isOpen).toList();
+    /** Lớp chưa đóng - giáo viên của các lớp này được coi là đang dạy ở chi nhánh của lớp. */
+    private static final List<CoursesConstants.ClassStatus> OPEN_STATUSES = List.of(
+            CoursesConstants.ClassStatus.ENROLLING, CoursesConstants.ClassStatus.IN_PROGRESS);
+
+    /** Trạng thái lớp còn nhận học viên - cùng quy tắc {@link ClassInfoResponse#acceptsEnrollment()}. */
+    private static final List<CoursesConstants.ClassStatus> ENROLLING_STATUSES = List.of(
+            CoursesConstants.ClassStatus.ENROLLING);
 
     private final CourseRepository courses;
     private final ClassRepository classes;
@@ -114,12 +122,18 @@ public class CoursesManagement {
         return classes.findAllById(classIds).stream().map(CoursesManagement::toClassInfo).toList();
     }
 
-    /** Các lớp còn mở của một khóa - {@code modules.enrollment} dùng để gợi ý lớp thay thế khi trùng lịch. */
+    /** Các lớp đang tuyển sinh của một khóa - {@code modules.enrollment} dùng để gợi ý lớp thay thế khi trùng lịch. */
     @Transactional(readOnly = true)
-    public List<ClassInfoResponse> listOpenClassesOfCourse(UUID courseId) {
-        return classes.findAllByCourse_IdAndStatusIn(courseId, OPEN_CLASS_STATUSES).stream()
+    public List<ClassInfoResponse> listEnrollingClassesOfCourse(UUID courseId) {
+        return classes.findAllByCourse_IdAndStatusIn(courseId, ENROLLING_STATUSES).stream()
                 .map(CoursesManagement::toClassInfo)
                 .toList();
+    }
+
+    /** Tài khoản giáo viên đang dạy lớp còn mở ở một chi nhánh - để lọc danh sách giáo viên theo chi nhánh. */
+    @Transactional(readOnly = true)
+    public List<UUID> teacherIdsTeachingAt(UUID branchId) {
+        return classes.findTeacherIdsAtBranch(branchId, OPEN_STATUSES);
     }
 
     @Transactional(readOnly = true)
@@ -184,8 +198,8 @@ public class CoursesManagement {
     }
 
     @Transactional(readOnly = true)
-    public List<ActiveClassSnapshot> listActiveClasses() {
-        var open = classes.findAllByStatusInOrderByCodeAsc(OPEN_CLASS_STATUSES).stream()
+    public List<ActiveClassSnapshot> listEnrollingClasses() {
+        var open = classes.findAllByStatusInOrderByCodeAsc(ENROLLING_STATUSES).stream()
                 .filter(cls -> cls.getCourse().isActive())
                 .toList();
         // Một câu đếm cho cả danh sách, không N câu - trang chủ là trang công khai, tải nhiều nhất.

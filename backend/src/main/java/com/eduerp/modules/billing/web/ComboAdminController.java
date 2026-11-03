@@ -61,8 +61,9 @@ class ComboAdminController {
     @PreAuthorize(AccessConstants.AccessRules.READ_INVOICE)
     PageResponse<ComboResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) UUID studentProfileId) {
-        return listCombos.execute(principal.accountId(), pageable, studentProfileId);
+            @RequestParam(required = false) UUID studentProfileId,
+            @RequestParam(required = false) UUID branchId) {
+        return listCombos.execute(principal.accountId(), pageable, studentProfileId, branchId);
     }
 
     @PostMapping

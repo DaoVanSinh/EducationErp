@@ -28,9 +28,9 @@ function toContractFormData(payload: CreateContractPayload | UpdateContractPaylo
 }
 
 export const contractApi = {
-  async listContracts(page: number, size: number, accountId?: string) {
+  async listContracts(page: number, size: number, accountId?: string, branchId?: string) {
     return contractPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.payroll.contracts, { page, size, accountId }),
+      await apiClient.get<unknown>(API_ROUTE.payroll.contracts, { page, size, accountId, branchId }),
     );
   },
 

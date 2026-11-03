@@ -51,7 +51,7 @@ class BillingReadUseCasesTest {
                 .thenReturn(new PageImpl<>(List.of(invoice), pageable, 1));
 
         var page = listInvoices.execute(null, pageable, invoice.getStudentProfileId(), invoice.getEnrollmentId(),
-                BillingConstants.InvoiceStatus.UNPAID);
+                BillingConstants.InvoiceStatus.UNPAID, null);
 
         assertThat(page.totalItems()).isEqualTo(1);
         assertThat(page.items()).singleElement()
@@ -63,7 +63,7 @@ class BillingReadUseCasesTest {
         var pageable = PageRequest.of(0, 20);
         when(invoices.search(null, null, null, null, pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        assertThat(listInvoices.execute(null, pageable, null, null, null).items()).isEmpty();
+        assertThat(listInvoices.execute(null, pageable, null, null, null, null).items()).isEmpty();
     }
 
     @Test
