@@ -35,13 +35,24 @@ public class ListStudentProfiles {
     /** Scope BRANCH bị ép về chi nhánh của mình (spec 6.4, lớp 2); ORGANIZATION lọc theo chi nhánh đang chọn. */
     @Transactional(readOnly = true)
     public PageResponse<StudentProfileResponse> execute(UUID actorAccountId, Pageable pageable,
-            UUID requestedBranchId) {
+            UUID requestedBranchId, String query) {
         var branchId = access.dataScopeOf(actorAccountId, AccessConstants.Resources.STUDENT,
                 AccessConstants.Actions.READ).branchFilter(requestedBranchId);
-        Page<StudentProfile> page = branchId == null ? profiles.findAll(pageable) : pageOfBranch(branchId, pageable);
+        Page<StudentProfile> page = pageOf(branchId, query, pageable);
         var accountIds = page.getContent().stream().map(StudentProfile::getAccountId).toList();
         var accountInfo = identity.summariesOf(accountIds);
         return PageResponse.of(page.map(profile -> toResponse(profile, accountInfo)));
+    }
+
+    private Page<StudentProfile> pageOf(UUID branchId, String query, Pageable pageable) {
+        if (query == null || query.isBlank()) {
+            return branchId == null ? profiles.findAll(pageable) : pageOfBranch(branchId, pageable);
+        }
+        var matching = new HashSet<>(identity.accountIdsMatching(query));
+        if (branchId != null) {
+            matching.retainAll(accountsOfBranch(branchId));
+        }
+        return matching.isEmpty() ? Page.empty(pageable) : profiles.findByAccountIdIn(matching, pageable);
     }
 
     /**
@@ -49,10 +60,15 @@ public class ListStudentProfiles {
      * Chưa có ai thì trả trang rỗng thay vì gửi {@code IN ()} rỗng xuống DB.
      */
     private Page<StudentProfile> pageOfBranch(UUID branchId, Pageable pageable) {
+        var accountIds = accountsOfBranch(branchId);
+        return accountIds.isEmpty() ? Page.empty(pageable) : profiles.findByAccountIdIn(accountIds, pageable);
+    }
+
+    private HashSet<UUID> accountsOfBranch(UUID branchId) {
         var accountIds = new HashSet<>(identity.accountIdsByBranch(branchId));
         profiles.findAllById(roster.activeStudentProfileIdsAt(branchId))
                 .forEach(profile -> accountIds.add(profile.getAccountId()));
-        return accountIds.isEmpty() ? Page.empty(pageable) : profiles.findByAccountIdIn(accountIds, pageable);
+        return accountIds;
     }
 
     private static StudentProfileResponse toResponse(StudentProfile profile,

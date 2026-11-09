@@ -12,6 +12,7 @@ import {
   type CreateComboPayload,
   type CreateGroupRegistrationPayload,
   type CreateInvoicePayload,
+  type ExtendInvoiceDuePayload,
   type InitiateOnlinePaymentPayload,
   type RecordManualPaymentPayload,
   type UpdateComboDiscountTierPayload,
@@ -81,6 +82,11 @@ export const billingApi = {
     return invoiceSummarySchema.parse(
       await apiClient.post<unknown>(API_ROUTE.billing.invoiceManualPayment(invoiceId), payload),
     );
+  },
+
+  /** Chỉ admin gốc: hoá đơn rời danh sách quá hạn. */
+  async extendInvoiceDue(invoiceId: string, payload: ExtendInvoiceDuePayload) {
+    return invoiceSummarySchema.parse(await apiClient.post<unknown>(API_ROUTE.billing.invoiceExtend(invoiceId), payload));
   },
 
   async cancelInvoice(invoiceId: string): Promise<void> {

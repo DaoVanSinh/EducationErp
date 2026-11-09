@@ -1,7 +1,6 @@
 import { Can, RequirePermission } from "@/entities/permission";
 import { useComboDetailController } from "@/modules/billing/hooks/use-combo-detail-controller";
 import { ComboCoursesTable } from "@/modules/billing/ui/combo-courses-table";
-import { ComboInvoiceDialog } from "@/modules/billing/ui/combo-invoice-dialog";
 import { InvoicesTable } from "@/modules/billing/ui/invoices-table";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { formatter } from "@/shared/lib/format";
@@ -24,7 +23,7 @@ export function ComboDetailPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Chi tiết combo"
-          description="Các khoá trong combo, số tiền sau giảm giá và các đợt thu đã phát hành."
+          description="Các khoá trong combo, số tiền sau giảm giá và hoá đơn học phí, thu đủ một lần."
         />
 
         {controller.detail.isError ? <ErrorNotice error={controller.detail.error} /> : null}
@@ -42,9 +41,6 @@ export function ComboDetailPage() {
                 </p>
                 <Badge tone="accent">-{controller.detail.data.combo.discountPercent}%</Badge>
                 <p className="text-xs text-mist-500">Hạn {controller.detail.data.combo.dueDate}</p>
-                <p className="text-xs text-mist-500">
-                  Đợt {controller.liveInstallmentCount}/{controller.maxInstallments}
-                </p>
               </div>
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                 <AmountCell label="Tổng gốc" value={controller.detail.data.combo.totalOriginalAmount} />
@@ -52,8 +48,8 @@ export function ComboDetailPage() {
                   label="Phải thu sau giảm"
                   value={controller.detail.data.combo.totalDiscountedAmount}
                 />
-                <AmountCell label="Đã phát hành" value={controller.invoicedAmount} />
-                <AmountCell label="Chưa phát hành" value={controller.remainingToInvoice} />
+                <AmountCell label="Đã lập hoá đơn" value={controller.invoicedAmount} />
+                <AmountCell label="Chưa lập hoá đơn" value={controller.remainingToInvoice} />
               </dl>
               <Can {...ACCESS_RULE.createInvoice}>
                 <ComboActions controller={controller} />
@@ -66,18 +62,10 @@ export function ComboDetailPage() {
             </GlassPanel>
 
             <GlassPanel className="flex flex-col gap-4">
-              <h2 className="text-sm font-semibold text-mist-100">Các đợt thu</h2>
+              <h2 className="text-sm font-semibold text-mist-100">Hoá đơn của combo</h2>
               <ComboInvoicesSection controller={controller} />
             </GlassPanel>
 
-            <ComboInvoiceDialog
-              comboId={comboId}
-              open={controller.invoiceDialogOpen}
-              onClose={controller.closeInvoiceDialog}
-              remainingToInvoice={controller.remainingToInvoice}
-              installmentNumber={controller.liveInstallmentCount + 1}
-              maxInstallments={controller.maxInstallments}
-            />
           </>
         ) : null}
       </div>
@@ -102,15 +90,16 @@ function ComboActions({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      {controller.cancelError ? <ErrorNotice error={controller.cancelError} /> : null}
+      {controller.actionError ? <ErrorNotice error={controller.actionError} /> : null}
       <div className="flex flex-wrap gap-2">
         <GlassButton
           size="sm"
-          disabled={!controller.canIssueInstallment}
-          onClick={controller.openInvoiceDialog}
+          disabled={!controller.canReissue}
+          loading={controller.isReissuing}
+          onClick={controller.onReissueInvoice}
           icon={<Plus size={14} aria-hidden />}
         >
-          Phát hành đợt thu
+          Lập lại hoá đơn
         </GlassButton>
         <GlassButton
           variant="ghost"
@@ -124,14 +113,14 @@ function ComboActions({
       </div>
       {controller.canCancel ? null : (
         <p className="text-xs text-mist-500">
-          Combo đã phát hành hoá đơn nên không huỷ được nữa.
+          Combo đã thu tiền nên không huỷ được nữa.
         </p>
       )}
     </div>
   );
 }
 
-/** Tái dùng InvoicesTable: một đợt thu của combo là một Invoice bình thường, bấm "Xem chi tiết" là
+/** Tái dùng InvoicesTable: hoá đơn của combo là một Invoice bình thường, bấm "Xem chi tiết" là
  * sang đúng trang chi tiết hoá đơn có sẵn để thu online/thủ công (Review Focus #9). */
 function ComboInvoicesSection({
   controller,
@@ -143,8 +132,8 @@ function ComboInvoicesSection({
     return (
       <EmptyState
         icon={<Receipt size={28} aria-hidden />}
-        title="Chưa phát hành đợt thu nào"
-        description="Phát hành đợt đầu tiên cho combo này; tối đa 3 đợt, tổng không vượt số tiền sau giảm."
+        title="Chưa có hoá đơn"
+        description="Hoá đơn của combo đã bị huỷ. Bấm Lập lại hoá đơn để thu đủ số tiền sau giảm giá."
       />
     );
   }

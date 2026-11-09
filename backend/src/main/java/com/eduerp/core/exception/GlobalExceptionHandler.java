@@ -55,7 +55,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "Hệ thống gặp lỗi, vui lòng thử lại sau");
     }
 
-    /** File hợp đồng scan thường vượt mặc định 1MB của Spring Boot - trả 413 rõ ràng thay vì lỗi thô. */
+    /** File tải lên vượt giới hạn multipart - trả 413 rõ ràng thay vì lỗi thô. */
     @Override
     protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {

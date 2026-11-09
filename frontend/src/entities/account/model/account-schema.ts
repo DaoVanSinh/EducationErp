@@ -5,16 +5,18 @@ import { z } from "zod";
 export const ACCOUNT_STATUS = {
   active: "ACTIVE",
   disabled: "DISABLED",
+  closed: "CLOSED",
 } as const;
 
 export type AccountStatus = (typeof ACCOUNT_STATUS)[keyof typeof ACCOUNT_STATUS];
 
 export const ACCOUNT_STATUS_LABEL: Record<AccountStatus, string> = {
-  [ACCOUNT_STATUS.active]: "Đang hoạt động",
-  [ACCOUNT_STATUS.disabled]: "Đã khoá",
+  [ACCOUNT_STATUS.active]: "Hoạt động",
+  [ACCOUNT_STATUS.disabled]: "Tạm đóng",
+  [ACCOUNT_STATUS.closed]: "Đã đóng",
 };
 
-export const accountStatusSchema = z.enum([ACCOUNT_STATUS.active, ACCOUNT_STATUS.disabled]);
+export const accountStatusSchema = z.enum([ACCOUNT_STATUS.active, ACCOUNT_STATUS.disabled, ACCOUNT_STATUS.closed]);
 
 /**
  * Phiên làm việc: ai đang đăng nhập và được làm gì. Trường chi nhánh và avatar có thể null - tài khoản
@@ -46,6 +48,14 @@ export const accountSummarySchema = z.object({
 });
 
 export type AccountSummary = z.infer<typeof accountSummarySchema>;
+
+/** Bộ lọc danh sách tài khoản. Chuỗi rỗng là không lọc; admin chi nhánh bị backend ép về chi nhánh của mình. */
+export interface AccountListFilters {
+  readonly branchId: string | null;
+  readonly roleCode: string;
+  readonly status: string;
+  readonly query: string;
+}
 
 export interface ProfileUpdatePayload {
   readonly fullName: string;

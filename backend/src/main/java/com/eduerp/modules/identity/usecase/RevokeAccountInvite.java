@@ -5,6 +5,7 @@ import com.eduerp.modules.identity.AccountAlreadyActivatedException;
 import com.eduerp.modules.identity.AccountNotFoundException;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.IdentityEvents;
+import com.eduerp.modules.identity.IdentityException;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +29,9 @@ public class RevokeAccountInvite {
     @Transactional
     public void execute(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
         var account = accounts.findById(accountId).orElseThrow(() -> new AccountNotFoundException(accountId));
+        if (account.isClosed()) {
+            throw new IdentityException.AccountClosed(accountId);
+        }
         if (account.getLastLogin() != null) {
             throw new AccountAlreadyActivatedException(accountId);
         }

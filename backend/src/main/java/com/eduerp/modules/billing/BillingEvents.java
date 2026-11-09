@@ -26,6 +26,10 @@ public final class BillingEvents {
     public record InvoiceCancelled(UUID invoiceId, UUID actorAccountId, UUID actorBranchId) {
     }
 
+    /** Gia hạn là quyết định về tiền của admin gốc, phải có dấu vết. Lý do nằm trên chính hoá đơn. */
+    public record InvoiceDueExtended(UUID invoiceId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
     /** Gộp nhiều khoá thành một gói giảm giá là một quyết định về tiền - phải có dấu vết ai đã làm,
      * mirror InvoiceCreated (spec mục 9). */
     public record ComboCreated(UUID comboId, UUID actorAccountId, UUID actorBranchId) {

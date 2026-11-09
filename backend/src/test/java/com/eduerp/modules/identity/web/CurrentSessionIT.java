@@ -110,25 +110,26 @@ class CurrentSessionIT {
     @Test
     void reflectsAPermissionChangeOnTheNextCall() throws Exception {
         var admin = signIn("me-granter@eduerp.local", AccessConstants.RoleCodes.ADMIN, null);
-        var studentCookie = signIn("me-student@eduerp.local", AccessConstants.RoleCodes.STUDENT, null);
-        var studentId = accounts.findByTypedEmail("me-student@eduerp.local").orElseThrow().getId();
-        var adminRoleId = roles.findByCode(AccessConstants.RoleCodes.ADMIN).orElseThrow().getId();
+        var branch = branches.save(new Branch("HN-ROLE", "Chi nhánh đổi vai trò", null));
+        var staffCookie = signIn("me-staff@eduerp.local", AccessConstants.RoleCodes.BRANCH_ADMIN, branch);
+        var staffId = accounts.findByTypedEmail("me-staff@eduerp.local").orElseThrow().getId();
+        var newRoleId = roles.findByCode(AccessConstants.RoleCodes.FORMER_STAFF).orElseThrow().getId();
 
         var before = objectMapper.readValue(
-                mockMvc.perform(get("/api/account/me").cookie(studentCookie)).andReturn()
+                mockMvc.perform(get("/api/account/me").cookie(staffCookie)).andReturn()
                         .getResponse().getContentAsString(), SessionResponse.class);
-        var changed = mockMvc.perform(patch("/api/rbac/accounts/" + studentId + "/role")
+        var changed = mockMvc.perform(patch("/api/rbac/accounts/" + staffId + "/role")
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new ChangeAccountRoleRequest(adminRoleId))))
+                        .content(objectMapper.writeValueAsString(new ChangeAccountRoleRequest(newRoleId))))
                 .andReturn();
         assertThat(changed.getResponse().getStatus()).isEqualTo(200);
         var after = objectMapper.readValue(
-                mockMvc.perform(get("/api/account/me").cookie(studentCookie)).andReturn()
+                mockMvc.perform(get("/api/account/me").cookie(staffCookie)).andReturn()
                         .getResponse().getContentAsString(), SessionResponse.class);
 
-        assertThat(before.permissions()).noneMatch(p -> AccessConstants.Resources.ROLE.equals(p.resource()));
-        assertThat(after.permissions()).anyMatch(p -> AccessConstants.Resources.ROLE.equals(p.resource()));
+        assertThat(before.permissions()).anyMatch(p -> AccessConstants.Resources.INVOICE.equals(p.resource()));
+        assertThat(after.permissions()).noneMatch(p -> AccessConstants.Resources.INVOICE.equals(p.resource()));
     }
 
     @Test

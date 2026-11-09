@@ -39,13 +39,16 @@ public class InvoiceResponseAssembler {
     public List<InvoiceResponse> toResponses(List<Invoice> invoices) {
         var studentNames = students.displayNamesOf(
                 invoices.stream().map(Invoice::getStudentProfileId).distinct().toList());
+        var studentSummaries = students.summariesOf(
+                invoices.stream().map(Invoice::getStudentProfileId).distinct().toList());
         var courseIdsByCombo = courseIdsByCombo(invoices);
         var courseNames = courses.courseNamesOf(invoices.stream()
                 .flatMap(invoice -> courseIdsOf(invoice, courseIdsByCombo).stream())
                 .distinct().toList());
         return invoices.stream()
                 .map(invoice -> toResponse(invoice, studentNames.get(invoice.getStudentProfileId()),
-                        namesOf(courseIdsOf(invoice, courseIdsByCombo), courseNames)))
+                        namesOf(courseIdsOf(invoice, courseIdsByCombo), courseNames),
+                        studentSummaries.get(invoice.getStudentProfileId())))
                 .toList();
     }
 
@@ -66,10 +69,12 @@ public class InvoiceResponseAssembler {
         return courseIds.stream().map(courseNames::get).filter(Objects::nonNull).toList();
     }
 
-    private static InvoiceResponse toResponse(Invoice invoice, String studentName, List<String> courseNames) {
+    private static InvoiceResponse toResponse(Invoice invoice, String studentName, List<String> courseNames,
+            StudentsManagement.StudentSummaryResponse student) {
         return new InvoiceResponse(invoice.getId(), invoice.getEnrollmentId(), invoice.getComboId(),
                 invoice.getStudentProfileId(), studentName, invoice.getCourseId(), courseNames, invoice.getBranchId(),
                 invoice.getInstallmentNumber(), invoice.getAmount(), invoice.getAmountPaid(), invoice.getStatus(),
-                invoice.getDueDate(), invoice.getIssuedAt());
+                invoice.getDueDate(), invoice.getIssuedAt(), invoice.isDueExtended(), invoice.getExtensionReason(),
+                student == null ? null : student.accountId());
     }
 }

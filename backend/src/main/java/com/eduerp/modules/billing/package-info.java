@@ -1,11 +1,11 @@
 /**
- * Module Billing — sở hữu hoá đơn học phí (Invoice, tối đa 3 đợt mỗi ghi danh) và lịch sử thanh
+ * Module Billing — sở hữu hoá đơn học phí (Invoice, mỗi ghi danh một hoá đơn thu đủ một lần) và lịch sử thanh
  * toán (Payment). Phụ thuộc một chiều {@code access} ({@code AccessConstants} cho
  * {@code @PreAuthorize}), {@code enrollment} ({@code EnrollmentManagement.getEnrollment} để chốt
  * snapshot và chặn phát hành cho ghi danh đã rút), {@code courses}
  * ({@code CoursesManagement.getCourseTuition} để chặn tổng các đợt vượt học phí) và
  * {@code integrations.payment} ({@code PaymentGatewayClient} - giống cách {@code modules.payroll}
- * gọi {@code integrations.storage}). Không module nào đọc ngược từ {@code billing} (spec mục 3).
+ * gọi {@code integrations.storage}); {@code identity} để chặn đóng tài khoản còn nợ. Không module nào đọc ngược từ {@code billing} (spec mục 3).
  *
  * <p>Vai trò từng package:
  * <ul>

@@ -17,7 +17,7 @@ export function MyInvoicesPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Học phí của tôi"
-          description="Các đợt học phí, số tiền đã đóng, còn lại và lịch sử thanh toán. Thanh toán online qua VNPay hoặc đóng tiền mặt tại quầy."
+          description="Học phí đóng đủ một lần trong 7 ngày đầu kể từ ngày khai giảng. Thanh toán online qua VNPay hoặc đóng tại quầy."
         />
         <MyInvoicesContent />
       </div>

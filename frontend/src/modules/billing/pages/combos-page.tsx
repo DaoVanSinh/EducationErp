@@ -22,7 +22,7 @@ export function CombosPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Combo khoá học"
-          description="Gộp các khoá đang học của một học viên để giảm giá theo số khoá. Combo thu tối đa 3 đợt, một hạn đóng chung."
+          description="Gộp các khoá đang học của một học viên để giảm giá theo số khoá. Hoá đơn của combo thu đủ một lần, hạn là ngày thứ 7 từ lớp khai giảng sớm nhất."
           actions={
             <Can {...ACCESS_RULE.createInvoice}>
               <GlassButton onClick={controller.openCreateDialog} icon={<Plus size={16} aria-hidden />}>

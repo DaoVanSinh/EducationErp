@@ -35,39 +35,20 @@ const METHOD_TABS: readonly SegmentedTab<OfflinePaymentMethod>[] = OFFLINE_PAYME
 }));
 
 export function ManualPaymentDialog({ invoiceId, open, onClose, remaining }: ManualPaymentDialogProps) {
-  const { form, selectMethod, notePlaceholder } = useManualPaymentForm(invoiceId, onClose);
+  const { form, selectMethod, notePlaceholder } = useManualPaymentForm(invoiceId, remaining, onClose);
 
   return (
     <GlassModal
       open={open}
       onClose={onClose}
       title="Ghi nhận thu tiền"
-      description="Tiền mặt tại quầy hoặc chuyển khoản do kế toán đối chiếu rồi nhập."
+      description={`Thu đủ một lần ${formatter.money(remaining)}, tiền mặt tại quầy hoặc chuyển khoản do kế toán đối chiếu.`}
     >
       <form id="manual-payment-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
 
         <FormField label="Hình thức thu" htmlFor="manual-payment-method">
           <SegmentedTabs tabs={METHOD_TABS} activeTab={form.values.method} onTabChange={selectMethod} />
-        </FormField>
-
-        <FormField
-          label="Số tiền (VND)"
-          htmlFor="manual-payment-amount"
-          hint={`Còn lại ${formatter.money(remaining)}. Thu quá số còn lại sẽ bị từ chối.`}
-          error={form.fieldErrors.amount}
-        >
-          <GlassInput
-            id="manual-payment-amount"
-            type="number"
-            min={1}
-            max={remaining}
-            step={1000}
-            autoFocus
-            value={form.values.amount}
-            invalid={form.fieldErrors.amount !== undefined}
-            onChange={(event) => form.setValue("amount", event.target.value)}
-          />
         </FormField>
 
         <FormField

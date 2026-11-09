@@ -86,6 +86,7 @@ export const ACCOUNT_COMMAND = {
   revokeInvite: "REVOKE_INVITE",
   disable: "DISABLE",
   enable: "ENABLE",
+  close: "CLOSE",
   signOutEverywhere: "SIGN_OUT_EVERYWHERE",
 } as const;
 
@@ -96,6 +97,7 @@ const COMMAND_CALL: Record<AccountCommand, (accountId: string) => Promise<void>>
   [ACCOUNT_COMMAND.revokeInvite]: (accountId) => accountApi.revokeInvite(accountId),
   [ACCOUNT_COMMAND.disable]: (accountId) => accountApi.disable(accountId),
   [ACCOUNT_COMMAND.enable]: (accountId) => accountApi.enable(accountId),
+  [ACCOUNT_COMMAND.close]: (accountId) => accountApi.close(accountId),
   [ACCOUNT_COMMAND.signOutEverywhere]: (accountId) => accountApi.signOutEverywhere(accountId),
 };
 

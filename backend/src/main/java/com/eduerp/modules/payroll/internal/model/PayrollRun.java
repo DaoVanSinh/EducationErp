@@ -9,12 +9,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.YearMonth;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
+/** Một kỳ lương là trọn một tháng dương lịch, mỗi tháng đúng một kỳ. */
 @Entity
 @Table(name = "payroll_runs", uniqueConstraints = @UniqueConstraint(columnNames = {"year", "month"}))
 @Getter
@@ -45,8 +47,14 @@ public class PayrollRun {
         this.status = PayrollConstants.PayrollRunStatus.DRAFT;
     }
 
+    public YearMonth getPeriod() {
+        return YearMonth.of(year, month);
+    }
+
+    /** Gửi duyệt lại sau khi bị từ chối: lý do cũ đã xử lý xong, không còn hiện nữa. */
     public void submitForApproval() {
         this.status = PayrollConstants.PayrollRunStatus.PENDING_APPROVAL;
+        this.rejectionReason = null;
     }
 
     public void approve() {

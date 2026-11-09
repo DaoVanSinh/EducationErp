@@ -7,6 +7,8 @@ import com.eduerp.modules.teachers.TeacherProfileNotFoundException;
 import com.eduerp.modules.teachers.TeachersEvents;
 import com.eduerp.modules.teachers.dto.CreateTeacherRequest;
 import com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository;
+import com.eduerp.modules.teachers.internal.rules.TeacherPayRules;
+import com.eduerp.modules.teachers.internal.util.TeacherPayMapper;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Tạo giáo viên một bước: mời tài khoản với vai trò Giáo viên của hệ thống, hồ sơ được
- * {@code TeacherRoleParticipant} sinh trong cùng transaction, rồi điền môn dạy/liên hệ ở đây. Lỗi ở bất
- * kỳ bước nào huỷ cả hai - không còn tài khoản giáo viên thiếu hồ sơ.
+ * {@code TeacherRoleParticipant} sinh trong cùng transaction, rồi điền môn dạy, liên hệ và điều khoản lương ở
+ * đây. Lỗi ở bất kỳ bước nào huỷ tất cả - không còn tài khoản giáo viên thiếu hồ sơ hay thiếu lương.
  */
 @Service
 public class CreateTeacher {
@@ -35,6 +37,10 @@ public class CreateTeacher {
 
     @Transactional
     public UUID execute(UUID actorAccountId, UUID actorBranchId, CreateTeacherRequest request) {
+        TeacherPayRules.requireValid(request.payTerms());
+        // Admin chi nhánh chỉ tạo giáo viên cho chi nhánh mình; admin gốc tạo cho chi nhánh nào cũng được.
+        access.dataScopeOf(actorAccountId, AccessConstants.Resources.TEACHER, AccessConstants.Actions.CREATE)
+                .requireCovers(request.homeBranchId());
         var accountId = identity.inviteAccount(request.email(), request.fullName().strip(), request.homeBranchId(),
                 access.roleIdOf(AccessConstants.RoleCodes.TEACHER), actorAccountId, actorBranchId);
 
@@ -43,6 +49,7 @@ public class CreateTeacher {
         profile.setSubjects(request.subjects());
         profile.setPhone(request.phone());
         profile.setBio(request.bio());
+        TeacherPayMapper.apply(profile, request.payTerms());
 
         events.publishEvent(new TeachersEvents.TeacherProfileCreated(profile.getId(), actorAccountId, actorBranchId));
         return profile.getId();

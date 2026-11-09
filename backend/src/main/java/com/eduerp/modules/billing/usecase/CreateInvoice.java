@@ -1,128 +1,83 @@
 package com.eduerp.modules.billing.usecase;
 
 import com.eduerp.modules.access.AccessConstants;
-import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
-import com.eduerp.modules.billing.BillingConstants;
-import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.CourseNotFoundException;
 import com.eduerp.modules.billing.CourseTuitionNotConfiguredException;
+import com.eduerp.modules.billing.EnrollmentAlreadyInvoicedException;
 import com.eduerp.modules.billing.EnrollmentBilledByComboException;
 import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
-import com.eduerp.modules.billing.InstallmentLimitExceededException;
-import com.eduerp.modules.billing.InvoiceAmountExceedsTuitionException;
 import com.eduerp.modules.billing.dto.CreateInvoiceRequest;
 import com.eduerp.modules.billing.dto.InvoiceResponse;
-import com.eduerp.modules.billing.internal.model.Invoice;
+import com.eduerp.modules.billing.internal.TuitionInvoiceIssuer;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
-import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
-import java.math.BigDecimal;
 import java.util.UUID;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Thứ tự kiểm tra đúng theo spec mục 5: ghi danh → học phí khoá → hạn mức 3 đợt → tổng tiền → lưu.
- * Hai lỗi "hết đợt" và "vượt học phí" là hai lỗi KHÁC NHAU (Review Focus #3) - kế toán cần biết
- * mình đang chạm giới hạn nào.
+ * Hoá đơn được lập tự động khi ghi danh, nên thao tác này chỉ dùng để lập lại: sau khi hoá đơn bị huỷ, khi khoá mới có
+ * học phí, hoặc phần chưa lập của dữ liệu chia đợt cũ. Số tiền và hạn do hệ thống tính, người dùng không nhập.
  */
 @Service
 public class CreateInvoice {
 
-    private final InvoiceRepository invoices;
     private final EnrollmentManagement enrollmentManagement;
     private final CoursesManagement coursesManagement;
-    private final ApplicationEventPublisher events;
-
     private final BillingBranchGuard branchGuard;
     private final EnrollmentDiscounts discounts;
+    private final TuitionInvoiceIssuer issuer;
     private final InvoiceResponseAssembler assembler;
 
-    CreateInvoice(InvoiceRepository invoices, EnrollmentManagement enrollmentManagement,
-            CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard,
-            EnrollmentDiscounts discounts, InvoiceResponseAssembler assembler) {
-        this.assembler = assembler;
-        this.branchGuard = branchGuard;
-        this.discounts = discounts;
-        this.invoices = invoices;
+    CreateInvoice(EnrollmentManagement enrollmentManagement, CoursesManagement coursesManagement,
+            BillingBranchGuard branchGuard, EnrollmentDiscounts discounts, TuitionInvoiceIssuer issuer,
+            InvoiceResponseAssembler assembler) {
         this.enrollmentManagement = enrollmentManagement;
         this.coursesManagement = coursesManagement;
-        this.events = events;
+        this.branchGuard = branchGuard;
+        this.discounts = discounts;
+        this.issuer = issuer;
+        this.assembler = assembler;
     }
 
     @Transactional
     public InvoiceResponse execute(UUID actorAccountId, UUID actorBranchId, CreateInvoiceRequest request) {
-        var enrollment = enrollmentManagement.getEnrollment(request.enrollmentId())
-                .orElseThrow(() -> new EnrollmentNotFoundException(request.enrollmentId()));
+        var enrollmentId = request.enrollmentId();
+        var enrollment = enrollmentManagement.getEnrollment(enrollmentId)
+                .orElseThrow(() -> new EnrollmentNotFoundException(enrollmentId));
         branchGuard.require(actorAccountId, AccessConstants.Actions.CREATE, enrollment.branchId());
         if (enrollment.status() != EnrollmentConstants.EnrollmentStatus.ACTIVE) {
-            throw new EnrollmentNotActiveForBillingException(request.enrollmentId());
+            throw new EnrollmentNotActiveForBillingException(enrollmentId);
         }
-        if (discounts.isInCombo(request.enrollmentId())) {
-            throw new EnrollmentBilledByComboException(request.enrollmentId());
+        if (discounts.isInCombo(enrollmentId)) {
+            throw new EnrollmentBilledByComboException(enrollmentId);
         }
-
-        var tuitionCap = tuitionCapOf(request.enrollmentId(), enrollment.courseId());
-
-        var liveInvoiceCount = invoices.countByEnrollmentIdAndStatusNot(request.enrollmentId(),
-                BillingConstants.InvoiceStatus.CANCELLED);
-        if (liveInvoiceCount >= BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT) {
-            throw new InstallmentLimitExceededException(request.enrollmentId(),
-                    BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT);
+        requireTuitionConfigured(enrollmentId, enrollment.courseId());
+        try {
+            var saved = issuer.issueFor(enrollment, actorAccountId, actorBranchId)
+                    .orElseThrow(() -> new EnrollmentAlreadyInvoicedException(enrollmentId));
+            return assembler.toResponse(saved);
+        } catch (DataIntegrityViolationException raceLostToAnotherRequest) {
+            // uq_invoices_enrollment_installment là lớp chặn cuối khi hai request cùng lập một lúc.
+            throw new EnrollmentAlreadyInvoicedException(enrollmentId);
         }
-
-        var alreadyInvoiced = invoices
-                .findAllByEnrollmentIdAndStatusNot(request.enrollmentId(), BillingConstants.InvoiceStatus.CANCELLED)
-                .stream().map(Invoice::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        var totalAfterThisInvoice = alreadyInvoiced.add(request.amount());
-        if (totalAfterThisInvoice.compareTo(tuitionCap) > 0) {
-            throw new InvoiceAmountExceedsTuitionException(totalAfterThisInvoice, tuitionCap);
-        }
-
-        var installmentNumber = Math.toIntExact(liveInvoiceCount) + 1;
-        var saved = saveInvoice(new Invoice(request.enrollmentId(), enrollment.studentProfileId(),
-                enrollment.courseId(), enrollment.branchId(), installmentNumber, request.amount(),
-                request.dueDate(), actorAccountId), request.enrollmentId());
-        events.publishEvent(new BillingEvents.InvoiceCreated(saved.getId(), actorAccountId, actorBranchId));
-        return assembler.toResponse(saved);
     }
 
-    /**
-     * Trần tổng hoá đơn của một ghi danh: học phí đã giảm nếu ghi danh thuộc một nhóm, nếu không thì học phí niêm
-     * yết của khoá. Khoá chưa có học phí vẫn bị chặn như cũ - nhóm luôn snapshot từ một khoá đã có giá.
-     */
-    private BigDecimal tuitionCapOf(UUID enrollmentId, UUID courseId) {
-        var groupTuition = discounts.groupTuitionOf(enrollmentId);
-        if (groupTuition.isPresent()) {
-            return groupTuition.get();
+    /** Lập lại thủ công thì báo rõ lý do, khác lập tự động: khoá chưa có giá thì ghi danh vẫn thành công. */
+    private void requireTuitionConfigured(UUID enrollmentId, UUID courseId) {
+        if (discounts.groupTuitionOf(enrollmentId).isPresent()) {
+            return;
         }
         var tuition = coursesManagement.getCourseTuition(courseId)
                 .orElseThrow(() -> new CourseNotFoundException(courseId));
         if (tuition.tuitionFee() == null) {
             throw new CourseTuitionNotConfiguredException(courseId);
-        }
-        return tuition.tuitionFee();
-    }
-
-    /**
-     * Final review Important #3: hai request đồng thời có thể cùng đọc count=1 và cùng tính
-     * installmentNumber=2, vượt qua mọi kiểm tra ở trên vì cả hai đọc TRƯỚC khi ai kịp ghi. Migration
-     * V20 (partial unique index trên {@code (enrollment_id, installment_number)}) là lớp chặn cuối -
-     * dùng {@code saveAndFlush} để buộc INSERT chạy ngay ở đây, trong khối try/catch này, thay vì trôi
-     * tới lúc transaction commit (ngoài tầm với của catch) rồi rơi thành 500.
-     */
-    private Invoice saveInvoice(Invoice invoice, UUID enrollmentId) {
-        try {
-            return invoices.saveAndFlush(invoice);
-        } catch (DataIntegrityViolationException raceLostToAnotherRequest) {
-            throw new InstallmentLimitExceededException(enrollmentId,
-                    BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT);
         }
     }
 }

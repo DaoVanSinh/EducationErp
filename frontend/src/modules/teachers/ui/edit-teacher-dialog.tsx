@@ -2,7 +2,6 @@ import type { TeacherProfileSummary } from "@/entities/teacher";
 import { useUpdateTeacherProfile } from "@/modules/teachers/api/use-teachers-mutations";
 import { updateTeacherFormSchema } from "@/modules/teachers/model/teachers-forms";
 import { useZodForm } from "@/shared/lib/use-zod-form";
-import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
@@ -24,7 +23,6 @@ export function EditTeacherDialog({ teacher, open, onClose }: EditTeacherDialogP
       subjects: teacher.subjects.join(", "),
       phone: teacher.phone ?? "",
       bio: teacher.bio ?? "",
-      active: teacher.active,
     },
     onSubmit: async (values) => {
       await updateTeacher.mutateAsync(values);
@@ -61,12 +59,6 @@ export function EditTeacherDialog({ teacher, open, onClose }: EditTeacherDialogP
           />
         </FormField>
 
-        <CheckableRow
-          label="Đang hoạt động"
-          description="Bỏ chọn để vô hiệu hoá hồ sơ mà không xoá dữ liệu."
-          checked={form.values.active}
-          onToggle={() => form.setValue("active", !form.values.active)}
-        />
       </form>
 
       <footer className="flex justify-end gap-2">

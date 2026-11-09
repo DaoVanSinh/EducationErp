@@ -3,6 +3,7 @@ package com.eduerp.modules.billing.internal.rules;
 import com.eduerp.modules.billing.BillingConstants;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
@@ -43,6 +44,11 @@ public final class BillingRules {
         var multiplier = BigDecimal.ONE.subtract(
                 percent(discountPercent).divide(ONE_HUNDRED, DISCOUNT_MATH_SCALE, RoundingMode.HALF_UP));
         return money(totalOriginalAmount.multiply(multiplier));
+    }
+
+    /** Hạn đóng học phí của một lớp khai giảng ngày {@code startDate}. */
+    public static LocalDate tuitionDueDate(LocalDate startDate) {
+        return startDate.plusDays(BillingConstants.Limits.TUITION_DUE_DAYS_AFTER_START);
     }
 
     public static BigDecimal remaining(BigDecimal amount, BigDecimal amountPaid) {

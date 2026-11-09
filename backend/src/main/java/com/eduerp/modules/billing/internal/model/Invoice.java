@@ -72,6 +72,13 @@ public class Invoice {
     @Column(name = "created_by_account_id", nullable = false, updatable = false)
     private UUID createdByAccountId;
 
+    /** Đã được admin gốc gia hạn: đổi ngày khai giảng về sau không được kéo hạn này theo. */
+    @Column(name = "due_extended", nullable = false)
+    private boolean dueExtended;
+
+    @Column(name = "extension_reason", length = BillingConstants.Limits.MAX_EXTENSION_REASON_LENGTH)
+    private String extensionReason;
+
     public Invoice(UUID enrollmentId, UUID studentProfileId, UUID courseId, UUID branchId, int installmentNumber,
             BigDecimal amount, LocalDate dueDate, UUID createdByAccountId) {
         this(studentProfileId, branchId, installmentNumber, amount, dueDate, createdByAccountId);
@@ -114,6 +121,21 @@ public class Invoice {
 
     public void markOverdue() {
         this.status = BillingConstants.InvoiceStatus.OVERDUE;
+    }
+
+    /** Gia hạn đưa hoá đơn ra khỏi danh sách quá hạn. Tới hạn mới mà chưa đóng thì tác vụ hằng ngày đánh dấu lại. */
+    public void extendDue(LocalDate newDueDate, String reason) {
+        rescheduleDue(newDueDate);
+        this.dueExtended = true;
+        this.extensionReason = reason;
+    }
+
+    public void rescheduleDue(LocalDate newDueDate) {
+        this.dueDate = newDueDate;
+        if (this.status == BillingConstants.InvoiceStatus.OVERDUE) {
+            this.status = this.amountPaid.signum() > 0
+                    ? BillingConstants.InvoiceStatus.PARTIALLY_PAID : BillingConstants.InvoiceStatus.UNPAID;
+        }
     }
 
     public void cancel() {

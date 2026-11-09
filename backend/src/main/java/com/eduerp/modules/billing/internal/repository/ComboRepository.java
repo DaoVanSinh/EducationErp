@@ -24,6 +24,9 @@ public interface ComboRepository extends JpaRepository<Combo, UUID> {
     Page<Combo> search(@Param("studentProfileId") UUID studentProfileId, @Param("branchId") UUID branchId,
             Pageable pageable);
 
+    @Query("SELECT ce.combo FROM ComboEnrollment ce WHERE ce.enrollmentId = :enrollmentId")
+    java.util.Optional<Combo> findByEnrollmentId(@Param("enrollmentId") UUID enrollmentId);
+
     /** Ghi danh đã nằm trong combo thì được thu qua hoá đơn combo, không được thu lẻ hay giảm thêm lần nữa. */
     @Query("SELECT COUNT(ce) > 0 FROM ComboEnrollment ce WHERE ce.enrollmentId = :enrollmentId")
     boolean existsEnrollment(@Param("enrollmentId") UUID enrollmentId);

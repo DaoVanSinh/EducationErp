@@ -45,8 +45,9 @@ class StudentAdminController {
     @GetMapping
     @PreAuthorize(AccessConstants.AccessRules.READ_STUDENT)
     PageResponse<StudentProfileResponse> list(@AuthenticationPrincipal AccountPrincipal principal,
-            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID branchId) {
-        return listStudentProfiles.execute(principal.accountId(), pageable, branchId);
+            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) String query) {
+        return listStudentProfiles.execute(principal.accountId(), pageable, branchId, query);
     }
 
     @GetMapping("/{profileId}")

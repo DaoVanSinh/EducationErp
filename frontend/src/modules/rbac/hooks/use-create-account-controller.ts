@@ -1,5 +1,6 @@
 import { useRbacCatalog } from "@/entities/rbac-catalog";
 import { useCreateAccount } from "@/modules/rbac/api/use-rbac-mutations";
+import { isStaffRole } from "@/modules/rbac/model/account-rules";
 import { createAccountFormSchema } from "@/modules/rbac/model/rbac-forms";
 import { useZodForm } from "@/shared/lib/use-zod-form";
 
@@ -28,7 +29,7 @@ export function useCreateAccountController({ onClose }: { readonly onClose: () =
     submitError: form.submitError,
     isSubmitting: form.isSubmitting,
     branches: catalog.data?.branches ?? [],
-    roles: catalog.data?.roles ?? [],
+    roles: (catalog.data?.roles ?? []).filter((role) => isStaffRole(role.code)),
     handleSubmit: form.handleSubmit,
     setValue: form.setValue,
   };

@@ -1,8 +1,8 @@
-import type { AccountSummary } from "@/entities/account";
+import { ACCOUNT_STATUS, type AccountSummary } from "@/entities/account";
 import { Can } from "@/entities/permission";
 import type { AccountCommand } from "@/modules/rbac/api/use-rbac-mutations";
 import { ACCOUNTS_DIALOG, type AccountsDialogKind } from "@/modules/rbac/hooks/use-accounts-page-controller";
-import { ACCOUNT_COMMAND_COPY } from "@/modules/rbac/model/account-rules";
+import { ACCOUNT_COMMAND_COPY, isStaffRole } from "@/modules/rbac/model/account-rules";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { useDisclosure } from "@/shared/lib/use-disclosure";
 import { DropdownMenu } from "@/shared/ui/dropdown-menu";
@@ -13,24 +13,37 @@ import type { ReactNode } from "react";
 export interface AccountActionsMenuProps {
   readonly account: AccountSummary;
   readonly isSelf: boolean;
+  readonly canManageOrganization: boolean;
   readonly commands: readonly AccountCommand[];
   readonly onOpenDialog: (kind: AccountsDialogKind, account: AccountSummary) => void;
   readonly onCommand: (account: AccountSummary, command: AccountCommand) => void;
 }
 
 /**
- * Mọi thao tác trên một tài khoản gom vào một menu - một dòng có tới sáu nút thì không đọc nổi. Ẩn hẳn
- * với người không có quyền sửa tài khoản cấp tổ chức (backend cũng chặn).
+ * Mọi thao tác trên một tài khoản gom vào một menu - một dòng có tới sáu nút thì không đọc nổi. Đổi vai trò và chuyển
+ * chi nhánh chỉ dành cho admin gốc; tạm đóng và đóng thì admin chi nhánh cũng làm được trong chi nhánh mình.
  */
-export function AccountActionsMenu({ account, isSelf, commands, onOpenDialog, onCommand }: AccountActionsMenuProps) {
+export function AccountActionsMenu({
+  account,
+  isSelf,
+  canManageOrganization,
+  commands,
+  onOpenDialog,
+  onCommand,
+}: AccountActionsMenuProps) {
   const menu = useDisclosure();
+  const isClosed = account.status === ACCOUNT_STATUS.closed;
   const run = (action: () => void) => () => {
     menu.onClose();
     action();
   };
 
+  if (isClosed || (!canManageOrganization && commands.length === 0)) {
+    return null;
+  }
+
   return (
-    <Can {...ACCESS_RULE.updateAccount}>
+    <Can {...ACCESS_RULE.manageAccountLifecycle}>
       <div className="relative justify-self-start lg:justify-self-end">
         <GlassButton
           variant="secondary"
@@ -44,7 +57,7 @@ export function AccountActionsMenu({ account, isSelf, commands, onOpenDialog, on
         </GlassButton>
         <DropdownMenu open={menu.open} onClose={menu.onClose} className="right-0 top-full mt-2">
           <Can {...ACCESS_RULE.readRole}>
-            {isSelf ? null : (
+            {isSelf || !isStaffRole(account.roleCode) ? null : (
               <MenuItem onSelect={run(() => onOpenDialog(ACCOUNTS_DIALOG.changeRole, account))}>Đổi vai trò</MenuItem>
             )}
             <MenuItem onSelect={run(() => onOpenDialog(ACCOUNTS_DIALOG.transferBranch, account))}>

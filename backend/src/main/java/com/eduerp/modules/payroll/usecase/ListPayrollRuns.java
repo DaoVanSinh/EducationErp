@@ -5,8 +5,8 @@ import com.eduerp.modules.payroll.internal.model.PayrollRun;
 import com.eduerp.modules.payroll.internal.repository.PayrollRunAggregateRow;
 import com.eduerp.modules.payroll.internal.repository.PayrollRunRepository;
 import com.eduerp.modules.payroll.internal.repository.PayslipRepository;
+import com.eduerp.modules.payroll.internal.response.PayrollResponseAssembler;
 import com.eduerp.shared.PageResponse;
-import java.math.BigDecimal;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Pageable;
@@ -35,13 +35,6 @@ public class ListPayrollRuns {
         var runIds = page.getContent().stream().map(PayrollRun::getId).toList();
         var aggregates = payslips.aggregateByPayrollRunIds(runIds).stream()
                 .collect(Collectors.toMap(PayrollRunAggregateRow::getPayrollRunId, Function.identity()));
-        return PageResponse.of(page.map(run -> toResponse(run, aggregates.get(run.getId()))));
-    }
-
-    private static PayrollRunResponse toResponse(PayrollRun run, PayrollRunAggregateRow aggregate) {
-        var payslipCount = aggregate == null ? 0 : Math.toIntExact(aggregate.getPayslipCount());
-        var totalGrossPay = aggregate == null ? BigDecimal.ZERO : aggregate.getTotalGrossPay();
-        return new PayrollRunResponse(run.getId(), run.getYear(), run.getMonth(), run.getStatus(), payslipCount,
-                totalGrossPay);
+        return PageResponse.of(page.map(run -> PayrollResponseAssembler.toRunResponse(run, aggregates.get(run.getId()))));
     }
 }

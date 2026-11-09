@@ -86,6 +86,12 @@ class ClassAdminControllerIT {
     EntityManagerFactory entityManagerFactory;
 
     @Autowired
+    com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository teacherProfiles;
+
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    @Autowired
     PasswordEncoder passwordEncoder;
 
     private Cookie signIn(String email, String roleCode) throws Exception {
@@ -108,12 +114,20 @@ class ClassAdminControllerIT {
         return teacher;
     }
 
+    /** Giáo viên phân công được: cùng chi nhánh với lớp và đã có lương. */
+    private Account saveTeacherAt(String email, String fullName, UUID branchId) {
+        var teacher = accounts.save(new Account(email, passwordEncoder.encode(PASSWORD), fullName, branchId));
+        access.assignRole(teacher.getId(), AccessConstants.RoleCodes.TEACHER);
+        com.eduerp.modules.teachers.TeacherFixtures.makeAssignable(teacherProfiles, jdbc, teacher.getId());
+        return teacher;
+    }
+
     @Test
     void createsAClassWithScheduleThenListsIt() throws Exception {
         var admin = signIn("class-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var course = courses.save(new Course("TA-GT", "Tiếng Anh giao tiếp", null, null, null));
         var branch = branches.save(new Branch("CG01", "Chi nhánh Cầu Giấy", null));
-        var teacher = saveTeacher("teacher-1@eduerp.local", "Cô Lan");
+        var teacher = saveTeacherAt("teacher-1@eduerp.local", "Cô Lan", branch.getId());
 
         var request = new CreateClassRequest(course.getId(), "TA-GT-K15", branch.getId(), teacher.getId(), 20, 1, TODAY, null,
                 List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0))));
@@ -199,7 +213,7 @@ class ClassAdminControllerIT {
     @Test
     void teacherSeesOnlyOwnClassesThroughTheTeachingPortal() throws Exception {
         var teacherCookie = signIn("class-portal-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
-        var me = accounts.findByEmail("class-portal-teacher@eduerp.local").orElseThrow();
+        var me = accounts.findByTypedEmail("class-portal-teacher@eduerp.local").orElseThrow();
         var other = saveTeacher("class-portal-other@eduerp.local", "Thầy Khác");
         var course = courses.save(new Course("TA-PT", "Tiếng Anh PT", null, null, null));
         var branch = branches.save(new Branch("CG-PT", "Chi nhánh PT", null));
@@ -263,7 +277,7 @@ class ClassAdminControllerIT {
         var admin = signIn("class-empty-schedule@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var course = courses.save(new Course("TA-GT5", "Tiếng Anh giao tiếp 5", null, null, null));
         var branch = branches.save(new Branch("CG05", "Chi nhánh 5", null));
-        var teacher = saveTeacher("teacher-6@eduerp.local", "Thầy Đức");
+        var teacher = saveTeacherAt("teacher-6@eduerp.local", "Thầy Đức", branch.getId());
 
         var request = new CreateClassRequest(course.getId(), "TA-GT5-K1", branch.getId(), teacher.getId(),
                 20, 1, TODAY, null, List.of());
@@ -288,7 +302,7 @@ class ClassAdminControllerIT {
         var branch = branches.save(new Branch("CG03", "Chi nhánh 3", null));
         var teacher1 = accounts.save(new Account("teacher-2@eduerp.local",
                 passwordEncoder.encode(PASSWORD), "Thầy Nam", null));
-        var teacher2 = saveTeacher("teacher-3@eduerp.local", "Cô Hoa");
+        var teacher2 = saveTeacherAt("teacher-3@eduerp.local", "Cô Hoa", branch.getId());
         var seedClass = ClassFixtures.enrolling(course, "TA-GT3-K1",
                 branch.getId(), teacher1.getId(), 15);
         seedClass.addSchedule(CoursesConstants.DayOfWeek.MON, LocalTime.of(18, 0), LocalTime.of(20, 0));
@@ -296,7 +310,8 @@ class ClassAdminControllerIT {
         var classId = classes.save(seedClass).getId();
 
         var updateRequest = new UpdateClassRequest(teacher2.getId(), 25, 1, seedClass.getStartDate(), null,
-                List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.TUE, LocalTime.of(19, 0), LocalTime.of(21, 0))));
+                List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.TUE, LocalTime.of(19, 0), LocalTime.of(21, 0))),
+                null);
         var result = mockMvc.perform(patch("/api/courses/classes/" + classId)
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -335,7 +350,7 @@ class ClassAdminControllerIT {
                         .cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdateClassRequest(teacher.getId(), 10, 1, TODAY, null, List.of()))))
+                                new UpdateClassRequest(teacher.getId(), 10, 1, TODAY, null, List.of(), null))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(404);

@@ -1,27 +1,23 @@
 package com.eduerp.modules.billing.usecase;
 
-import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.eduerp.modules.billing.BillingConstants;
-import com.eduerp.modules.billing.BillingEvents;
 import com.eduerp.modules.billing.CourseNotFoundException;
 import com.eduerp.modules.billing.CourseTuitionNotConfiguredException;
+import com.eduerp.modules.billing.EnrollmentAlreadyInvoicedException;
 import com.eduerp.modules.billing.EnrollmentBilledByComboException;
 import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
-import com.eduerp.modules.billing.InstallmentLimitExceededException;
-import com.eduerp.modules.billing.InvoiceAmountExceedsTuitionException;
 import com.eduerp.modules.billing.dto.CreateInvoiceRequest;
+import com.eduerp.modules.billing.internal.TuitionInvoiceIssuer;
+import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.internal.model.Invoice;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboRepository;
-import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.billing.internal.response.InvoiceResponseAssembler;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
@@ -29,44 +25,39 @@ import com.eduerp.modules.enrollment.EnrollmentManagement;
 import com.eduerp.modules.students.StudentsManagement;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
+/** Số tiền và hạn do {@code TuitionInvoiceIssuer} tính, phần đó có test riêng. Ở đây chỉ chốt các điều kiện chặn. */
 class CreateInvoiceTest {
 
     private static final BigDecimal TUITION = new BigDecimal("12000000");
-    private static final BigDecimal HALF = new BigDecimal("6000000");
-    private static final LocalDate DUE_DATE = LocalDate.of(2026, 11, 30);
 
-    private final InvoiceRepository invoices = mock(InvoiceRepository.class);
     private final EnrollmentManagement enrollmentManagement = mock(EnrollmentManagement.class);
     private final CoursesManagement coursesManagement = mock(CoursesManagement.class);
-    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
-    private final CreateInvoice useCase =
-            new CreateInvoice(invoices, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class),
-                    discounts, new InvoiceResponseAssembler(mock(ComboRepository.class), coursesManagement,
-                            mock(StudentsManagement.class)));
+    private final TuitionInvoiceIssuer issuer = mock(TuitionInvoiceIssuer.class);
+    private final CreateInvoice useCase = new CreateInvoice(enrollmentManagement, coursesManagement,
+            mock(BillingBranchGuard.class), discounts, issuer,
+            new InvoiceResponseAssembler(mock(ComboRepository.class), coursesManagement,
+                    mock(StudentsManagement.class)));
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();
     private final UUID enrollmentId = UUID.randomUUID();
     private final UUID studentProfileId = UUID.randomUUID();
     private final UUID courseId = UUID.randomUUID();
-    private final UUID enrollmentBranchId = UUID.randomUUID();
+    private final UUID branchId = UUID.randomUUID();
+    private final CreateInvoiceRequest request = new CreateInvoiceRequest(enrollmentId);
 
-    private CreateInvoiceRequest request(BigDecimal amount) {
-        return new CreateInvoiceRequest(enrollmentId, amount, DUE_DATE);
-    }
-
-    private void stubActiveEnrollment() {
-        when(enrollmentManagement.getEnrollment(enrollmentId)).thenReturn(Optional.of(
-                new EnrollmentManagement.EnrollmentSummaryResponse(enrollmentId, studentProfileId, courseId,
-                        enrollmentBranchId, EnrollmentConstants.EnrollmentStatus.ACTIVE)));
+    private EnrollmentManagement.EnrollmentSummaryResponse stubEnrollment(
+            EnrollmentConstants.EnrollmentStatus status) {
+        var enrollment = new EnrollmentManagement.EnrollmentSummaryResponse(enrollmentId, studentProfileId, courseId,
+                branchId, status, UUID.randomUUID());
+        when(enrollmentManagement.getEnrollment(enrollmentId)).thenReturn(Optional.of(enrollment));
+        return enrollment;
     }
 
     private void stubTuition(BigDecimal tuitionFee) {
@@ -74,202 +65,93 @@ class CreateInvoiceTest {
                 new CoursesManagement.CourseTuitionResponse(courseId, tuitionFee, true)));
     }
 
-    private Invoice existingInvoice(int installmentNumber, BigDecimal amount) {
-        return new Invoice(enrollmentId, studentProfileId, courseId, enrollmentBranchId, installmentNumber, amount,
-                DUE_DATE, actorAccountId);
-    }
-
-    private void stubExistingInvoices(List<Invoice> existing) {
-        when(invoices.countByEnrollmentIdAndStatusNot(enrollmentId, BillingConstants.InvoiceStatus.CANCELLED))
-                .thenReturn((long) existing.size());
-        when(invoices.findAllByEnrollmentIdAndStatusNot(enrollmentId, BillingConstants.InvoiceStatus.CANCELLED))
-                .thenReturn(existing);
-    }
-
-    private void stubSaveEchoesBack() {
-        when(invoices.saveAndFlush(any(Invoice.class))).thenAnswer(invocation -> invocation.getArgument(0));
-    }
-
     @Test
     void rejectsAnUnknownEnrollment() {
         when(enrollmentManagement.getEnrollment(enrollmentId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
                 .isInstanceOf(EnrollmentNotFoundException.class);
     }
 
-    /** Rút khỏi lớp giữ nguyên hoá đơn cũ nhưng chặn phát hành đợt mới (spec mục 12). */
     @Test
     void rejectsAWithdrawnEnrollment() {
-        when(enrollmentManagement.getEnrollment(enrollmentId)).thenReturn(Optional.of(
-                new EnrollmentManagement.EnrollmentSummaryResponse(enrollmentId, studentProfileId, courseId,
-                        enrollmentBranchId, EnrollmentConstants.EnrollmentStatus.WITHDRAWN)));
+        stubEnrollment(EnrollmentConstants.EnrollmentStatus.WITHDRAWN);
 
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
                 .isInstanceOf(EnrollmentNotActiveForBillingException.class);
     }
 
     @Test
+    void rejectsAnEnrollmentBilledThroughACombo() {
+        stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
+        when(discounts.isInCombo(enrollmentId)).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
+                .isInstanceOf(EnrollmentBilledByComboException.class);
+    }
+
+    @Test
     void rejectsAnEnrollmentWhoseCourseIsGone() {
-        stubActiveEnrollment();
+        stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
         when(coursesManagement.getCourseTuition(courseId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
                 .isInstanceOf(CourseNotFoundException.class);
     }
 
     @Test
     void rejectsACourseWithoutATuitionFee() {
-        stubActiveEnrollment();
+        stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
         stubTuition(null);
 
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
                 .isInstanceOf(CourseTuitionNotConfiguredException.class);
     }
 
     @Test
-    void numbersTheFirstInstallmentOneAndPublishesInvoiceCreated() {
-        stubActiveEnrollment();
+    void reportsAlreadyInvoicedWhenNothingIsLeftToIssue() {
+        var enrollment = stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
         stubTuition(TUITION);
-        stubExistingInvoices(List.of());
-        stubSaveEchoesBack();
+        when(issuer.issueFor(enrollment, actorAccountId, actorBranchId)).thenReturn(Optional.empty());
 
-        var response = useCase.execute(actorAccountId, actorBranchId, request(HALF));
-
-        assertThat(response.installmentNumber()).isEqualTo(1);
-        assertThat(response.enrollmentId()).isEqualTo(enrollmentId);
-        // Hoá đơn đơn-khoá không thuộc combo nào - hai field neo loại trừ nhau (spec mục 5).
-        assertThat(response.comboId()).isNull();
-        assertThat(response.studentProfileId()).isEqualTo(studentProfileId);
-        assertThat(response.courseId()).isEqualTo(courseId);
-        assertThat(response.branchId()).isEqualTo(enrollmentBranchId);
-        assertThat(response.amount()).isEqualByComparingTo(HALF);
-        assertThat(response.amountPaid()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(response.status()).isEqualTo(BillingConstants.InvoiceStatus.UNPAID);
-        assertThat(response.dueDate()).isEqualTo(DUE_DATE);
-        verify(events).publishEvent(any(BillingEvents.InvoiceCreated.class));
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
+                .isInstanceOf(EnrollmentAlreadyInvoicedException.class);
     }
 
+    /** Hai request cùng lập một lúc: chỉ mục duy nhất của database là lớp chặn cuối, không được rơi thành 500. */
     @Test
-    void numbersTheSecondInstallmentTwo() {
-        stubActiveEnrollment();
+    void translatesAConcurrentIssueIntoAlreadyInvoiced() {
+        var enrollment = stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
         stubTuition(TUITION);
-        stubExistingInvoices(List.of(existingInvoice(1, HALF)));
-        stubSaveEchoesBack();
-
-        assertThat(useCase.execute(actorAccountId, actorBranchId, request(new BigDecimal("3000000")))
-                .installmentNumber()).isEqualTo(2);
-    }
-
-    /**
-     * Review Focus #3: đợt 1 = 50%, đợt 2 = 50% thì đợt 3 với SỐ TIỀN DƯƠNG BẤT KỲ phải bị chặn vì
-     * vượt học phí - lỗi đúng phải là INVOICE_AMOUNT_EXCEEDS_TUITION, KHÔNG phải
-     * INSTALLMENT_LIMIT_EXCEEDED (hạn mức 3 đợt chưa chạm, mới có 2 đợt).
-     */
-    @Test
-    void rejectsAThirdInstallmentOfAnyAmountOnceTheTuitionIsFullyInvoiced() {
-        stubActiveEnrollment();
-        stubTuition(TUITION);
-        stubExistingInvoices(List.of(existingInvoice(1, HALF), existingInvoice(2, HALF)));
-
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(new BigDecimal("1"))))
-                .isInstanceOf(InvoiceAmountExceedsTuitionException.class)
-                .hasMessageContaining("12000000");
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(new BigDecimal("1000000"))))
-                .isInstanceOf(InvoiceAmountExceedsTuitionException.class);
-    }
-
-    /** Ranh giới: tổng đúng bằng học phí vẫn phải được phát hành, chỉ vượt mới bị chặn. */
-    @Test
-    void acceptsAnInstallmentThatExactlyCompletesTheTuition() {
-        stubActiveEnrollment();
-        stubTuition(TUITION);
-        stubExistingInvoices(List.of(existingInvoice(1, HALF)));
-        stubSaveEchoesBack();
-
-        var response = useCase.execute(actorAccountId, actorBranchId, request(HALF));
-
-        assertThat(response.amount()).isEqualByComparingTo(HALF);
-    }
-
-    /** Ghi danh thuộc nhóm: trần là học phí đã giảm, không phải học phí niêm yết của khoá. */
-    @Test
-    void capsAGroupMemberAtTheDiscountedTuition() {
-        stubActiveEnrollment();
-        stubExistingInvoices(List.of());
-        when(discounts.groupTuitionOf(enrollmentId)).thenReturn(Optional.of(new BigDecimal("10800000")));
-
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(TUITION)))
-                .isInstanceOf(InvoiceAmountExceedsTuitionException.class);
-    }
-
-    @Test
-    void acceptsAGroupMemberInvoiceUpToTheDiscountedTuition() {
-        stubActiveEnrollment();
-        stubExistingInvoices(List.of());
-        stubSaveEchoesBack();
-        var discounted = new BigDecimal("10800000");
-        when(discounts.groupTuitionOf(enrollmentId)).thenReturn(Optional.of(discounted));
-
-        var response = useCase.execute(actorAccountId, actorBranchId, request(discounted));
-
-        assertThat(response.amount()).isEqualByComparingTo(discounted);
-    }
-
-    /** Ghi danh trong combo thu qua hoá đơn combo - hoá đơn lẻ nữa là thu hai lần. */
-    @Test
-    void rejectsAnEnrollmentThatIsBilledByACombo() {
-        stubActiveEnrollment();
-        when(discounts.isInCombo(enrollmentId)).thenReturn(true);
-
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
-                .isInstanceOf(EnrollmentBilledByComboException.class);
-    }
-
-    /** Hạn mức 3 đợt là một lỗi RIÊNG, chỉ gặp khi tổng tiền còn chỗ mà số đợt đã hết (ví dụ 3 đợt
-     * nhỏ chưa dùng hết học phí) - nếu không tách, người dùng nhận thông báo sai nguyên nhân. */
-    @Test
-    void rejectsAFourthInstallmentEvenWhenTuitionBudgetRemains() {
-        stubActiveEnrollment();
-        stubTuition(TUITION);
-        stubExistingInvoices(List.of(existingInvoice(1, new BigDecimal("1000000")),
-                existingInvoice(2, new BigDecimal("1000000")), existingInvoice(3, new BigDecimal("1000000"))));
-
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(new BigDecimal("1000000"))))
-                .isInstanceOf(InstallmentLimitExceededException.class)
-                .hasMessageContaining("3");
-    }
-
-    /**
-     * Final review Important #3: khi race condition giữa hai request đồng thời vẫn lọt qua được các
-     * kiểm tra đếm/tổng ở trên (cả hai đọc cùng một trạng thái trước khi ai kịp ghi), lớp phòng thủ DB
-     * (migration V20, partial unique index) là thứ chặn một trong hai ở bước lưu - usecase phải dịch
-     * {@code DataIntegrityViolationException} đó sang đúng lỗi nghiệp vụ, không để lọt ra thành 500.
-     */
-    @Test
-    void translatesADatabaseRaceOnTheInstallmentNumberIntoAnInstallmentLimitExceededException() {
-        stubActiveEnrollment();
-        stubTuition(TUITION);
-        stubExistingInvoices(List.of());
-        when(invoices.saveAndFlush(any(Invoice.class)))
+        when(issuer.issueFor(enrollment, actorAccountId, actorBranchId))
                 .thenThrow(new DataIntegrityViolationException("uq_invoices_enrollment_installment"));
 
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request(HALF)))
-                .isInstanceOf(InstallmentLimitExceededException.class);
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
+                .isInstanceOf(EnrollmentAlreadyInvoicedException.class);
     }
 
-    /** Hoá đơn đã huỷ không chiếm chỗ trong 3 đợt và không tính vào tổng (spec mục 5). */
     @Test
-    void ignoresCancelledInvoicesInBothTheCountAndTheSum() {
-        stubActiveEnrollment();
+    void returnsTheIssuedInvoice() {
+        var enrollment = stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
         stubTuition(TUITION);
-        // Repository đã loại CANCELLED, nên usecase chỉ thấy 1 hoá đơn còn sống.
-        stubExistingInvoices(List.of(existingInvoice(1, HALF)));
-        stubSaveEchoesBack();
+        var invoice = new Invoice(enrollmentId, studentProfileId, courseId, branchId, 1, TUITION,
+                LocalDate.of(2026, 11, 30), actorAccountId);
+        when(issuer.issueFor(any(), any(), any())).thenReturn(Optional.of(invoice));
 
-        var response = useCase.execute(actorAccountId, actorBranchId, request(HALF));
+        var response = useCase.execute(actorAccountId, actorBranchId, request);
 
-        assertThat(response.installmentNumber()).isEqualTo(2);
-        assertThat(response.status()).isEqualTo(BillingConstants.InvoiceStatus.UNPAID);
+        assertThat(response.amount()).isEqualByComparingTo(TUITION);
+        assertThat(enrollment.enrollmentId()).isEqualTo(response.enrollmentId());
+    }
+
+    /** Thành viên nhóm luôn có giá đã chốt, kể cả khi khoá đã bị đổi giá về sau. */
+    @Test
+    void doesNotRequireListPriceForAGroupMember() {
+        stubEnrollment(EnrollmentConstants.EnrollmentStatus.ACTIVE);
+        when(discounts.groupTuitionOf(enrollmentId)).thenReturn(Optional.of(new BigDecimal("9000000")));
+        when(issuer.issueFor(any(), any(), any())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, actorBranchId, request))
+                .isInstanceOf(EnrollmentAlreadyInvoicedException.class);
     }
 }

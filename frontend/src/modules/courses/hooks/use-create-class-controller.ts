@@ -22,7 +22,6 @@ const AUTO_END_DATE_FIELDS: ReadonlySet<string> = new Set(["courseId", "startDat
 export function useCreateClassController({ onClose }: { readonly onClose: () => void }) {
   const createClass = useCreateClass();
   const courses = useCourses(0, COURSE_OPTION_PAGE_SIZE);
-  const teacherOptions = useTeacherOptions();
   const permissions = usePermissions();
   const canChooseBranch = permissions.allows(ACCESS_RULE.readRole);
   const catalog = useRbacCatalog({ enabled: canChooseBranch });
@@ -49,6 +48,7 @@ export function useCreateClassController({ onClose }: { readonly onClose: () => 
     },
   });
 
+  const teacherOptions = useTeacherOptions(form.values.branchId);
   const courseList = courses.data?.items ?? [];
   const sessionCountOf = (courseId: string) =>
     courseList.find((course) => course.id === courseId)?.standardSessionCount ?? null;
@@ -56,6 +56,10 @@ export function useCreateClassController({ onClose }: { readonly onClose: () => 
   // Đổi khoá học / ngày khai giảng / lịch thì tính lại ngày kết thúc ngay trong lúc nhập, không cần effect.
   const setValue: typeof form.setValue = (field, value) => {
     form.setValue(field, value);
+    if (field === "branchId") {
+      // Giáo viên thuộc chi nhánh chủ quản: đổi chi nhánh thì lựa chọn cũ không còn hợp lệ.
+      form.setValue("teacherId", "");
+    }
     if (!AUTO_END_DATE_FIELDS.has(String(field))) {
       return;
     }
@@ -76,6 +80,8 @@ export function useCreateClassController({ onClose }: { readonly onClose: () => 
     endDateHint: planEndDate(form.values.startDate, form.values.schedule, sessionCountOf(form.values.courseId)).hint,
     courses: courseList,
     teacherOptions,
+    teacherHint:
+      form.values.branchId.length === 0 ? "Chọn chi nhánh trước." : "Giáo viên thuộc chi nhánh này, đã thiết lập lương.",
     canChooseBranch,
     branches: catalog.data?.branches ?? [],
     fixedBranchLabel: session.data?.branchName ?? "Chi nhánh của bạn",

@@ -10,6 +10,7 @@ import com.eduerp.modules.attendance.internal.access.ClassAttendanceAccessGuard;
 import com.eduerp.modules.attendance.internal.model.AttendanceSession;
 import com.eduerp.modules.attendance.internal.repository.AttendanceSessionRepository;
 import com.eduerp.modules.attendance.internal.rules.AttendanceRules;
+import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -33,20 +34,22 @@ public class RecordAttendance {
 
     private final AttendanceSessionRepository sessions;
     private final EnrollmentManagement enrollments;
+    private final CoursesManagement courses;
     private final ClassAttendanceAccessGuard guard;
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
     @Autowired
-    RecordAttendance(AttendanceSessionRepository sessions, EnrollmentManagement enrollments,
+    RecordAttendance(AttendanceSessionRepository sessions, EnrollmentManagement enrollments, CoursesManagement courses,
             ClassAttendanceAccessGuard guard, ApplicationEventPublisher events) {
-        this(sessions, enrollments, guard, events,
+        this(sessions, enrollments, courses, guard, events,
                 Clock.system(ZoneId.of(AttendanceConstants.Schedules.CENTER_ZONE_ID)));
     }
 
     /** Constructor cho test: "hôm nay" phải chốt được để kiểm luật ngày tương lai. */
-    RecordAttendance(AttendanceSessionRepository sessions, EnrollmentManagement enrollments,
+    RecordAttendance(AttendanceSessionRepository sessions, EnrollmentManagement enrollments, CoursesManagement courses,
             ClassAttendanceAccessGuard guard, ApplicationEventPublisher events, Clock clock) {
+        this.courses = courses;
         this.sessions = sessions;
         this.enrollments = enrollments;
         this.guard = guard;
@@ -71,7 +74,9 @@ public class RecordAttendance {
 
         var session = sessions.findByClassIdAndSessionDate(request.classId(), request.sessionDate())
                 .orElseGet(() -> new AttendanceSession(request.classId(), request.sessionDate(), request.note(),
-                        actorAccountId));
+                        actorAccountId, courses.teacherOn(request.classId(), request.sessionDate())
+                                .orElse(classInfo.teacherId()),
+                        AttendanceRules.sessionMinutes(classInfo.schedule(), request.sessionDate())));
         session.changeNote(request.note());
         request.entries().forEach(entry -> session.mark(entry.enrollmentId(), entry.status(), entry.note()));
         var saved = sessions.save(session);

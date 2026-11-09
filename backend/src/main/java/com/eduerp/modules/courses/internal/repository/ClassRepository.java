@@ -39,6 +39,9 @@ public interface ClassRepository extends JpaRepository<Class, UUID>, JpaSpecific
     @EntityGraph(attributePaths = "course")
     Page<Class> findAllByTeacherId(UUID teacherId, Pageable pageable);
 
+    /** Các lớp còn mở của một giáo viên - để kiểm tra trùng giờ khi phân công. */
+    List<Class> findAllByTeacherIdAndStatusIn(UUID teacherId, Collection<CoursesConstants.ClassStatus> statuses);
+
     /** Số lớp còn mở mà một giáo viên đang được phân công - chặn đổi vai trò làm mất năng lực giáo viên. */
     long countByTeacherIdAndStatusIn(UUID teacherId, Collection<CoursesConstants.ClassStatus> statuses);
 

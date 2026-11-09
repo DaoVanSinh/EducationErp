@@ -1,3 +1,4 @@
+import { accountApi, accountKeys } from "@/entities/account";
 import {
   billingApi,
   billingKeys,
@@ -5,6 +6,7 @@ import {
   type CreateComboPayload,
   type CreateGroupRegistrationPayload,
   type CreateInvoicePayload,
+  type ExtendInvoiceDuePayload,
   type InitiateOnlinePaymentPayload,
   type RecordManualPaymentPayload,
 } from "@/entities/billing";
@@ -55,6 +57,25 @@ export function useRecordManualPayment(invoiceId: string) {
   return useMutation({
     mutationFn: (payload: RecordManualPaymentPayload) => billingApi.recordManualPayment(invoiceId, payload),
     onSuccess: invalidate,
+  });
+}
+
+export function useExtendInvoiceDue(invoiceId: string) {
+  const invalidate = useInvoicesInvalidation();
+  return useMutation({
+    mutationFn: (payload: ExtendInvoiceDuePayload) => billingApi.extendInvoiceDue(invoiceId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Từ danh sách quá hạn: tạm đóng tài khoản học viên. Không rút lớp tự động, mở lại được khi đã đóng tiền. */
+export function useSuspendStudentAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (accountId: string) => accountApi.disable(accountId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: accountKeys.all });
+    },
   });
 }
 

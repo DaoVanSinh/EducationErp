@@ -13,6 +13,7 @@ import com.eduerp.modules.enrollment.EnrollmentEvents;
 import com.eduerp.modules.identity.IdentityEvents;
 import com.eduerp.modules.organization.OrganizationEvents;
 import com.eduerp.modules.payroll.PayrollEvents;
+import com.eduerp.modules.teachers.TeachersEvents;
 import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
@@ -94,6 +95,12 @@ class AuditEventListeners {
     }
 
     @ApplicationModuleListener
+    void on(IdentityEvents.AccountClosed event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_CLOSE,
+                AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
     void on(IdentityEvents.AccountEnabled event) {
         auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.ACCOUNT_ENABLE,
                 AuditConstants.EntityTypes.ACCOUNT, event.accountId().toString(), event.actorBranchId()));
@@ -161,15 +168,35 @@ class AuditEventListeners {
     }
 
     @ApplicationModuleListener
-    void on(PayrollEvents.ContractCreated event) {
-        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CONTRACT_CREATE,
-                AuditConstants.EntityTypes.CONTRACT, event.contractId().toString(), event.actorBranchId()));
+    void on(TeachersEvents.TeacherPayUpdated event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.TEACHER_PAY_UPDATE,
+                AuditConstants.EntityTypes.TEACHER_PROFILE, event.teacherProfileId().toString(),
+                event.actorBranchId()));
     }
 
     @ApplicationModuleListener
-    void on(PayrollEvents.ContractTerminated event) {
-        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.CONTRACT_TERMINATE,
-                AuditConstants.EntityTypes.CONTRACT, event.contractId().toString(), event.actorBranchId()));
+    void on(TeachersEvents.TeacherLeft event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.TEACHER_LEAVE,
+                AuditConstants.EntityTypes.TEACHER_PROFILE, event.teacherProfileId().toString(),
+                event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(PayrollEvents.PayslipPaid event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PAYSLIP_PAY,
+                AuditConstants.EntityTypes.PAYSLIP, event.payslipId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(PayrollEvents.PayslipPaymentUndone event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.PAYSLIP_PAYMENT_UNDO,
+                AuditConstants.EntityTypes.PAYSLIP, event.payslipId().toString(), event.actorBranchId()));
+    }
+
+    @ApplicationModuleListener
+    void on(BillingEvents.InvoiceDueExtended event) {
+        auditLogs.save(new AuditLog(event.actorAccountId(), AuditConstants.Actions.INVOICE_DUE_EXTEND,
+                AuditConstants.EntityTypes.INVOICE, event.invoiceId().toString(), event.actorBranchId()));
     }
 
     @ApplicationModuleListener

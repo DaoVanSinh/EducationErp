@@ -19,4 +19,8 @@ public interface TeacherProfileRepository extends JpaRepository<TeacherProfile, 
     Page<TeacherProfile> findByAccountIdIn(Collection<UUID> accountIds, Pageable pageable);
 
     List<TeacherProfile> findAllByActiveTrue();
+
+    List<TeacherProfile> findAllByPayTypeIsNotNull();
+
+    List<TeacherProfile> findAllByActiveTrueAndPayTypeIsNull();
 }

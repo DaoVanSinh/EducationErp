@@ -14,3 +14,6 @@ export const DEFAULT_PAGE_SIZE = 20;
 
 /** Số lần thử lại một truy vấn khi lỗi. Lỗi 4xx thì thử lại chỉ làm chậm phản hồi cho người dùng. */
 export const QUERY_RETRY_COUNT = 1;
+
+/** Thời gian chờ sau khi gõ trong ô tìm kiếm rồi mới gọi API. */
+export const SEARCH_DEBOUNCE_MS = 300;

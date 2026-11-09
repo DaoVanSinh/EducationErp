@@ -65,8 +65,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   {
     title: "Nhân sự",
     items: [
-      { path: APP_ROUTE.payrollContracts, label: "Hợp đồng lao động", requirement: ACCESS_RULE.readPayroll },
       { path: APP_ROUTE.payrollRuns, label: "Kỳ lương", requirement: ACCESS_RULE.readPayroll },
+      { path: APP_ROUTE.branchPayslips, label: "Chi trả lương", requirement: ACCESS_RULE.readBranchPayslips },
     ],
   },
   {
@@ -74,6 +74,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { path: APP_ROUTE.enrollments, label: "Ghi danh", requirement: ACCESS_RULE.readEnrollment },
       { path: APP_ROUTE.invoices, label: "Hoá đơn học phí", requirement: ACCESS_RULE.readInvoice },
+      { path: APP_ROUTE.overdueInvoices, label: "Học phí quá hạn", requirement: ACCESS_RULE.readInvoice },
       { path: APP_ROUTE.combos, label: "Combo khoá học", requirement: ACCESS_RULE.readInvoice },
       { path: APP_ROUTE.groupRegistrations, label: "Đăng ký nhóm", requirement: ACCESS_RULE.readInvoice },
       {

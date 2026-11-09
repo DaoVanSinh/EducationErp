@@ -3,6 +3,7 @@ package com.eduerp.modules.billing.web;
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.billing.BillingConstants;
 import com.eduerp.modules.billing.dto.CreateInvoiceRequest;
+import com.eduerp.modules.billing.dto.ExtendInvoiceDueRequest;
 import com.eduerp.modules.billing.dto.InitiateOnlinePaymentRequest;
 import com.eduerp.modules.billing.dto.InitiateOnlinePaymentResponse;
 import com.eduerp.modules.billing.dto.InvoiceDetailResponse;
@@ -10,6 +11,7 @@ import com.eduerp.modules.billing.dto.InvoiceResponse;
 import com.eduerp.modules.billing.dto.RecordManualPaymentRequest;
 import com.eduerp.modules.billing.usecase.CancelInvoice;
 import com.eduerp.modules.billing.usecase.CreateInvoice;
+import com.eduerp.modules.billing.usecase.ExtendInvoiceDue;
 import com.eduerp.modules.billing.usecase.GetInvoiceDetail;
 import com.eduerp.modules.billing.usecase.InitiateOnlinePayment;
 import com.eduerp.modules.billing.usecase.ListInvoices;
@@ -44,10 +46,12 @@ class InvoiceAdminController {
     private final InitiateOnlinePayment initiateOnlinePayment;
     private final RecordManualPayment recordManualPayment;
     private final CancelInvoice cancelInvoice;
+    private final ExtendInvoiceDue extendInvoiceDue;
 
     InvoiceAdminController(ListInvoices listInvoices, CreateInvoice createInvoice,
             GetInvoiceDetail getInvoiceDetail, InitiateOnlinePayment initiateOnlinePayment,
-            RecordManualPayment recordManualPayment, CancelInvoice cancelInvoice) {
+            RecordManualPayment recordManualPayment, CancelInvoice cancelInvoice, ExtendInvoiceDue extendInvoiceDue) {
+        this.extendInvoiceDue = extendInvoiceDue;
         this.listInvoices = listInvoices;
         this.createInvoice = createInvoice;
         this.getInvoiceDetail = getInvoiceDetail;
@@ -93,6 +97,14 @@ class InvoiceAdminController {
     InvoiceResponse recordManualPayment(@AuthenticationPrincipal AccountPrincipal principal,
             @PathVariable UUID invoiceId, @Valid @RequestBody RecordManualPaymentRequest request) {
         return recordManualPayment.execute(invoiceId, request, principal.accountId(), principal.homeBranchId());
+    }
+
+    /** Chỉ admin gốc: {@code EXTEND_INVOICE} đòi phạm vi toàn tổ chức, admin chi nhánh chỉ thấy danh sách quá hạn. */
+    @PostMapping("/{invoiceId}/extend")
+    @PreAuthorize(AccessConstants.AccessRules.EXTEND_INVOICE)
+    InvoiceResponse extend(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID invoiceId,
+            @Valid @RequestBody ExtendInvoiceDueRequest request) {
+        return extendInvoiceDue.execute(invoiceId, principal.accountId(), principal.homeBranchId(), request);
     }
 
     @PostMapping("/{invoiceId}/cancel")

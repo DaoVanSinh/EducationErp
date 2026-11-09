@@ -20,7 +20,7 @@ export function CreateAccountDialog({ open, onClose }: CreateAccountDialogProps)
       open={open}
       onClose={onClose}
       title="Tạo tài khoản"
-      description="Hệ thống sẽ gửi email kèm mật khẩu tạm, hiệu lực 7 ngày."
+      description="Tài khoản nhân viên. Giáo viên và học viên được tạo ở màn của họ để nhập đủ hồ sơ. Hệ thống gửi email kèm mật khẩu tạm, hiệu lực 7 ngày."
     >
       <form id="create-account-form" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         {submitError ? <ErrorNotice error={submitError} /> : null}
@@ -61,7 +61,7 @@ export function CreateAccountDialog({ open, onClose }: CreateAccountDialogProps)
           </GlassSelect>
         </FormField>
 
-        <FormField label="Chi nhánh" htmlFor="create-account-branch" hint="Bỏ trống nếu là tài khoản cấp tổ chức.">
+        <FormField label="Chi nhánh" htmlFor="create-account-branch" hint="Quản trị chi nhánh bắt buộc thuộc một chi nhánh.">
           <GlassSelect
             id="create-account-branch"
             value={values.homeBranchId}

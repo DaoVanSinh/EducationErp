@@ -11,6 +11,7 @@ import com.eduerp.modules.payroll.usecase.ApprovePayrollRun;
 import com.eduerp.modules.payroll.usecase.CreatePayrollRun;
 import com.eduerp.modules.payroll.usecase.GetPayrollRun;
 import com.eduerp.modules.payroll.usecase.ListPayrollRuns;
+import com.eduerp.modules.payroll.usecase.RecalculatePayrollRun;
 import com.eduerp.modules.payroll.usecase.RejectPayrollRun;
 import com.eduerp.modules.payroll.usecase.SubmitPayrollRunForApproval;
 import com.eduerp.modules.payroll.usecase.UpdatePayslip;
@@ -42,11 +43,13 @@ class PayrollRunAdminController {
     private final SubmitPayrollRunForApproval submitPayrollRunForApproval;
     private final ApprovePayrollRun approvePayrollRun;
     private final RejectPayrollRun rejectPayrollRun;
+    private final RecalculatePayrollRun recalculatePayrollRun;
 
     PayrollRunAdminController(ListPayrollRuns listPayrollRuns, CreatePayrollRun createPayrollRun,
             GetPayrollRun getPayrollRun, UpdatePayslip updatePayslip,
             SubmitPayrollRunForApproval submitPayrollRunForApproval, ApprovePayrollRun approvePayrollRun,
-            RejectPayrollRun rejectPayrollRun) {
+            RejectPayrollRun rejectPayrollRun, RecalculatePayrollRun recalculatePayrollRun) {
+        this.recalculatePayrollRun = recalculatePayrollRun;
         this.listPayrollRuns = listPayrollRuns;
         this.createPayrollRun = createPayrollRun;
         this.getPayrollRun = getPayrollRun;
@@ -79,7 +82,13 @@ class PayrollRunAdminController {
     @PreAuthorize(AccessConstants.AccessRules.UPDATE_PAYROLL)
     PayslipResponse updatePayslip(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID runId,
             @PathVariable UUID payslipId, @Valid @RequestBody UpdatePayslipRequest request) {
-        return updatePayslip.execute(payslipId, principal.accountId(), principal.homeBranchId(), request);
+        return updatePayslip.execute(runId, payslipId, principal.accountId(), principal.homeBranchId(), request);
+    }
+
+    @PostMapping("/{runId}/recalculate")
+    @PreAuthorize(AccessConstants.AccessRules.UPDATE_PAYROLL)
+    void recalculate(@PathVariable UUID runId) {
+        recalculatePayrollRun.execute(runId);
     }
 
     @PostMapping("/{runId}/submit")

@@ -1,80 +1,86 @@
-import { CONTRACT_TYPE, CONTRACT_TYPE_LABEL, type Payslip } from "@/entities/payroll";
-import type { UpdatePayslipPayload } from "@/entities/payroll";
-import { GlassInput } from "@/shared/ui/glass-input";
+import { payBasisText, teachingText, type Payslip } from "@/entities/payroll";
+import { PAY_TYPE_LABEL } from "@/shared/constants/pay-type";
+import { formatter } from "@/shared/lib/format";
+import { GlassButton } from "@/shared/ui/glass-button";
+import { Pencil } from "lucide-react";
 
 export interface PayslipsTableProps {
   readonly rows: readonly Payslip[];
+  readonly periodEnd: string;
   readonly editable: boolean;
-  readonly onUpdate: (payslipId: string, payload: UpdatePayslipPayload) => void;
+  readonly onAdjust: (payslip: Payslip) => void;
 }
 
-/** Sửa được tại chỗ khi editable (PayrollRun.status === DRAFT) - echo thay đổi ra ngoài qua onUpdate,
- * không tự gọi API (Mandate #2: logic mutation nằm ở controller hook, không ở đây).
- *
- * Input để `defaultValue` (uncontrolled) và chỉ gọi onUpdate lúc onBlur, không phải onChange: mutate
- * trên mỗi keystroke kích hoạt invalidateQueries -> refetch -> props.rows đổi -> nếu input là
- * controlled bằng value={payslip.x} thì React ghi đè lại giá trị đang gõ dở ngay giữa chừng (review
- * finding Important #5). note luôn gửi null - backend coi null là "không đổi", không phải "xoá ghi
- * chú" (UpdatePayslip chỉ set note khi request.note() khác null). */
-export function PayslipsTable({ rows, editable, onUpdate }: PayslipsTableProps) {
+const AMOUNT_CELL = "px-2 py-3 text-right tabular-nums whitespace-nowrap";
+
+/** Bảng rộng cuộn ngang trong khung riêng, để trang không bị tràn trên màn hình nhỏ. */
+export function PayslipsTable({ rows, periodEnd, editable, onAdjust }: PayslipsTableProps) {
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="text-left text-xs uppercase text-mist-500">
-          <th>Nhân viên</th>
-          <th>Loại HĐ</th>
-          <th>Giờ dạy</th>
-          <th>Lương gộp</th>
-          <th>BHXH (NLĐ)</th>
-          <th>Thuế TNCN</th>
-          <th>Thực nhận</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((payslip) => (
-          <tr key={payslip.id} className="border-t border-white/10">
-            <td>{payslip.accountFullName}</td>
-            <td>{CONTRACT_TYPE_LABEL[payslip.contractType]}</td>
-            <td>
-              {editable && payslip.contractType === CONTRACT_TYPE.collaborator ? (
-                <GlassInput
-                  type="number"
-                  defaultValue={payslip.hoursWorked ?? ""}
-                  onBlur={(event) =>
-                    onUpdate(payslip.id, {
-                      hoursWorked: Number(event.target.value),
-                      incomeTaxWithheld: null,
-                      note: null,
-                    })
-                  }
-                />
-              ) : (
-                (payslip.hoursWorked ?? "-")
-              )}
-            </td>
-            <td>{payslip.grossPay.toLocaleString("vi-VN")}</td>
-            <td>{payslip.socialInsuranceEmployee.toLocaleString("vi-VN")}</td>
-            <td>
-              {editable ? (
-                <GlassInput
-                  type="number"
-                  defaultValue={payslip.incomeTaxWithheld}
-                  onBlur={(event) =>
-                    onUpdate(payslip.id, {
-                      hoursWorked: null,
-                      incomeTaxWithheld: Number(event.target.value),
-                      note: null,
-                    })
-                  }
-                />
-              ) : (
-                payslip.incomeTaxWithheld.toLocaleString("vi-VN")
-              )}
-            </td>
-            <td>{payslip.netPay.toLocaleString("vi-VN")}</td>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[960px] text-sm">
+        <thead>
+          <tr className="text-left text-xs text-mist-500 uppercase">
+            <th className="px-2 py-2 font-medium">Giáo viên</th>
+            <th className="px-2 py-2 font-medium">Căn cứ tính</th>
+            <th className="px-2 py-2 text-right font-medium">Lương chính</th>
+            <th className="px-2 py-2 text-right font-medium">Phụ cấp</th>
+            <th className="px-2 py-2 text-right font-medium">Thưởng/điều chỉnh</th>
+            <th className="px-2 py-2 text-right font-medium">BHXH 10,5%</th>
+            <th className="px-2 py-2 text-right font-medium">Thuế TNCN</th>
+            <th className="px-2 py-2 text-right font-medium">Thực nhận</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((payslip) => (
+            <tr key={payslip.id} className="border-t border-slate-200/70 align-top">
+              <td className="px-2 py-3">
+                <p className="text-mist-100">{payslip.accountFullName ?? "Chưa rõ tên"}</p>
+                <p className="text-xs text-mist-500">{PAY_TYPE_LABEL[payslip.payType]}</p>
+              </td>
+              <td className="px-2 py-3">
+                <p className="text-mist-100">{payBasisText(payslip, periodEnd)}</p>
+                <p className="text-xs text-mist-500">{teachingText(payslip)}</p>
+              </td>
+              <td className={AMOUNT_CELL}>{formatter.money(payslip.grossPay)}</td>
+              <td className={AMOUNT_CELL}>{formatter.money(payslip.allowancesTotal)}</td>
+              <td className={AMOUNT_CELL}>
+                <AdjustmentCell payslip={payslip} editable={editable} onAdjust={onAdjust} />
+              </td>
+              <td className={AMOUNT_CELL}>{formatter.money(payslip.socialInsuranceEmployee)}</td>
+              <td className={AMOUNT_CELL}>{formatter.money(payslip.incomeTaxWithheld)}</td>
+              <td className={`${AMOUNT_CELL} font-semibold text-mist-100`}>{formatter.money(payslip.netPay)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AdjustmentCell({
+  payslip,
+  editable,
+  onAdjust,
+}: {
+  readonly payslip: Payslip;
+  readonly editable: boolean;
+  readonly onAdjust: (payslip: Payslip) => void;
+}) {
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <span>{formatter.money(payslip.adjustment)}</span>
+      {payslip.note ? <span className="max-w-40 truncate text-xs text-mist-500" title={payslip.note}>{payslip.note}</span> : null}
+      {editable ? (
+        <GlassButton
+          variant="ghost"
+          size="sm"
+          aria-label={`Điều chỉnh lương của ${payslip.accountFullName ?? "giáo viên"}`}
+          onClick={() => onAdjust(payslip)}
+          icon={<Pencil size={14} aria-hidden />}
+        >
+          Sửa
+        </GlassButton>
+      ) : null}
+    </div>
   );
 }

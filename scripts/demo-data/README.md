@@ -30,10 +30,11 @@ mật khẩu. Cách này cũng dùng được khi tạo tài khoản bằng tay 
 
 | Vai trò | Email | Mật khẩu |
 |---|---|---|
+| Quản trị chi nhánh | `ten+qtcn1@gmail.com` ... `ten+qtcn3@gmail.com` | `Demo@2026` |
 | Giáo viên | `ten+gv01@gmail.com` ... `ten+gv12@gmail.com` | `Demo@2026` |
 | Học viên | `ten+hv001@gmail.com` ... `ten+hv150@gmail.com` | `Demo@2026` |
 
-`hv148` - `hv150` bị khoá sẵn để trình diễn chức năng khoá/mở khoá.
+`hv148` - `hv150` bị tạm đóng sẵn để trình diễn chức năng tạm đóng và mở lại.
 
 Giáo viên thật đang có trong hệ thống được phân công thêm hai lớp demo đang học, và học viên thật được ghi
 danh vào ba lớp demo. Đăng nhập bằng tài khoản thật vẫn thấy dữ liệu.
@@ -43,16 +44,16 @@ danh vào ba lớp demo. Đăng nhập bằng tài khoản thật vẫn thấy d
 | Phân hệ | Dữ liệu |
 |---|---|
 | Tổ chức | Thêm chi nhánh Hồ Chí Minh, dùng chung các chi nhánh đang có |
-| Nhân sự | 12 giáo viên kèm hồ sơ, môn dạy, hợp đồng chính thức hoặc cộng tác viên, phụ cấp |
+| Nhân sự | 12 giáo viên kèm hồ sơ, môn dạy, mức lương theo tháng hoặc theo giờ, phụ cấp |
 | Khoá học | 8 khoá học có học phí, số buổi chuẩn, cột điểm theo trọng số |
 | Lớp học | 20 lớp ở cả 4 trạng thái, có lịch học |
 | Tuyển sinh | 150 học viên, khoảng 225 lượt ghi danh, có học viên rút khỏi lớp |
-| Học phí | Hoá đơn trả đủ, chia kỳ, trả một phần, quá hạn, đã huỷ. Thanh toán tiền mặt, MoMo, VNPay, có giao dịch lỗi. 3 combo giảm giá |
+| Học phí | Mỗi ghi danh một hoá đơn, thu đủ một lần, hạn là ngày thứ 7 từ khai giảng. Có hoá đơn đã thu, chưa tới hạn, quá hạn, đã huỷ. Thanh toán tiền mặt, chuyển khoản hoặc VNPay |
 | Học tập | Điểm danh mọi buổi đã qua, điểm thành phần, bài tập và mini-test hằng tuần, mini-task có lời giải và lượt làm |
 | Dashboard | Nhật ký đăng nhập 7 ngày gần nhất |
 
-Bảng lương không được nạp sẵn. Vào màn Bảng lương và bấm tạo bảng lương tháng để hệ thống tự tính từ các
-hợp đồng demo. Đây cũng là một thao tác nên trình diễn trực tiếp.
+Kỳ lương không được nạp sẵn. Vào màn Kỳ lương và tạo kỳ cho tháng trước để hệ thống tự tính từ mức lương và
+điểm danh demo. Đây cũng là một thao tác nên trình diễn trực tiếp.
 
 ## Nhận diện và gỡ bỏ
 

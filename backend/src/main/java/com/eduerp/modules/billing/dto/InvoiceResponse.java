@@ -17,8 +17,11 @@ import java.util.UUID;
  *
  * <p>{@code studentName} và {@code courseNames} là dữ liệu hiển thị tra lúc đọc. {@code courseNames} có
  * một tên với hoá đơn ghi danh, nhiều tên với hoá đơn combo, và rỗng khi không tra được.
+ *
+ * <p>{@code studentAccountId} để danh sách quá hạn thao tác được trên tài khoản học viên.
  */
 public record InvoiceResponse(UUID id, UUID enrollmentId, UUID comboId, UUID studentProfileId, String studentName,
         UUID courseId, List<String> courseNames, UUID branchId, int installmentNumber, BigDecimal amount,
-        BigDecimal amountPaid, BillingConstants.InvoiceStatus status, LocalDate dueDate, Instant issuedAt) {
+        BigDecimal amountPaid, BillingConstants.InvoiceStatus status, LocalDate dueDate, Instant issuedAt,
+        boolean dueExtended, String extensionReason, UUID studentAccountId) {
 }

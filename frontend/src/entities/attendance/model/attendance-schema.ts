@@ -111,3 +111,16 @@ export interface RecordAttendancePayload {
     readonly note: string | null;
   }[];
 }
+
+/** Một lớp giáo viên từng dạy, tính từ các buổi được ghi giờ cho họ - kể cả lớp đã bàn giao cho người khác. */
+export const taughtClassSchema = z.object({
+  classId: z.string().uuid(),
+  classCode: z.string().nullable(),
+  courseName: z.string().nullable(),
+  sessionCount: z.number().int(),
+  totalMinutes: z.number().int(),
+  firstSessionDate: z.string(),
+  lastSessionDate: z.string(),
+});
+
+export type TaughtClass = z.infer<typeof taughtClassSchema>;

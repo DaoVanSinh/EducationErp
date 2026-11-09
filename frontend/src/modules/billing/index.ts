@@ -4,4 +4,5 @@ export { CombosPage } from "@/modules/billing/pages/combos-page";
 export { GroupRegistrationsPage } from "@/modules/billing/pages/group-registrations-page";
 export { InvoiceDetailPage } from "@/modules/billing/pages/invoice-detail-page";
 export { InvoicesPage } from "@/modules/billing/pages/invoices-page";
+export { OverdueInvoicesPage } from "@/modules/billing/pages/overdue-invoices-page";
 export { PaymentReturnPage } from "@/modules/billing/pages/payment-return-page";

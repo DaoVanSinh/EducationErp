@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, UUID> {
 
@@ -17,4 +19,23 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     /** Cả bảng điểm danh của lớp trong MỘT câu, nạp sẵn records - không N+1 theo số buổi. */
     @EntityGraph(attributePaths = "records")
     List<AttendanceSession> findAllByClassIdOrderBySessionDateAsc(UUID classId);
+
+    @Query("""
+            SELECT s.classId AS classId, COUNT(s) AS sessionCount, COALESCE(SUM(s.durationMinutes), 0) AS totalMinutes,
+                   MIN(s.sessionDate) AS firstSessionDate, MAX(s.sessionDate) AS lastSessionDate
+            FROM AttendanceSession s
+            WHERE s.teacherAccountId = :teacherAccountId
+            GROUP BY s.classId
+            ORDER BY MAX(s.sessionDate) DESC
+            """)
+    List<TaughtClassRow> summarizeTaughtClasses(@Param("teacherAccountId") UUID teacherAccountId);
+
+    @Query("""
+            SELECT s.teacherAccountId AS teacherAccountId, COUNT(s) AS sessionCount,
+                   COALESCE(SUM(s.durationMinutes), 0) AS totalMinutes
+            FROM AttendanceSession s
+            WHERE s.sessionDate BETWEEN :from AND :to
+            GROUP BY s.teacherAccountId
+            """)
+    List<TeachingSummaryRow> summarizeTeaching(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }

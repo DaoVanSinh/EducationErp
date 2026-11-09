@@ -18,11 +18,14 @@ import com.eduerp.modules.attendance.dto.RecordAttendanceRequest;
 import com.eduerp.modules.attendance.internal.access.ClassAttendanceAccessGuard;
 import com.eduerp.modules.attendance.internal.model.AttendanceSession;
 import com.eduerp.modules.attendance.internal.repository.AttendanceSessionRepository;
+import com.eduerp.modules.courses.CoursesConstants;
+import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +45,8 @@ class RecordAttendanceTest {
     private final ClassAttendanceAccessGuard guard = mock(ClassAttendanceAccessGuard.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final Clock clock = Clock.fixed(TODAY.atTime(9, 0).atZone(ZONE).toInstant(), ZONE);
-    private final RecordAttendance useCase = new RecordAttendance(sessions, enrollments, guard, events, clock);
+    private final RecordAttendance useCase = new RecordAttendance(sessions, enrollments,
+            mock(com.eduerp.modules.courses.CoursesManagement.class), guard, events, clock);
 
     private final UUID actor = UUID.randomUUID();
     private final UUID branch = UUID.randomUUID();
@@ -87,9 +91,29 @@ class RecordAttendanceTest {
         verify(events).publishEvent(any(AttendanceEvents.AttendanceRecorded.class));
     }
 
+    /** Admin điểm danh hộ thì giờ dạy vẫn thuộc giáo viên của lớp; thời lượng chụp theo lịch của lớp lúc đó. */
+    @Test
+    void aNewSessionCreditsTheTeacherOfTheClassWithTheScheduledDuration() {
+        var teacher = UUID.randomUUID();
+        var admin = UUID.randomUUID();
+        var monday = LocalDate.of(2026, 10, 26);
+        when(guard.requireAccessToClass(any(), any(), any())).thenReturn(TestClassInfos.of(classId, UUID.randomUUID(),
+                branch, teacher, 20, true, 24, List.of(new WeeklyScheduleSlot(CoursesConstants.DayOfWeek.MON,
+                        LocalTime.of(18, 0), LocalTime.of(20, 0)))));
+        when(sessions.findByClassIdAndSessionDate(classId, monday)).thenReturn(Optional.empty());
+
+        useCase.execute(admin, branch, request(monday, entry(anEnrollment, AttendanceStatus.PRESENT)));
+
+        var saved = ArgumentCaptor.forClass(AttendanceSession.class);
+        verify(sessions).save(saved.capture());
+        assertThat(saved.getValue().getTeacherAccountId()).isEqualTo(teacher);
+        assertThat(saved.getValue().getCreatedByAccountId()).isEqualTo(admin);
+        assertThat(saved.getValue().getDurationMinutes()).isEqualTo(120);
+    }
+
     @Test
     void updatesTheExistingSessionOfThatDayInsteadOfCreatingASecondOne() {
-        var existing = new AttendanceSession(classId, TODAY, null, actor);
+        var existing = new AttendanceSession(classId, TODAY, null, actor, actor, 90);
         existing.mark(anEnrollment, AttendanceStatus.ABSENT, null);
         when(sessions.findByClassIdAndSessionDate(classId, TODAY)).thenReturn(Optional.of(existing));
 

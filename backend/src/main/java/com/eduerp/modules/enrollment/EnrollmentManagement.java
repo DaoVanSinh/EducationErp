@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EnrollmentManagement {
 
     public record EnrollmentSummaryResponse(UUID enrollmentId, UUID studentProfileId, UUID courseId, UUID branchId,
-            EnrollmentConstants.EnrollmentStatus status) {
+            EnrollmentConstants.EnrollmentStatus status, UUID classId) {
     }
 
     /**
@@ -66,7 +66,7 @@ public class EnrollmentManagement {
     public Optional<EnrollmentSummaryResponse> getEnrollment(UUID enrollmentId) {
         return enrollments.findById(enrollmentId).map(enrollment -> new EnrollmentSummaryResponse(
                 enrollment.getId(), enrollment.getStudentProfileId(), enrollment.getCourseId(),
-                enrollment.getBranchId(), enrollment.getStatus()));
+                enrollment.getBranchId(), enrollment.getStatus(), enrollment.getClassId()));
     }
 
     /**

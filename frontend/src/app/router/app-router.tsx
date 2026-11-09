@@ -54,11 +54,14 @@ const StudentsPage = lazy(() =>
 const StudentDetailPage = lazy(() =>
   import("@/modules/students").then((module) => ({ default: module.StudentDetailPage })),
 );
-const ContractsPage = lazy(() =>
-  import("@/modules/payroll").then((module) => ({ default: module.ContractsPage })),
-);
 const PayrollRunsPage = lazy(() =>
   import("@/modules/payroll").then((module) => ({ default: module.PayrollRunsPage })),
+);
+const BranchPayslipsPage = lazy(() =>
+  import("@/modules/payroll").then((module) => ({ default: module.BranchPayslipsPage })),
+);
+const OverdueInvoicesPage = lazy(() =>
+  import("@/modules/billing").then((module) => ({ default: module.OverdueInvoicesPage })),
 );
 const PayrollRunDetailPage = lazy(() =>
   import("@/modules/payroll").then((module) => ({ default: module.PayrollRunDetailPage })),
@@ -180,11 +183,12 @@ export function AppRouter() {
           <Route path={APP_ROUTE.teacherDetail} element={<TeacherDetailPage />} />
           <Route path={APP_ROUTE.students} element={<StudentsPage />} />
           <Route path={APP_ROUTE.studentDetail} element={<StudentDetailPage />} />
-          <Route path={APP_ROUTE.payrollContracts} element={<ContractsPage />} />
           <Route path={APP_ROUTE.payrollRuns} element={<PayrollRunsPage />} />
           <Route path={APP_ROUTE.payrollRunDetail} element={<PayrollRunDetailPage />} />
+          <Route path={APP_ROUTE.branchPayslips} element={<BranchPayslipsPage />} />
           <Route path={APP_ROUTE.enrollments} element={<EnrollmentsPage />} />
           <Route path={APP_ROUTE.invoices} element={<InvoicesPage />} />
+          <Route path={APP_ROUTE.overdueInvoices} element={<OverdueInvoicesPage />} />
           <Route path={APP_ROUTE.invoiceDetail} element={<InvoiceDetailPage />} />
           <Route path={APP_ROUTE.combos} element={<CombosPage />} />
           <Route path={APP_ROUTE.groupRegistrations} element={<GroupRegistrationsPage />} />

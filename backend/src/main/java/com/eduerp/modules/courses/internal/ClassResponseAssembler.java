@@ -34,12 +34,15 @@ public class ClassResponseAssembler {
         var classIds = page.getContent().stream().map(Class::getId).toList();
         var branchNames = organization.namesOf(page.getContent().stream().map(Class::getBranchId).toList());
         var teachers = identity.summariesOf(page.getContent().stream().map(Class::getTeacherId).toList());
+        var teacherBranches = identity.homeBranchesOf(page.getContent().stream().map(Class::getTeacherId).toList());
         var enrolled = classIds.isEmpty() ? Map.<UUID, Long>of() : roster.countActiveByClass(classIds);
-        return PageResponse.of(page.map(cls -> toResponse(cls, branchNames, teachers, enrolled)));
+        return PageResponse.of(page.map(cls -> toResponse(cls, branchNames, teachers, enrolled,
+                cls.getStatus().isOpen() && !cls.getBranchId().equals(teacherBranches.get(cls.getTeacherId())))));
     }
 
     private static ClassResponse toResponse(Class cls, Map<UUID, String> branchNames,
-            Map<UUID, IdentityManagement.AccountBasicInfo> teachers, Map<UUID, Long> enrolled) {
+            Map<UUID, IdentityManagement.AccountBasicInfo> teachers, Map<UUID, Long> enrolled,
+            boolean teacherOutsideBranch) {
         var teacher = teachers.get(cls.getTeacherId());
         var slots = cls.getSchedule().stream()
                 .map(s -> new WeeklyScheduleSlot(s.getDayOfWeek(), s.getStartTime(), s.getEndTime()))
@@ -48,6 +51,6 @@ public class ClassResponseAssembler {
                 cls.getBranchId(), branchNames.get(cls.getBranchId()), cls.getTeacherId(),
                 teacher == null ? null : teacher.fullName(), cls.getMaxSeats(), cls.getMinSeats(),
                 enrolled.getOrDefault(cls.getId(), 0L), cls.getStatus(), cls.getStartDate(), cls.getEndDate(),
-                cls.getStartedAt(), cls.getEndedAt(), slots);
+                cls.getStartedAt(), cls.getEndedAt(), slots, teacherOutsideBranch);
     }
 }

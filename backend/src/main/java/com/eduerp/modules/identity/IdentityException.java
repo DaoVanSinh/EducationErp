@@ -8,7 +8,8 @@ public sealed class IdentityException extends AppException
         permits AccountNotFoundException, InvalidCredentialsException, ReferenceNotFoundException, TokenInvalidException,
         EmailAlreadyExistsException, AccountInviteExpiredException, AccountAlreadyActivatedException,
         InvalidAvatarException, AvatarNotFoundException,
-        IdentityException.CannotModifyOwnAccount, IdentityException.AccountNeverActivated {
+        IdentityException.CannotModifyOwnAccount, IdentityException.AccountNeverActivated,
+        IdentityException.AccountClosed, IdentityException.AccountProtected {
 
     protected IdentityException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);
@@ -19,6 +20,21 @@ public sealed class IdentityException extends AppException
         public CannotModifyOwnAccount() {
             super(IdentityConstants.ErrorCodes.SELF_MODIFICATION_FORBIDDEN, HttpStatus.CONFLICT,
                     "Không thể khoá chính tài khoản đang đăng nhập");
+        }
+    }
+
+    /** Đã đóng là vĩnh viễn: muốn dùng lại email thì tạo tài khoản mới. */
+    public static final class AccountClosed extends IdentityException {
+        public AccountClosed(java.util.UUID accountId) {
+            super(IdentityConstants.ErrorCodes.ACCOUNT_CLOSED, HttpStatus.CONFLICT,
+                    "Tài khoản đã đóng, không mở lại được. Hãy tạo tài khoản mới với email này");
+        }
+    }
+
+    /** Admin gốc không ai đóng được; tài khoản quản trị chi nhánh chỉ admin gốc xử lý. */
+    public static final class AccountProtected extends IdentityException {
+        public AccountProtected(String message) {
+            super(IdentityConstants.ErrorCodes.ACCOUNT_PROTECTED, HttpStatus.FORBIDDEN, message);
         }
     }
 

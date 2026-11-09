@@ -56,6 +56,7 @@ function ClassHeader({ cls, today }: { readonly cls: ClassSummary; readonly toda
         <p className="truncate text-xs text-slate-500">
           {cls.branchName ?? "—"} · {cls.teacherName ?? "Chưa gán giáo viên"}
         </p>
+        {cls.teacherOutsideBranch ? <p className="text-xs text-amber-600">Giáo viên thuộc chi nhánh khác</p> : null}
       </div>
       <div className="text-xs text-slate-600">
         <p>Khai giảng {formatter.date(cls.startDate)}</p>

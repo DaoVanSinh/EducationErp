@@ -7,8 +7,12 @@ public final class IdentityConstants {
     private IdentityConstants() {
     }
 
+    /**
+     * DISABLED là Tạm đóng: chặn đăng nhập, mở lại được. CLOSED là Đã đóng: vĩnh viễn, email được dùng lại cho
+     * tài khoản mới, dữ liệu cũ giữ nguyên để tra cứu.
+     */
     public enum AccountStatus {
-        ACTIVE, DISABLED
+        ACTIVE, DISABLED, CLOSED
     }
 
     public static final class TokenTypes {
@@ -19,6 +23,14 @@ public final class IdentityConstants {
         public static final String REFRESH = "refresh";
     }
 
+    public static final class Schedules {
+        private Schedules() {
+        }
+
+        /** "Hôm nay" của trung tâm khi ghi ngày đóng tài khoản. */
+        public static final String CENTER_ZONE_ID = "Asia/Ho_Chi_Minh";
+    }
+
     public static final class ErrorCodes {
         private ErrorCodes() {
         }
@@ -27,6 +39,8 @@ public final class IdentityConstants {
         public static final String AVATAR_NOT_FOUND = "IDENTITY_AVATAR_NOT_FOUND";
         public static final String SELF_MODIFICATION_FORBIDDEN = "IDENTITY_SELF_MODIFICATION_FORBIDDEN";
         public static final String ACCOUNT_NEVER_ACTIVATED = "IDENTITY_ACCOUNT_NEVER_ACTIVATED";
+        public static final String ACCOUNT_CLOSED = "IDENTITY_ACCOUNT_CLOSED";
+        public static final String ACCOUNT_PROTECTED = "IDENTITY_ACCOUNT_PROTECTED";
     }
 
     /**

@@ -1,19 +1,18 @@
 package com.eduerp.modules.payroll.usecase;
 
+import com.eduerp.modules.payroll.PayrollConstants;
 import com.eduerp.modules.payroll.dto.MyPayslipResponse;
-import com.eduerp.modules.payroll.internal.model.Payslip;
 import com.eduerp.modules.payroll.internal.repository.PayslipRepository;
-import com.eduerp.modules.payroll.internal.rules.PayrollRules;
+import com.eduerp.modules.payroll.internal.response.PayrollResponseAssembler;
 import com.eduerp.shared.PageResponse;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Phiếu lương CỦA CHÍNH người gọi, xuyên mọi kỳ lương - cho tab "Lương" của trang Hồ sơ của tôi.
- * KHÔNG đòi {@code READ_PAYROLL}: {@code accountId} luôn là chính người gọi (ép ở
+ * Phiếu lương CỦA CHÍNH người gọi, chỉ từ kỳ đã duyệt: phiếu kỳ nháp còn đổi được, cho xem sớm dễ gây hiểu nhầm về
+ * số tiền thực nhận. KHÔNG đòi {@code READ_PAYROLL}: {@code accountId} luôn là chính người gọi (ép ở
  * {@code PayrollSelfServiceController}, không nhận từ query), nên không có cách nào xem được phiếu
  * lương của người khác qua đường này - mirror {@code GetCurrentSession}.
  */
@@ -28,15 +27,8 @@ public class ListMyPayslips {
 
     @Transactional(readOnly = true)
     public PageResponse<MyPayslipResponse> execute(UUID accountId, Pageable pageable) {
-        Page<Payslip> page = payslips.findAllByAccountId(accountId, pageable);
-        return PageResponse.of(page.map(ListMyPayslips::toResponse));
-    }
-
-    private static MyPayslipResponse toResponse(Payslip payslip) {
-        var netPay = PayrollRules.netPay(payslip.getGrossPay(), payslip.getAllowancesTotal(),
-                payslip.getSocialInsuranceEmployee(), payslip.getIncomeTaxWithheld());
-        return new MyPayslipResponse(payslip.getId(), payslip.getPayrollRun().getYear(),
-                payslip.getPayrollRun().getMonth(), payslip.getContractType(), payslip.getGrossPay(), netPay,
-                payslip.isInProbation());
+        var page = payslips.findAllByAccountIdAndPayrollRun_StatusOrderByPayrollRun_YearDescPayrollRun_MonthDesc(
+                accountId, PayrollConstants.PayrollRunStatus.APPROVED, pageable);
+        return PageResponse.of(page.map(PayrollResponseAssembler::toMyPayslipResponse));
     }
 }

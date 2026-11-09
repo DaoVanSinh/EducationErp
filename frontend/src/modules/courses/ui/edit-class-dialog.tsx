@@ -6,6 +6,7 @@ import { ErrorNotice } from "@/shared/ui/error-notice";
 import { listFieldError } from "@/shared/lib/use-zod-form";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
+import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
 import { GlassSelect } from "@/shared/ui/glass-select";
 
@@ -30,7 +31,19 @@ export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
       <form id="edit-class-form" onSubmit={controller.handleSubmit} className="flex flex-col gap-4" noValidate>
         {controller.submitError ? <ErrorNotice error={controller.submitError} /> : null}
 
-        <FormField label="Giáo viên" htmlFor="edit-class-teacher" error={fieldErrors.teacherId}>
+        {controller.teacherOutsideBranch ? (
+          <p className="rounded-2xl border border-amber-200/90 bg-amber-50 p-3 text-xs text-amber-700">
+            Giáo viên hiện tại thuộc chi nhánh khác. Lớp được giữ tới khi kết thúc; nếu đổi giáo viên thì chỉ chọn được người
+            của chi nhánh này.
+          </p>
+        ) : null}
+
+        <FormField
+          label="Giáo viên"
+          htmlFor="edit-class-teacher"
+          hint="Giáo viên thuộc chi nhánh của lớp, đã thiết lập lương."
+          error={fieldErrors.teacherId}
+        >
           <GlassSelect
             id="edit-class-teacher"
             value={values.teacherId}
@@ -44,6 +57,25 @@ export function EditClassDialog({ cls, open, onClose }: EditClassDialogProps) {
             ))}
           </GlassSelect>
         </FormField>
+
+        {controller.showTeacherEffectiveFrom ? (
+          <FormField
+            label="Giáo viên mới dạy từ ngày"
+            htmlFor="edit-class-teacher-from"
+            hint="Buổi trước ngày này vẫn tính giờ cho giáo viên cũ, kể cả khi điểm danh bù sau này."
+            error={fieldErrors.teacherEffectiveFrom}
+          >
+            <GlassInput
+              id="edit-class-teacher-from"
+              type="date"
+              min={controller.minTeacherEffectiveFrom}
+              max={controller.today}
+              value={values.teacherEffectiveFrom}
+              invalid={fieldErrors.teacherEffectiveFrom !== undefined}
+              onChange={(event) => setValue("teacherEffectiveFrom", event.target.value)}
+            />
+          </FormField>
+        ) : null}
 
         <ClassPlanFields
           idPrefix="edit-class"

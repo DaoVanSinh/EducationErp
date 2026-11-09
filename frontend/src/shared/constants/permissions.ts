@@ -1,6 +1,10 @@
 /** Bản sao của AccessConstants.RoleCodes ở backend. */
 export const ROLE_CODE = {
+  admin: "ADMIN",
+  teacher: "TEACHER",
   student: "STUDENT",
+  branchAdmin: "BRANCH_ADMIN",
+  formerStaff: "FORMER_STAFF",
 } as const;
 
 /** Bản sao của IdentityConstants.Resources ở backend. */
@@ -72,7 +76,7 @@ export const RESOURCE_LABEL: Record<string, string> = {
   [RESOURCE.dashboard]: "Tổng quan",
   [RESOURCE.teacher]: "Giáo viên",
   [RESOURCE.student]: "Học viên",
-  [RESOURCE.payroll]: "Lương & Hợp đồng",
+  [RESOURCE.payroll]: "Lương",
   [RESOURCE.enrollment]: "Ghi danh",
   [RESOURCE.invoice]: "Hoá đơn học phí",
   [RESOURCE.grade]: "Điểm & Tiến trình học tập",
@@ -93,9 +97,9 @@ export const ACTION_LABEL: Record<string, string> = {
 
 /**
  * Bản sao của AccessConstants.AccessRules: yêu cầu quyền của từng nhóm endpoint. Cấu hình hệ thống (vai trò,
- * nhóm quyền, chi nhánh, danh mục khoá học, lương, tạo/sửa tài khoản) đòi scope ORGANIZATION; thao tác vận
- * hành theo chi nhánh (lớp, học viên, ghi danh, học phí, xem tài khoản, tổng quan) chấp nhận BRANCH - backend
- * tự lọc về chi nhánh chủ quản. Một quyền ACCOUNT:UPDATE:PERSONAL chỉ đủ để tự sửa hồ sơ mình.
+ * nhóm quyền, chi nhánh, danh mục khoá học, kỳ lương, đổi vai trò, chuyển chi nhánh) đòi scope ORGANIZATION; thao
+ * tác vận hành theo chi nhánh (lớp, giáo viên, học viên, ghi danh, học phí, tạm đóng và đóng tài khoản, chi trả phiếu
+ * lương đã duyệt, tổng quan) chấp nhận BRANCH - backend tự lọc về chi nhánh chủ quản. Một quyền ACCOUNT:UPDATE:PERSONAL chỉ đủ để tự sửa hồ sơ mình.
  * Giao diện phải hỏi đúng câu backend hỏi, nếu không sẽ có nút hiện ra rồi bấm vào là 403.
  */
 export const ACCESS_RULE = {
@@ -113,6 +117,12 @@ export const ACCESS_RULE = {
     resource: RESOURCE.account,
     action: ACTION.update,
     scope: PERMISSION_SCOPE.organization,
+  },
+  /** Tạm đóng, mở lại, đóng tài khoản: admin chi nhánh làm được trong chi nhánh mình. */
+  manageAccountLifecycle: {
+    resource: RESOURCE.account,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.branch,
   },
   readRole: { resource: RESOURCE.role, action: ACTION.read, scope: PERMISSION_SCOPE.organization },
   createRole: { resource: RESOURCE.role, action: ACTION.create, scope: PERMISSION_SCOPE.organization },
@@ -164,12 +174,12 @@ export const ACCESS_RULE = {
   createTeacher: {
     resource: RESOURCE.teacher,
     action: ACTION.create,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   updateTeacher: {
     resource: RESOURCE.teacher,
     action: ACTION.update,
-    scope: PERMISSION_SCOPE.organization,
+    scope: PERMISSION_SCOPE.branch,
   },
   readStudent: { resource: RESOURCE.student, action: ACTION.read, scope: PERMISSION_SCOPE.branch },
   createStudent: {
@@ -202,6 +212,17 @@ export const ACCESS_RULE = {
     resource: RESOURCE.payroll,
     action: ACTION.approve,
     scope: PERMISSION_SCOPE.organization,
+  },
+  /** Phiếu đã duyệt theo chi nhánh: admin chi nhánh xem và đánh dấu đã trả, không thấy kỳ lương. */
+  readBranchPayslips: {
+    resource: RESOURCE.payroll,
+    action: ACTION.read,
+    scope: PERMISSION_SCOPE.branch,
+  },
+  payBranchPayslips: {
+    resource: RESOURCE.payroll,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.branch,
   },
   readEnrollment: {
     resource: RESOURCE.enrollment,
@@ -239,6 +260,12 @@ export const ACCESS_RULE = {
     resource: RESOURCE.invoice,
     action: ACTION.update,
     scope: PERMISSION_SCOPE.branch,
+  },
+  /** Chỉ admin gốc gia hạn học phí. */
+  extendInvoice: {
+    resource: RESOURCE.invoice,
+    action: ACTION.update,
+    scope: PERMISSION_SCOPE.organization,
   },
   /**
    * Hai entry DUY NHẤT trong file không ghi scope, và đó là chủ đích: ba rule `*_GRADE` ở backend

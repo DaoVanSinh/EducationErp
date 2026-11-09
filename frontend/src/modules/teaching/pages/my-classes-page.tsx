@@ -1,5 +1,6 @@
 import { RequirePermission } from "@/entities/permission";
 import { useMyClassesPageController } from "@/modules/teaching/hooks/use-my-classes-page-controller";
+import { TaughtClassesHistory } from "@/modules/teaching/ui/taught-classes-history";
 import { TeachingClassCard } from "@/modules/teaching/ui/teaching-class-card";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -19,6 +20,7 @@ export function MyClassesPage() {
           description="Các lớp bạn được phân công dạy. Mở sổ điểm để xem danh sách học viên và nhập điểm."
         />
         <MyClassesContent />
+        <TaughtClassesHistory />
       </div>
     </RequirePermission>
   );

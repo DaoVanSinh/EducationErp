@@ -1,4 +1,5 @@
-import { INVOICE_STATUS, INVOICE_STATUS_LABEL, useInvoices } from "@/entities/billing";
+import { INVOICE_STATUS,
+  invoiceTitle, INVOICE_STATUS_LABEL, useInvoices } from "@/entities/billing";
 import { buildInvoiceDetailPath } from "@/shared/constants/app-routes";
 import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
 import { formatter } from "@/shared/lib/format";
@@ -44,7 +45,7 @@ export function StudentInvoicesList({ studentProfileId }: StudentInvoicesListPro
             className="glass grid grid-cols-1 items-center gap-3 rounded-2xl p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
           >
             <Link to={buildInvoiceDetailPath(invoice.id)} className="truncate text-sm text-mist-100 hover:underline">
-              Đợt {invoice.installmentNumber}
+              {invoiceTitle(invoice)}
             </Link>
             <p className="truncate text-xs text-mist-400">
               {formatter.count(invoice.amountPaid)} / {formatter.count(invoice.amount)} đ

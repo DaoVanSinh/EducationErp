@@ -23,8 +23,6 @@ class EndpointSpec:
     path_params: tuple[str, ...] = ()
     query_params: tuple[str, ...] = ()
     body_fields: tuple[str, ...] = ()
-    # Set when the controller takes @RequestPart(<name>) JSON instead of @RequestBody.
-    multipart_part: str = ""
 
 
 def endpoint(
@@ -37,7 +35,6 @@ def endpoint(
     *,
     query_params: tuple[str, ...] = (),
     body_fields: tuple[str, ...] = (),
-    multipart_part: str = "",
 ) -> EndpointSpec:
     """Build a spec, deriving path params from the template. `permission` = (resource, action, min scope)."""
     resource, action, min_scope = permission
@@ -53,5 +50,4 @@ def endpoint(
         path_params=tuple(_PATH_PARAM.findall(path_template)),
         query_params=query_params,
         body_fields=body_fields,
-        multipart_part=multipart_part,
     )

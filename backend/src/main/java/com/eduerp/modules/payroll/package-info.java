@@ -1,12 +1,11 @@
 /**
- * Module Payroll & Nhân sự - sở hữu hợp đồng lao động (EmploymentContract) và chu kỳ lương
- * (PayrollRun/Payslip). Gộp cả hai vì luôn dùng cùng nhau trong một vòng nghiệp vụ (hợp đồng là
- * input để tính lương) - tách modules.hr riêng là over-engineering khi chưa có use case nào cần
- * EmploymentContract độc lập mà không liên quan lương (spec mục 3.1).
+ * Module Payroll - sở hữu kỳ lương và phiếu lương (PayrollRun/Payslip). Tính lương từ điều khoản trên hồ sơ
+ * giáo viên và giờ dạy từ điểm danh.
  *
- * <p>Phụ thuộc một chiều {@code access} (AccessConstants cho @PreAuthorize), {@code identity}
- * (IdentityManagement.summariesOf để hiển thị tên/email) và {@code integrations.storage}
- * (StorageClient để lưu file hợp đồng PDF). Không module nào đọc ngược từ {@code payroll}.
+ * <p>Phụ thuộc một chiều {@code access} (AccessConstants cho @PreAuthorize), {@code identity} (họ tên, chi nhánh chủ quản),
+ * {@code organization} (tên chi nhánh),
+ * {@code teachers} (điều khoản lương) và {@code attendance} (giờ dạy). {@code audit} chỉ lắng nghe
+ * {@code PayrollEvents}.
  */
-@org.springframework.modulith.ApplicationModule(displayName = "Payroll & Nhân sự")
+@org.springframework.modulith.ApplicationModule(displayName = "Payroll")
 package com.eduerp.modules.payroll;

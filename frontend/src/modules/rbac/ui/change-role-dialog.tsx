@@ -42,8 +42,8 @@ export function ChangeRoleDialog({ account, open, onClose }: ChangeRoleDialogPro
 
         <ul className="list-disc space-y-1 pl-5 text-xs text-slate-500">
           <li>Quyền mới có hiệu lực ngay ở lần thao tác kế tiếp của người đó, không cần đăng nhập lại.</li>
-          <li>Có năng lực học viên/giáo viên mà chưa có hồ sơ thì hệ thống tự tạo hồ sơ trống.</li>
-          <li>Không đổi được nếu người này còn dạy lớp đang mở hoặc còn đang học - xử lý lớp/ghi danh trước.</li>
+          <li>Chỉ đổi giữa các vai trò nhân viên. Muốn thành giáo viên hoặc học viên: đóng tài khoản này rồi tạo mới cùng email.</li>
+          <li>Quản trị chi nhánh nghỉ việc: đổi sang vai trò Đã nghỉ việc, tài khoản chỉ còn xem được thông tin của mình.</li>
         </ul>
       </form>
 

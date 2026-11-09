@@ -1,6 +1,6 @@
 export { attendanceApi } from "@/entities/attendance/api/attendance-api";
 export { attendanceKeys } from "@/entities/attendance/api/attendance-keys";
-export { useClassAttendance, useMyAttendance } from "@/entities/attendance/api/use-attendance-queries";
+export { useClassAttendance, useMyAttendance, useMyTaughtClasses } from "@/entities/attendance/api/use-attendance-queries";
 export {
   ATTENDANCE_STATUS,
   ATTENDANCE_STATUS_LABEL,
@@ -12,4 +12,5 @@ export {
   type MyAttendanceClass,
   type RecordAttendancePayload,
   type StudentAttendanceRow,
+  type TaughtClass,
 } from "@/entities/attendance/model/attendance-schema";

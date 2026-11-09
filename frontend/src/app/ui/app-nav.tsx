@@ -5,13 +5,14 @@ import { cx } from "@/shared/lib/class-names";
 import { MOTION_SPRING } from "@/shared/lib/motion";
 import { m } from "framer-motion";
 import {
+  AlertTriangle,
   BadgePercent,
+  Banknote,
   BookOpen,
   Bot,
   Building2,
   CalendarDays,
   ClipboardList,
-  FileSignature,
   Globe,
   GraduationCap,
   LayoutDashboard,
@@ -35,8 +36,9 @@ const NAV_ICON: Record<string, ReactNode> = {
   [APP_ROUTE.classes]: <CalendarDays size={18} aria-hidden />,
   [APP_ROUTE.teachers]: <GraduationCap size={18} aria-hidden />,
   [APP_ROUTE.students]: <UserRoundCheck size={18} aria-hidden />,
-  [APP_ROUTE.payrollContracts]: <FileSignature size={18} aria-hidden />,
   [APP_ROUTE.payrollRuns]: <Wallet size={18} aria-hidden />,
+  [APP_ROUTE.branchPayslips]: <Banknote size={18} aria-hidden />,
+  [APP_ROUTE.overdueInvoices]: <AlertTriangle size={18} aria-hidden />,
   [APP_ROUTE.enrollments]: <ClipboardList size={18} aria-hidden />,
   [APP_ROUTE.invoices]: <Receipt size={18} aria-hidden />,
   [APP_ROUTE.combos]: <Package size={18} aria-hidden />,

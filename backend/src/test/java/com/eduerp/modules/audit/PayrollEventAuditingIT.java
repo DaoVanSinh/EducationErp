@@ -3,6 +3,7 @@ package com.eduerp.modules.audit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.eduerp.modules.payroll.PayrollEvents;
+import com.eduerp.modules.teachers.TeachersEvents;
 import com.redis.testcontainers.RedisContainer;
 import java.time.Duration;
 import java.util.UUID;
@@ -69,26 +70,14 @@ class PayrollEventAuditingIT {
     AuditManagement audit;
 
     @Test
-    void auditsContractCreated() {
-        var contractId = UUID.randomUUID();
-        events.publish(new PayrollEvents.ContractCreated(contractId, UUID.randomUUID(), UUID.randomUUID()));
+    void auditsTeacherPayUpdated() {
+        var profileId = UUID.randomUUID();
+        events.publish(new TeachersEvents.TeacherPayUpdated(profileId, UUID.randomUUID(), UUID.randomUUID()));
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            var entityIds = audit.recentActions(AuditConstants.EntityTypes.CONTRACT,
-                    AuditConstants.Actions.CONTRACT_CREATE, 20).stream().map(a -> a.entityId()).toList();
-            assertThat(entityIds).contains(contractId.toString());
-        });
-    }
-
-    @Test
-    void auditsContractTerminated() {
-        var contractId = UUID.randomUUID();
-        events.publish(new PayrollEvents.ContractTerminated(contractId, UUID.randomUUID(), UUID.randomUUID()));
-
-        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            var entityIds = audit.recentActions(AuditConstants.EntityTypes.CONTRACT,
-                    AuditConstants.Actions.CONTRACT_TERMINATE, 20).stream().map(a -> a.entityId()).toList();
-            assertThat(entityIds).contains(contractId.toString());
+            var entityIds = audit.recentActions(AuditConstants.EntityTypes.TEACHER_PROFILE,
+                    AuditConstants.Actions.TEACHER_PAY_UPDATE, 20).stream().map(a -> a.entityId()).toList();
+            assertThat(entityIds).contains(profileId.toString());
         });
     }
 

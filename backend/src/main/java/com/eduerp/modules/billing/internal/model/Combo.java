@@ -89,6 +89,10 @@ public class Combo {
         this.createdAt = Instant.now();
     }
 
+    public void rescheduleDue(LocalDate newDueDate) {
+        this.dueDate = newDueDate;
+    }
+
     public List<ComboEnrollment> getEnrollments() {
         return List.copyOf(enrollments);
     }

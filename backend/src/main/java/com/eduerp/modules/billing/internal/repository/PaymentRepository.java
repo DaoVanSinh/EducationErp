@@ -10,6 +10,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
+    /** Giao dịch nào, kể cả thất bại, cũng là dấu vết tài chính: hoá đơn có nó thì không xoá cứng được. */
+    boolean existsByInvoice_Id(UUID invoiceId);
+
     Optional<Payment> findByGatewayTransactionId(String gatewayTransactionId);
 
     /** Lịch sử thanh toán trong chi tiết hoá đơn, mới nhất trước (spec mục 5). */

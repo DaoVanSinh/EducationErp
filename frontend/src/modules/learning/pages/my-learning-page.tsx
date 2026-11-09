@@ -44,10 +44,20 @@ function MyLearningContent() {
     );
   }
   return (
-    <div className="flex flex-col gap-4">
-      {controller.classes.map((item) => (
-        <LearningClassCard key={item.enrollmentId} item={item} today={controller.today} />
-      ))}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        {controller.classes.map((item) => (
+          <LearningClassCard key={item.enrollmentId} item={item} today={controller.today} />
+        ))}
+      </div>
+      {controller.history.length > 0 ? (
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold text-mist-100">Lịch sử học tập</h2>
+          {controller.history.map((item) => (
+            <LearningClassCard key={item.enrollmentId} item={item} today={controller.today} />
+          ))}
+        </section>
+      ) : null}
     </div>
   );
 }

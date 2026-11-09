@@ -1,7 +1,7 @@
 """Curated EduERP endpoint registry with exact RBAC (resource, action, min_scope) requirements.
 
 Not exposed on purpose: credential flows (login, password change/reset, invite completion), so an
-AI client never handles a password; binary downloads and uploads (exports, avatar, contract scans);
+AI client never handles a password; binary downloads and uploads (exports, avatar);
 the notification SSE stream; and the VNPay server-to-server callbacks.
 
 Every entry mirrors one Spring controller method: same HTTP method and path, the same
@@ -126,7 +126,7 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
             "schedule",
         ),
     ),
-    # Teachers - TeacherAdminController (READ_TEACHER@BRANCH, CREATE_TEACHER@ORGANIZATION)
+    # Teachers - TeacherAdminController (READ_TEACHER@BRANCH, CREATE_TEACHER@BRANCH)
     EndpointSpec(
         endpoint_id="teachers.list",
         domain="teacher",
@@ -135,8 +135,8 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.TEACHER,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách hồ sơ giáo viên và môn dạy.",
-        query_params=_PAGING,
+        summary="Danh sách hồ sơ giáo viên; query tìm theo tên hoặc email; admin chi nhánh chỉ thấy chi nhánh mình.",
+        query_params=(*_PAGING, "branchId", "query"),
     ),
     EndpointSpec(
         endpoint_id="teachers.create",
@@ -145,9 +145,14 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         path_template="/api/teachers/profiles",
         resource=C.Resources.TEACHER,
         action=C.Actions.CREATE,
-        min_scope=C.Scopes.ORGANIZATION,
-        summary="Tạo giáo viên mới kèm tài khoản; hệ thống gửi email mời tới địa chỉ email.",
-        body_fields=("email", "fullName", "homeBranchId", "subjects", "phone", "bio"),
+        min_scope=C.Scopes.BRANCH,
+        summary=(
+            "Tạo giáo viên mới kèm tài khoản và mức lương; hệ thống gửi email mời tới địa chỉ email. "
+            "Giáo viên chỉ dạy lớp thuộc chi nhánh chủ quản homeBranchId. "
+            "payTerms gồm payType (MONTHLY hoặc HOURLY), workStartDate, monthlySalary hoặc hourlyRate, "
+            "probationEndDate, dependentCount, allowances."
+        ),
+        body_fields=("email", "fullName", "homeBranchId", "subjects", "phone", "bio", "payTerms"),
     ),
     # Students - StudentAdminController (STUDENT:*@BRANCH)
     EndpointSpec(
@@ -159,7 +164,7 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
         summary="Danh sách hồ sơ học viên trong phạm vi chi nhánh được phép.",
-        query_params=_PAGING,
+        query_params=(*_PAGING, "branchId", "query"),
     ),
     EndpointSpec(
         endpoint_id="students.create",
@@ -210,7 +215,7 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
         summary="Danh sách hóa đơn học phí; status: UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED.",
-        query_params=(*_PAGING, "studentProfileId", "enrollmentId", "status"),
+        query_params=(*_PAGING, "studentProfileId", "enrollmentId", "status", "branchId"),
     ),
     EndpointSpec(
         endpoint_id="invoices.create",
@@ -220,8 +225,11 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.INVOICE,
         action=C.Actions.CREATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Phát hành một đợt học phí cho một ghi danh (tối đa 3 đợt, tổng không vượt học phí).",
-        body_fields=("enrollmentId", "amount", "dueDate"),
+        summary=(
+            "Lập lại hóa đơn học phí cho một ghi danh đã bị hủy hóa đơn. Hóa đơn tự lập khi ghi danh, thu đủ một lần, "
+            "hạn là ngày thứ 7 từ ngày khai giảng; số tiền và hạn do hệ thống tính."
+        ),
+        body_fields=("enrollmentId",),
     ),
     EndpointSpec(
         endpoint_id="invoices.manual_payment",
@@ -231,7 +239,10 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.INVOICE,
         action=C.Actions.UPDATE,
         min_scope=C.Scopes.BRANCH,
-        summary="Ghi nhận khoản thu tại trung tâm cho hóa đơn; method: CASH hoặc BANK_TRANSFER.",
+        summary=(
+            "Ghi nhận thu đủ tại trung tâm; amount phải đúng phần còn lại của hóa đơn, không nhận trả một phần; "
+            "method: CASH hoặc BANK_TRANSFER."
+        ),
         path_params=("invoiceId",),
         body_fields=("amount", "method", "note"),
     ),
@@ -269,18 +280,7 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         summary="Nhập hoặc sửa điểm một cột điểm cho một học viên trong lớp.",
         body_fields=("classId", "enrollmentId", "courseGradeColumnId", "score"),
     ),
-    # Payroll - ContractAdminController / PayrollRunAdminController (PAYROLL:*@ORGANIZATION)
-    EndpointSpec(
-        endpoint_id="contracts.list",
-        domain="payroll",
-        method="GET",
-        path_template="/api/payroll/contracts",
-        resource=C.Resources.PAYROLL,
-        action=C.Actions.READ,
-        min_scope=C.Scopes.ORGANIZATION,
-        summary="Danh sách hợp đồng lao động, lọc theo tài khoản nhân sự.",
-        query_params=(*_PAGING, "accountId"),
-    ),
+    # Payroll - PayrollRunAdminController (PAYROLL:*@ORGANIZATION)
     EndpointSpec(
         endpoint_id="payroll_runs.list",
         domain="payroll",
@@ -314,8 +314,11 @@ _CORE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         resource=C.Resources.ACCOUNT,
         action=C.Actions.READ,
         min_scope=C.Scopes.BRANCH,
-        summary="Danh sách tài khoản người dùng, lọc theo chi nhánh.",
-        query_params=(*_PAGING, "branchId"),
+        summary=(
+            "Danh sách tài khoản; lọc theo branchId, roleCode, status (ACTIVE, DISABLED, CLOSED), query tìm theo tên "
+            "hoặc email. Admin chi nhánh luôn chỉ thấy chi nhánh mình."
+        ),
+        query_params=(*_PAGING, "branchId", "roleCode", "status", "query"),
     ),
     # Access - RbacAdminController (READ_ROLE = ROLE:READ@ORGANIZATION). The catalog already
     # returns roles, permission groups, branches and permissions; there is no GET /api/rbac/roles.

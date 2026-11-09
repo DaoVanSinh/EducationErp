@@ -1,26 +1,22 @@
-import { useBranchPaging } from "@/entities/branch";
-import { useStudents, type StudentProfileSummary } from "@/entities/student";
 import { Can, RequirePermission } from "@/entities/permission";
+import { useStudentsPageController } from "@/modules/students/hooks/use-students-page-controller";
 import { CreateStudentDialog } from "@/modules/students/ui/create-student-dialog";
 import { EditStudentDialog } from "@/modules/students/ui/edit-student-dialog";
 import { StudentsTable } from "@/modules/students/ui/students-table";
 import { ACCESS_RULE } from "@/shared/constants/permissions";
-import { DEFAULT_PAGE_SIZE } from "@/shared/constants/query-config";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { GlassButton } from "@/shared/ui/glass-button";
+import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassPanel } from "@/shared/ui/glass-panel";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Pagination } from "@/shared/ui/pagination";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Plus, Users } from "lucide-react";
-import { useState } from "react";
 
 export function StudentsPage() {
-  const { branchId, page, setPage } = useBranchPaging();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<StudentProfileSummary | null>(null);
-  const students = useStudents(page, DEFAULT_PAGE_SIZE, branchId);
+  const { students, setPage, createDialogOpen, setCreateDialogOpen, editing, setEditing, queryInput, onQueryChange } =
+    useStudentsPageController();
 
   return (
     <RequirePermission {...ACCESS_RULE.readStudent}>
@@ -40,6 +36,12 @@ export function StudentsPage() {
         {students.isError ? <ErrorNotice error={students.error} /> : null}
 
         <GlassPanel className="flex flex-col gap-4">
+          <GlassInput
+            aria-label="Tìm theo tên hoặc email"
+            placeholder="Tìm theo tên hoặc email"
+            value={queryInput}
+            onChange={(event) => onQueryChange(event.target.value)}
+          />
           {students.isPending ? (
             <div className="flex flex-col gap-2">
               <Skeleton className="h-16" />

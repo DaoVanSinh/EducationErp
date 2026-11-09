@@ -1,69 +1,44 @@
 import {
-  contractSummarySchema,
+  branchPayslipSchema,
   myPayslipSchema,
   payrollRunDetailSchema,
   payrollRunSummarySchema,
   payslipSchema,
-  type CreateContractPayload,
+  type BranchPayslipFilters,
   type CreatePayrollRunPayload,
+  type MarkPayslipPaidPayload,
   type RejectPayrollRunPayload,
-  type UpdateContractPayload,
+  type UndoPayslipPaymentPayload,
   type UpdatePayslipPayload,
 } from "@/entities/payroll/model/payroll-schema";
 import { apiClient } from "@/shared/api/api-client";
 import { pageResponseSchema } from "@/shared/api/schemas";
 import { API_ROUTE } from "@/shared/constants/api-routes";
 
-const contractPageSchema = pageResponseSchema(contractSummarySchema);
 const payrollRunPageSchema = pageResponseSchema(payrollRunSummarySchema);
 const myPayslipPageSchema = pageResponseSchema(myPayslipSchema);
-
-function toContractFormData(payload: CreateContractPayload | UpdateContractPayload, file: File | null): FormData {
-  const formData = new FormData();
-  formData.append("request", new Blob([JSON.stringify(payload)], { type: "application/json" }));
-  if (file) {
-    formData.append("file", file);
-  }
-  return formData;
-}
-
-export const contractApi = {
-  async listContracts(page: number, size: number, accountId?: string, branchId?: string) {
-    return contractPageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.payroll.contracts, { page, size, accountId, branchId }),
-    );
-  },
-
-  async createContract(payload: CreateContractPayload, file: File | null) {
-    return contractSummarySchema.parse(
-      await apiClient.postForm<unknown>(API_ROUTE.payroll.contracts, toContractFormData(payload, file)),
-    );
-  },
-
-  async updateContract(contractId: string, payload: UpdateContractPayload, file: File | null) {
-    return contractSummarySchema.parse(
-      await apiClient.patchForm<unknown>(API_ROUTE.payroll.contract(contractId), toContractFormData(payload, file)),
-    );
-  },
-
-  async terminateContract(contractId: string): Promise<void> {
-    await apiClient.post<void>(API_ROUTE.payroll.contractTerminate(contractId));
-  },
-
-  async downloadContractFile(contractId: string): Promise<{ blob: Blob; fileName: string | null }> {
-    return apiClient.getBlob(API_ROUTE.payroll.contractFile(contractId));
-  },
-
-  /** Hợp đồng CỦA CHÍNH người gọi - không cần quyền READ_PAYROLL (PayrollSelfServiceController). */
-  async listMyContracts(page: number, size: number) {
-    return contractPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.payroll.myContracts, { page, size }));
-  },
-} as const;
+const branchPayslipPageSchema = pageResponseSchema(branchPayslipSchema);
 
 export const payslipApi = {
-  /** Phiếu lương CỦA CHÍNH người gọi, xuyên mọi kỳ lương - không cần quyền READ_PAYROLL. */
+  /** Phiếu lương CỦA CHÍNH người gọi, chỉ từ kỳ đã duyệt - không cần quyền READ_PAYROLL. */
   async listMyPayslips(page: number, size: number) {
     return myPayslipPageSchema.parse(await apiClient.get<unknown>(API_ROUTE.payroll.myPayslips, { page, size }));
+  },
+
+  /** Phiếu đã duyệt để chi trả: admin chi nhánh luôn bị backend ép về chi nhánh của mình. */
+  async listBranchPayslips(page: number, size: number, filters: BranchPayslipFilters) {
+    return branchPayslipPageSchema.parse(
+      await apiClient.get<unknown>(API_ROUTE.payroll.branchPayslips, { page, size, ...filters }),
+    );
+  },
+
+  async markPaid(payslipId: string, payload: MarkPayslipPaidPayload): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.payroll.branchPayslipPay(payslipId), payload);
+  },
+
+  /** Chỉ admin gốc huỷ được đánh dấu nhầm, bắt buộc có lý do. */
+  async undoPayment(payslipId: string, payload: UndoPayslipPaymentPayload): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.payroll.branchPayslipUndo(payslipId), payload);
   },
 } as const;
 
@@ -84,6 +59,10 @@ export const payrollRunApi = {
     return payslipSchema.parse(
       await apiClient.patch<unknown>(API_ROUTE.payroll.payslip(runId, payslipId), payload),
     );
+  },
+
+  async recalculate(runId: string): Promise<void> {
+    await apiClient.post<void>(API_ROUTE.payroll.runRecalculate(runId));
   },
 
   async submitForApproval(runId: string): Promise<void> {

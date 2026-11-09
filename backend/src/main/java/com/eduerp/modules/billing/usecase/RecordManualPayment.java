@@ -50,7 +50,8 @@ public class RecordManualPayment {
             throw new InvoiceNotPayableException(invoiceId, invoice.getStatus());
         }
         var remaining = BillingRules.remaining(invoice.getAmount(), invoice.getAmountPaid());
-        if (amount.signum() <= 0 || amount.compareTo(remaining) > 0) {
+        // Thu đủ một lần: số gửi lên phải đúng phần còn lại, không ghi nhận trả một phần.
+        if (amount.compareTo(remaining) != 0) {
             throw new InvalidPaymentAmountException(amount);
         }
 

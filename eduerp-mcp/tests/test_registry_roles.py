@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 
 import httpx
@@ -81,11 +80,27 @@ def test_teacher_reaches_teaching_tools_and_nothing_administrative() -> None:
     assert {
         "teaching.my_classes", "attendance.class", "attendance.record", "grades.class_gradebook",
         "grades.upsert", "grades.class_progress", "assignments.create", "assignments.record_results",
-        "mini_tasks.create", "payroll.my_payslips",
+        "mini_tasks.create", "payroll.my_payslips", "teaching.my_taught_classes",
     } <= reachable
     assert reachable.isdisjoint({
         "students.list", "accounts.list", "invoices.list", "enrollments.create", "payroll_runs.list",
         "learning.my_classes", "rbac.catalog",
+    })
+
+
+def test_branch_admin_runs_their_branch_but_not_the_organization() -> None:
+    granted = {
+        ("ACCOUNT", "READ"): "BRANCH",
+        ("ACCOUNT", "UPDATE"): "BRANCH",
+        ("PAYROLL", "READ"): "BRANCH",
+        ("PAYROLL", "UPDATE"): "BRANCH",
+        ("INVOICE", "UPDATE"): "BRANCH",
+    }
+    reachable = _reachable(granted)
+    assert {"accounts.list", "accounts.disable", "accounts.close", "branch_payslips.list", "branch_payslips.pay"} <= reachable
+    assert reachable.isdisjoint({
+        "accounts.change_role", "accounts.transfer_branch", "branch_payslips.undo_payment", "payroll_runs.list",
+        "invoices.extend",
     })
 
 
@@ -132,22 +147,6 @@ async def test_put_endpoints_are_writes() -> None:
         "rbac.update_role", path_params={"roleId": str(uuid.uuid4())}, body={"name": "X"}, caller=_caller()
     )
     assert seen == ["PUT"]
-
-
-@pytest.mark.asyncio
-async def test_contract_endpoints_send_a_json_request_part() -> None:
-    bodies: list[tuple[str, bytes]] = []
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        bodies.append((request.headers["content-type"], request.content))
-        return httpx.Response(200, json={})
-
-    await _service(handler).execute_write("contracts.create", body={"accountId": "abc"}, caller=_caller())
-
-    content_type, content = bodies[0]
-    assert content_type.startswith("multipart/form-data")
-    assert b'name="request"' in content
-    assert json.dumps({"accountId": "abc"}).encode() in content
 
 
 @pytest.mark.asyncio

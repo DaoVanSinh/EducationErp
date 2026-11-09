@@ -38,6 +38,9 @@ public final class IdentityEvents {
     public record AccountEnabled(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
     }
 
+    public record AccountClosed(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
     /** Admin buộc một tài khoản đăng xuất khỏi mọi thiết bị (spec 6.3 Force-logout). */
     public record AccountSignedOutEverywhere(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
     }

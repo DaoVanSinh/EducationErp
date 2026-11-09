@@ -3,8 +3,10 @@ package com.eduerp.modules.courses;
 import com.eduerp.modules.courses.dto.GradeColumnResponse;
 import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
 import com.eduerp.modules.courses.internal.model.Class;
+import com.eduerp.modules.courses.internal.model.ClassTeacherAssignment;
 import com.eduerp.modules.courses.internal.model.Course;
 import com.eduerp.modules.courses.internal.repository.ClassRepository;
+import com.eduerp.modules.courses.internal.repository.ClassTeacherAssignmentRepository;
 import com.eduerp.modules.courses.internal.repository.CourseRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -91,8 +93,11 @@ public class CoursesManagement {
     private final CourseRepository courses;
     private final ClassRepository classes;
     private final ClassRosterPort roster;
+    private final ClassTeacherAssignmentRepository assignments;
 
-    CoursesManagement(CourseRepository courses, ClassRepository classes, ClassRosterPort roster) {
+    CoursesManagement(CourseRepository courses, ClassRepository classes, ClassRosterPort roster,
+            ClassTeacherAssignmentRepository assignments) {
+        this.assignments = assignments;
         this.courses = courses;
         this.classes = classes;
         this.roster = roster;
@@ -134,6 +139,23 @@ public class CoursesManagement {
     @Transactional(readOnly = true)
     public List<UUID> teacherIdsTeachingAt(UUID branchId) {
         return classes.findTeacherIdsAtBranch(branchId, OPEN_STATUSES);
+    }
+
+    /** Số lớp còn mở của một giáo viên - phải bàn giao hết trước khi cho nghỉ. */
+    @Transactional(readOnly = true)
+    public long openClassCountOf(UUID teacherId) {
+        return classes.countByTeacherIdAndStatusIn(teacherId, OPEN_STATUSES);
+    }
+
+    /**
+     * Ai dạy lớp vào một ngày: người được phân công có hiệu lực từ ngày đó trở về trước. Ngày trước mốc đầu tiên thì lấy
+     * người đầu tiên. Rỗng khi lớp chưa có dòng lịch sử nào, nơi gọi dùng giáo viên hiện tại.
+     */
+    @Transactional(readOnly = true)
+    public Optional<UUID> teacherOn(UUID classId, LocalDate date) {
+        return assignments.findFirstByClassIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(classId, date)
+                .or(() -> assignments.findFirstByClassIdOrderByEffectiveFromAsc(classId))
+                .map(ClassTeacherAssignment::getTeacherId);
     }
 
     @Transactional(readOnly = true)

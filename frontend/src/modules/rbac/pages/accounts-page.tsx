@@ -1,6 +1,7 @@
 import { Can, RequirePermission } from "@/entities/permission";
 import { ACCOUNTS_DIALOG, useAccountsPageController } from "@/modules/rbac/hooks/use-accounts-page-controller";
 import { ACCOUNT_COMMAND_COPY } from "@/modules/rbac/model/account-rules";
+import { AccountsFilterBar } from "@/modules/rbac/ui/accounts-filter-bar";
 import { AccountsTable } from "@/modules/rbac/ui/accounts-table";
 import { ChangeRoleDialog } from "@/modules/rbac/ui/change-role-dialog";
 import { CreateAccountDialog } from "@/modules/rbac/ui/create-account-dialog";
@@ -25,7 +26,7 @@ export function AccountsPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Tài khoản"
-          description="Người dùng, vai trò, chi nhánh và trạng thái đăng nhập. Khoá tài khoản thu hồi mọi phiên ngay lập tức."
+          description="Người dùng, vai trò, chi nhánh và trạng thái. Tạm đóng mở lại được; đóng là vĩnh viễn và giải phóng email để tạo tài khoản mới."
           actions={
             <Can {...ACCESS_RULE.createAccount}>
               <GlassButton onClick={controller.openCreateAccountDialog} icon={<Plus size={16} aria-hidden />}>
@@ -38,6 +39,15 @@ export function AccountsPage() {
         {accounts.isError ? <ErrorNotice error={accounts.error} /> : null}
 
         <GlassPanel className="flex flex-col gap-4">
+          <AccountsFilterBar
+            queryInput={controller.queryInput}
+            onQueryChange={controller.setQueryInput}
+            roleCode={controller.roleCode}
+            onRoleChange={controller.setRoleCode}
+            roleOptions={controller.roleOptions}
+            status={controller.status}
+            onStatusChange={controller.setStatus}
+          />
           {accounts.isPending ? (
             <div className="flex flex-col gap-2">
               <Skeleton className="h-16" />
@@ -48,8 +58,8 @@ export function AccountsPage() {
           {accounts.data && accounts.data.items.length === 0 ? (
             <EmptyState
               icon={<Users size={28} aria-hidden />}
-              title="Chưa có tài khoản nào"
-              description="Tài khoản đầu tiên được tạo bởi quá trình khởi tạo hệ thống."
+              title="Không có tài khoản phù hợp"
+              description="Thử bỏ bớt bộ lọc hoặc đổi từ khoá tìm kiếm."
             />
           ) : null}
           {accounts.data && accounts.data.items.length > 0 ? (
@@ -57,6 +67,7 @@ export function AccountsPage() {
               <AccountsTable
                 rows={accounts.data.items}
                 currentAccountId={controller.currentAccountId}
+                canManageOrganization={controller.canManageOrganization}
                 onOpenDialog={controller.openDialog}
                 onCommand={controller.requestCommand}
               />

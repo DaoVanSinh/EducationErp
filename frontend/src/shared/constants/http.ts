@@ -32,7 +32,7 @@ export const HTTP_HEADER = {
   contentType: "Content-Type",
   /** Tên header mà Spring Security đọc khi CookieCsrfTokenRepository được bật. */
   csrfToken: "X-XSRF-TOKEN",
-  /** Backend đính tên file gốc vào đây khi tải file hợp đồng về (ContentDisposition.attachment()). */
+  /** Backend đính tên file gốc vào đây khi tải file về (ContentDisposition.attachment()). */
   contentDisposition: "Content-Disposition",
 } as const;
 

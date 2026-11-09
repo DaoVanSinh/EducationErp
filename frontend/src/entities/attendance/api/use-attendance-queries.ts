@@ -20,3 +20,12 @@ export function useMyAttendance() {
     queryFn: () => attendanceApi.listMyAttendance(),
   });
 }
+
+export function useMyTaughtClasses() {
+  return useQuery({
+    queryKey: attendanceKeys.taughtByMe(),
+    staleTime: QUERY_STALE_TIME_MS.list,
+    retry: QUERY_RETRY_COUNT,
+    queryFn: () => attendanceApi.listMyTaughtClasses(),
+  });
+}

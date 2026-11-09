@@ -1,7 +1,10 @@
 import {
   payrollKeys,
   payrollRunApi,
+  payslipApi,
   type CreatePayrollRunPayload,
+  type MarkPayslipPaidPayload,
+  type UndoPayslipPaymentPayload,
   type RejectPayrollRunPayload,
   type UpdatePayslipPayload,
 } from "@/entities/payroll";
@@ -31,6 +34,14 @@ export function useUpdatePayslip(runId: string) {
   });
 }
 
+export function useRecalculatePayrollRun(runId: string) {
+  const invalidate = useRunsInvalidation();
+  return useMutation({
+    mutationFn: () => payrollRunApi.recalculate(runId),
+    onSuccess: invalidate,
+  });
+}
+
 export function useSubmitPayrollRunForApproval(runId: string) {
   const invalidate = useRunsInvalidation();
   return useMutation({
@@ -51,6 +62,33 @@ export function useRejectPayrollRun(runId: string) {
   const invalidate = useRunsInvalidation();
   return useMutation({
     mutationFn: (payload: RejectPayrollRunPayload) => payrollRunApi.rejectPayrollRun(runId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** Đánh dấu đã trả làm đổi cả tiến độ của kỳ lương, nên dọn luôn cache kỳ. */
+function usePaymentInvalidation(): () => Promise<void> {
+  const queryClient = useQueryClient();
+  return async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: payrollKeys.payslips.all }),
+      queryClient.invalidateQueries({ queryKey: payrollKeys.runs.all }),
+    ]);
+  };
+}
+
+export function useMarkPayslipPaid(payslipId: string) {
+  const invalidate = usePaymentInvalidation();
+  return useMutation({
+    mutationFn: (payload: MarkPayslipPaidPayload) => payslipApi.markPaid(payslipId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUndoPayslipPayment(payslipId: string) {
+  const invalidate = usePaymentInvalidation();
+  return useMutation({
+    mutationFn: (payload: UndoPayslipPaymentPayload) => payslipApi.undoPayment(payslipId, payload),
     onSuccess: invalidate,
   });
 }

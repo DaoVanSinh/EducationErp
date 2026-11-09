@@ -13,6 +13,7 @@ _ORG = C.Scopes.ORGANIZATION
 _BRANCH = C.Scopes.BRANCH
 
 _ACCOUNT_UPDATE = (C.Resources.ACCOUNT, C.Actions.UPDATE, _ORG)
+_ACCOUNT_LIFECYCLE = (C.Resources.ACCOUNT, C.Actions.UPDATE, _BRANCH)
 _BRANCH_READ = (C.Resources.BRANCH, C.Actions.READ, _ORG)
 _BRANCH_UPDATE = (C.Resources.BRANCH, C.Actions.UPDATE, _ORG)
 _CLASS_UPDATE = (C.Resources.CLASS, C.Actions.UPDATE, _BRANCH)
@@ -20,7 +21,10 @@ _ENROLLMENT_UPDATE = (C.Resources.ENROLLMENT, C.Actions.UPDATE, _BRANCH)
 _INVOICE_READ = (C.Resources.INVOICE, C.Actions.READ, _BRANCH)
 _INVOICE_CREATE = (C.Resources.INVOICE, C.Actions.CREATE, _BRANCH)
 _INVOICE_UPDATE = (C.Resources.INVOICE, C.Actions.UPDATE, _BRANCH)
+_INVOICE_EXTEND = (C.Resources.INVOICE, C.Actions.UPDATE, _ORG)
 _PAYROLL_READ = (C.Resources.PAYROLL, C.Actions.READ, _ORG)
+_BRANCH_PAYSLIP_READ = (C.Resources.PAYROLL, C.Actions.READ, _BRANCH)
+_BRANCH_PAYSLIP_PAY = (C.Resources.PAYROLL, C.Actions.UPDATE, _BRANCH)
 _PAYROLL_CREATE = (C.Resources.PAYROLL, C.Actions.CREATE, _ORG)
 _PAYROLL_UPDATE = (C.Resources.PAYROLL, C.Actions.UPDATE, _ORG)
 _PAYROLL_APPROVE = (C.Resources.PAYROLL, C.Actions.APPROVE, _ORG)
@@ -61,9 +65,20 @@ ACADEMIC_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
     ),
     endpoint(
         "teachers.update", "teacher", "PATCH", "/api/teachers/profiles/{profileId}",
-        (C.Resources.TEACHER, C.Actions.UPDATE, _ORG),
-        "Sửa hồ sơ giáo viên.",
-        body_fields=("subjects", "phone", "bio", "active"),
+        (C.Resources.TEACHER, C.Actions.UPDATE, _BRANCH),
+        "Sửa môn dạy, điện thoại, giới thiệu. Cho nghỉ là thao tác riêng.",
+        body_fields=("subjects", "phone", "bio"),
+    ),
+    endpoint(
+        "teachers.leave", "teacher", "POST", "/api/teachers/profiles/{profileId}/leave",
+        (C.Resources.TEACHER, C.Actions.UPDATE, _BRANCH),
+        "Cho giáo viên nghỉ từ lastWorkDate; bị chặn khi còn lớp mở, dừng lương tháng, tài khoản vẫn xem được dữ liệu của mình.",
+        body_fields=("lastWorkDate",),
+    ),
+    endpoint(
+        "teachers.branch_history", "teacher", "GET", "/api/teachers/profiles/{profileId}/branch-history",
+        (C.Resources.TEACHER, C.Actions.READ, _BRANCH),
+        "Lịch sử chuyển chi nhánh chủ quản của giáo viên.",
     ),
     endpoint(
         "students.get", "admission", "GET", "/api/students/profiles/{profileId}",
@@ -109,14 +124,19 @@ FINANCE_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
         "Hủy một hóa đơn chưa thu.",
     ),
     endpoint(
+        "invoices.extend", "finance", "POST", "/api/billing/invoices/{invoiceId}/extend", _INVOICE_EXTEND,
+        "Gia hạn học phí, chỉ admin gốc; dueDate là hạn mới, bắt buộc reason. Hóa đơn rời danh sách quá hạn.",
+        body_fields=("dueDate", "reason"),
+    ),
+    endpoint(
         "combos.create", "finance", "POST", "/api/billing/combos", _INVOICE_CREATE,
-        "Tạo combo nhiều khóa học cho một học viên từ các ghi danh đã có.",
-        body_fields=("studentProfileId", "enrollmentIds", "dueDate"),
+        "Tạo combo từ các ghi danh đã có; hóa đơn lẻ chưa thu được thay bằng một hóa đơn đã giảm, hạn do hệ thống tính.",
+        body_fields=("studentProfileId", "enrollmentIds"),
     ),
     endpoint(
         "combos.create_invoice", "finance", "POST", "/api/billing/combos/invoices", _INVOICE_CREATE,
-        "Phát hành một đợt học phí cho combo.",
-        body_fields=("comboId", "amount", "dueDate"),
+        "Lập lại hóa đơn của combo sau khi đã hủy; số tiền là phần còn lại của tổng sau giảm giá.",
+        body_fields=("comboId",),
     ),
     endpoint(
         "combos.get", "finance", "GET", "/api/billing/combos/{comboId}", _INVOICE_READ,
@@ -161,30 +181,23 @@ FINANCE_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
 
 PAYROLL_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
     endpoint(
-        "contracts.create", "payroll", "POST", "/api/payroll/contracts", _PAYROLL_CREATE,
+        "teachers.get_pay", "payroll", "GET", "/api/teachers/profiles/{profileId}/pay", _PAYROLL_READ,
+        "Mức lương của một giáo viên.",
+    ),
+    endpoint(
+        "teachers.update_pay", "payroll", "PUT", "/api/teachers/profiles/{profileId}/pay", _PAYROLL_UPDATE,
         (
-            "Tạo hợp đồng lao động; contractType: OFFICIAL hoặc COLLABORATOR "
-            "(không kèm file scan; tải file scan ở giao diện web)."
+            "Thiết lập hoặc sửa mức lương của giáo viên; payType: MONTHLY (cần monthlySalary) hoặc "
+            "HOURLY (cần hourlyRate, không có thử việc, người phụ thuộc, phụ cấp)."
         ),
         body_fields=(
-            "accountId", "contractType", "baseSalary", "hourlyRate", "probationStartDate",
-            "probationEndDate", "startDate", "allowances",
+            "payType", "monthlySalary", "hourlyRate", "workStartDate", "probationEndDate", "dependentCount",
+            "allowances",
         ),
-        multipart_part="request",
-    ),
-    endpoint(
-        "contracts.update", "payroll", "PATCH", "/api/payroll/contracts/{contractId}", _PAYROLL_UPDATE,
-        "Sửa hợp đồng lao động (không đổi file scan).",
-        body_fields=("baseSalary", "hourlyRate", "probationEndDate", "allowances"),
-        multipart_part="request",
-    ),
-    endpoint(
-        "contracts.terminate", "payroll", "POST", "/api/payroll/contracts/{contractId}/terminate", _PAYROLL_UPDATE,
-        "Chấm dứt một hợp đồng lao động.",
     ),
     endpoint(
         "payroll_runs.create", "payroll", "POST", "/api/payroll/runs", _PAYROLL_CREATE,
-        "Tạo kỳ lương theo tháng.",
+        "Tạo kỳ lương cho một tháng; hệ thống tính phiếu từ mức lương và điểm danh. Không tạo được tháng tương lai.",
         body_fields=("year", "month"),
     ),
     endpoint(
@@ -194,16 +207,36 @@ PAYROLL_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
     endpoint(
         "payroll_runs.update_payslip", "payroll", "PATCH", "/api/payroll/runs/{runId}/payslips/{payslipId}",
         _PAYROLL_UPDATE,
-        "Sửa giờ công, thuế khấu trừ hoặc ghi chú của một phiếu lương.",
-        body_fields=("hoursWorked", "incomeTaxWithheld", "note"),
+        "Nhập thưởng/điều chỉnh của một phiếu lương (âm là trừ); khác 0 thì bắt buộc có note. Giờ dạy và thuế do hệ thống tính.",
+        body_fields=("adjustment", "note"),
+    ),
+    endpoint(
+        "payroll_runs.recalculate", "payroll", "POST", "/api/payroll/runs/{runId}/recalculate", _PAYROLL_UPDATE,
+        "Tính lại kỳ lương nháp từ mức lương và điểm danh hiện tại; giữ nguyên thưởng/điều chỉnh.",
     ),
     endpoint(
         "payroll_runs.submit", "payroll", "POST", "/api/payroll/runs/{runId}/submit", _PAYROLL_UPDATE,
-        "Gửi kỳ lương đi duyệt.",
+        "Gửi kỳ lương đi duyệt; chỉ được sau khi hết tháng và mọi giáo viên đã dạy đều có mức lương.",
     ),
     endpoint(
         "payroll_runs.approve", "payroll", "POST", "/api/payroll/runs/{runId}/approve", _PAYROLL_APPROVE,
-        "Duyệt kỳ lương.",
+        "Duyệt kỳ lương; phiếu chuyển xuống chi nhánh chủ quản của giáo viên để chi trả.",
+    ),
+    endpoint(
+        "branch_payslips.list", "payroll", "GET", "/api/payroll/branch-payslips", _BRANCH_PAYSLIP_READ,
+        "Phiếu lương đã duyệt để chi trả; lọc branchId, year, month, paid. Admin chi nhánh chỉ thấy chi nhánh mình.",
+        query_params=("page", "size", "branchId", "year", "month", "paid"),
+    ),
+    endpoint(
+        "branch_payslips.pay", "payroll", "POST", "/api/payroll/branch-payslips/{payslipId}/pay", _BRANCH_PAYSLIP_PAY,
+        "Đánh dấu đã trả đủ một phiếu; method: CASH hoặc BANK_TRANSFER; số tiền đã chốt lúc duyệt, không sửa được.",
+        body_fields=("paidOn", "method", "note"),
+    ),
+    endpoint(
+        "branch_payslips.undo_payment", "payroll", "POST", "/api/payroll/branch-payslips/{payslipId}/undo-payment",
+        _PAYROLL_UPDATE,
+        "Huỷ đánh dấu đã trả nhầm, chỉ admin gốc, bắt buộc reason.",
+        body_fields=("reason",),
     ),
     endpoint(
         "payroll_runs.reject", "payroll", "POST", "/api/payroll/runs/{runId}/reject", _PAYROLL_APPROVE,
@@ -216,16 +249,20 @@ SYSTEM_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
     endpoint(
         "accounts.create", "identity", "POST", "/api/rbac/accounts",
         (C.Resources.ACCOUNT, C.Actions.CREATE, _ORG),
-        "Tạo tài khoản; hệ thống gửi email mời.",
+        "Tạo tài khoản nhân viên; giáo viên và học viên tạo bằng công cụ riêng. Hệ thống gửi email mời.",
         body_fields=("email", "fullName", "homeBranchId", "roleId"),
     ),
     endpoint(
-        "accounts.disable", "identity", "POST", "/api/rbac/accounts/{accountId}/disable", _ACCOUNT_UPDATE,
-        "Khóa một tài khoản.",
+        "accounts.disable", "identity", "POST", "/api/rbac/accounts/{accountId}/disable", _ACCOUNT_LIFECYCLE,
+        "Tạm đóng một tài khoản: không đăng nhập được, mở lại được. Admin chi nhánh làm được trong chi nhánh mình.",
     ),
     endpoint(
-        "accounts.enable", "identity", "POST", "/api/rbac/accounts/{accountId}/enable", _ACCOUNT_UPDATE,
-        "Mở khóa một tài khoản.",
+        "accounts.enable", "identity", "POST", "/api/rbac/accounts/{accountId}/enable", _ACCOUNT_LIFECYCLE,
+        "Mở lại một tài khoản đang tạm đóng.",
+    ),
+    endpoint(
+        "accounts.close", "identity", "POST", "/api/rbac/accounts/{accountId}/close", _ACCOUNT_LIFECYCLE,
+        "Đóng vĩnh viễn: giải phóng email, dừng lương. Bị chặn khi còn lớp mở, còn đang học hoặc còn nợ học phí.",
     ),
     endpoint(
         "accounts.sign_out_everywhere", "identity", "POST", "/api/rbac/accounts/{accountId}/sign-out-everywhere",
@@ -243,12 +280,12 @@ SYSTEM_ADMIN_ENDPOINTS: tuple[EndpointSpec, ...] = (
     endpoint(
         "accounts.transfer_branch", "identity", "POST", "/api/rbac/accounts/{accountId}/transfer-branch",
         _ACCOUNT_UPDATE,
-        "Chuyển tài khoản sang chi nhánh khác.",
+        "Chuyển tài khoản sang chi nhánh khác, chỉ admin gốc; giáo viên phải bàn giao hết lớp mở trước, lịch sử được lưu.",
         body_fields=("branchId",),
     ),
     endpoint(
         "accounts.change_role", "access", "PATCH", "/api/rbac/accounts/{accountId}/role", _ACCOUNT_UPDATE,
-        "Đổi vai trò của một tài khoản.",
+        "Đổi giữa các vai trò nhân viên. Giáo viên và học viên không đổi được: đóng tài khoản cũ rồi tạo mới cùng email.",
         body_fields=("roleId",),
     ),
     endpoint(

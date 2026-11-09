@@ -1,13 +1,16 @@
 package com.eduerp.modules.teachers.usecase;
 
+import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.identity.IdentityManagement;
 import com.eduerp.modules.teachers.dto.TeacherProfileResponse;
+import com.eduerp.modules.teachers.internal.TeacherProfileAssembler;
+import com.eduerp.modules.teachers.internal.access.TeacherBranchGuard;
 import com.eduerp.modules.teachers.internal.model.TeacherProfile;
 import com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository;
 import com.eduerp.shared.PageResponse;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,33 +23,44 @@ public class ListTeacherProfiles {
     private final TeacherProfileRepository profiles;
     private final IdentityManagement identity;
     private final CoursesManagement courses;
+    private final TeacherBranchGuard branchGuard;
+    private final TeacherProfileAssembler assembler;
 
-    ListTeacherProfiles(TeacherProfileRepository profiles, IdentityManagement identity, CoursesManagement courses) {
+    ListTeacherProfiles(TeacherProfileRepository profiles, IdentityManagement identity, CoursesManagement courses,
+            TeacherBranchGuard branchGuard, TeacherProfileAssembler assembler) {
         this.profiles = profiles;
         this.identity = identity;
         this.courses = courses;
+        this.branchGuard = branchGuard;
+        this.assembler = assembler;
     }
 
+    /** Scope BRANCH bị ép về chi nhánh của người gọi; {@code query} tìm theo tên hoặc email. */
     @Transactional(readOnly = true)
-    public PageResponse<TeacherProfileResponse> execute(Pageable pageable, UUID branchId) {
-        Page<TeacherProfile> page = branchId == null ? profiles.findAll(pageable) : pageOfBranch(branchId, pageable);
-        var accountIds = page.getContent().stream().map(TeacherProfile::getAccountId).toList();
-        var accountInfo = identity.summariesOf(accountIds);
-        return PageResponse.of(page.map(profile -> toResponse(profile, accountInfo)));
+    public PageResponse<TeacherProfileResponse> execute(UUID actorAccountId, Pageable pageable,
+            UUID requestedBranchId, String query) {
+        var branchId = branchGuard.scopeOf(actorAccountId, AccessConstants.Actions.READ)
+                .branchFilter(requestedBranchId);
+        Set<UUID> accountIds = branchId == null ? null : accountsOfBranch(branchId);
+        if (query != null && !query.isBlank()) {
+            var matching = new HashSet<>(identity.accountIdsMatching(query));
+            if (accountIds != null) {
+                matching.retainAll(accountIds);
+            }
+            accountIds = matching;
+        }
+        if (accountIds == null) {
+            return PageResponse.of(assembler.toPage(profiles.findAll(pageable)));
+        }
+        Page<TeacherProfile> page = accountIds.isEmpty() ? Page.empty(pageable)
+                : profiles.findByAccountIdIn(accountIds, pageable);
+        return PageResponse.of(assembler.toPage(page));
     }
 
-    /** Giáo viên của một chi nhánh: cơ sở chính ở đó, hoặc đang dạy lớp còn mở ở đó (nhiều người dạy nhiều cơ sở). */
-    private Page<TeacherProfile> pageOfBranch(UUID branchId, Pageable pageable) {
+    /** Giáo viên của một chi nhánh: cơ sở chính ở đó, hoặc đang dạy lớp còn mở ở đó (lớp cũ giữ tới khi kết thúc). */
+    private Set<UUID> accountsOfBranch(UUID branchId) {
         var accountIds = new HashSet<>(identity.accountIdsByBranch(branchId));
         accountIds.addAll(courses.teacherIdsTeachingAt(branchId));
-        return accountIds.isEmpty() ? Page.empty(pageable) : profiles.findByAccountIdIn(accountIds, pageable);
-    }
-
-    private static TeacherProfileResponse toResponse(TeacherProfile profile,
-            Map<UUID, IdentityManagement.AccountBasicInfo> accountInfo) {
-        var account = accountInfo.get(profile.getAccountId());
-        return new TeacherProfileResponse(profile.getId(), profile.getAccountId(),
-                account == null ? null : account.fullName(), account == null ? null : account.email(),
-                profile.getSubjects(), profile.getPhone(), profile.getBio(), profile.isActive());
+        return accountIds;
     }
 }

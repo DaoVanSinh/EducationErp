@@ -20,11 +20,7 @@ import com.eduerp.modules.landing.LandingConstants;
 import com.eduerp.modules.landing.dto.SubmitConsultationRequest;
 import com.eduerp.modules.organization.internal.model.Branch;
 import com.eduerp.modules.organization.internal.repository.BranchRepository;
-import com.eduerp.modules.payroll.PayrollConstants;
-import com.eduerp.modules.payroll.internal.model.EmploymentContract;
-import com.eduerp.modules.payroll.internal.repository.EmploymentContractRepository;
 import com.eduerp.modules.students.StudentsManagement;
-import com.eduerp.modules.teachers.internal.model.TeacherProfile;
 import com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
@@ -81,8 +77,9 @@ class BranchFilterIT {
     @Autowired BranchRepository branches;
     @Autowired StudentsManagement students;
     @Autowired TeacherProfileRepository teacherProfiles;
-    @Autowired EmploymentContractRepository contracts;
     @Autowired PasswordEncoder passwordEncoder;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @Autowired com.eduerp.modules.courses.internal.repository.ClassRepository classes;
 
     private String suffix;
     private Cookie admin;
@@ -111,9 +108,7 @@ class BranchFilterIT {
 
     private UUID teacher(String name, UUID homeBranchId) {
         var accountId = account(name + "-" + suffix + "@eduerp.local", AccessConstants.RoleCodes.TEACHER, homeBranchId);
-        if (!teacherProfiles.existsByAccountId(accountId)) {
-            teacherProfiles.save(new TeacherProfile(accountId, List.of(), null, null));
-        }
+        com.eduerp.modules.teachers.TeacherFixtures.makeAssignable(teacherProfiles, jdbc, accountId);
         return accountId;
     }
 
@@ -126,7 +121,9 @@ class BranchFilterIT {
         return courses.save(new Course(code + "-" + suffix, "Khoá " + code, null, 24, new BigDecimal("5000000"))).getId();
     }
 
-    private UUID openClass(String code, UUID courseId, UUID branchId, UUID teacherId) throws Exception {
+    /** Mỗi lớp một giáo viên của đúng chi nhánh đó: giáo viên chỉ dạy chi nhánh chủ quản và không được trùng giờ. */
+    private UUID openClass(String code, UUID courseId, UUID branchId) throws Exception {
+        var teacherId = teacher("t-" + code.toLowerCase(), branchId);
         var result = postJson("/api/courses/classes", new CreateClassRequest(courseId, code + "-" + suffix, branchId,
                 teacherId, 10, 1, TODAY, null, SCHEDULE));
         assertThat(result).as("mở lớp %s", code).isNotBlank();
@@ -162,7 +159,7 @@ class BranchFilterIT {
         var homeHanoiStudiesThaiBinh = student("s-cross", hanoi);
         var homeThaiBinh = student("s-tb", thaiBinh);
         var homeHanoi = student("s-hn", hanoi);
-        var classAtThaiBinh = openClass("L-TB", course("C-S"), thaiBinh, teacher("t-s", thaiBinh));
+        var classAtThaiBinh = openClass("L-TB", course("C-S"), thaiBinh);
         enroll(homeHanoiStudiesThaiBinh, classAtThaiBinh);
 
         assertThat(list("/api/students/profiles", thaiBinh, "id"))
@@ -181,7 +178,9 @@ class BranchFilterIT {
         var homeHanoiTeachesThaiBinh = teacher("t-cross", hanoi);
         var homeHanoi = teacher("t-hn", hanoi);
         var homeThaiBinh = teacher("t-tb", thaiBinh);
-        openClass("L-T", course("C-T"), thaiBinh, homeHanoiTeachesThaiBinh);
+        // Lớp cũ khác chi nhánh được giữ tới khi kết thúc: dựng thẳng vì API không còn cho mở lớp như vậy.
+        classes.save(com.eduerp.modules.courses.internal.model.ClassFixtures.enrolling(
+                courses.findById(course("C-T")).orElseThrow(), "L-T-" + suffix, thaiBinh, homeHanoiTeachesThaiBinh, 10));
 
         assertThat(list("/api/teachers/profiles", thaiBinh, "accountId"))
                 .contains(homeHanoiTeachesThaiBinh.toString(), homeThaiBinh.toString())
@@ -193,14 +192,13 @@ class BranchFilterIT {
 
     @Test
     void coursesAreListedOnlyWhereTheyHaveAClassThatIsNotCancelled() throws Exception {
-        var teacherId = teacher("t-c", null);
         var atThaiBinh = course("C-TB");
         var atHanoi = course("C-HN");
         var noClass = course("C-NONE");
         var cancelledAtThaiBinh = course("C-CANCEL");
-        openClass("L-C1", atThaiBinh, thaiBinh, teacherId);
-        openClass("L-C2", atHanoi, hanoi, teacherId);
-        var cancelled = openClass("L-C3", cancelledAtThaiBinh, thaiBinh, teacherId);
+        openClass("L-C1", atThaiBinh, thaiBinh);
+        openClass("L-C2", atHanoi, hanoi);
+        var cancelled = openClass("L-C3", cancelledAtThaiBinh, thaiBinh);
         mockMvc.perform(post("/api/courses/classes/" + cancelled + "/cancel").cookie(admin).with(csrf()));
 
         assertThat(list("/api/courses/courses", thaiBinh, "id"))
@@ -212,36 +210,16 @@ class BranchFilterIT {
     @Test
     void classesEnrollmentsAndInvoicesFollowTheirOwnBranch() throws Exception {
         var courseId = course("C-E");
-        var teacherId = teacher("t-e", null);
-        var classHanoi = openClass("L-EH", courseId, hanoi, teacherId);
-        var classThaiBinh = openClass("L-ET", courseId, thaiBinh, teacherId);
+        var classHanoi = openClass("L-EH", courseId, hanoi);
+        var classThaiBinh = openClass("L-ET", courseId, thaiBinh);
         var enrollmentHanoi = enroll(student("s-eh", null), classHanoi);
         var enrollmentThaiBinh = enroll(student("s-et", null), classThaiBinh);
-        postJson("/api/billing/invoices", new CreateInvoiceRequest(UUID.fromString(enrollmentHanoi),
-                new BigDecimal("1000000"), TODAY.plusDays(10)));
-        postJson("/api/billing/invoices", new CreateInvoiceRequest(UUID.fromString(enrollmentThaiBinh),
-                new BigDecimal("1000000"), TODAY.plusDays(10)));
 
         assertThat(list("/api/courses/classes", thaiBinh, "id")).containsExactly(classThaiBinh.toString());
         assertThat(list("/api/enrollment/enrollments", thaiBinh, "id")).containsExactly(enrollmentThaiBinh);
         assertThat(list("/api/billing/invoices", thaiBinh, "enrollmentId")).containsExactly(enrollmentThaiBinh);
         assertThat(list("/api/billing/invoices", null, "enrollmentId"))
                 .contains(enrollmentHanoi, enrollmentThaiBinh);
-    }
-
-    @Test
-    void contractsFollowTheHomeBranchOfTheEmployee() throws Exception {
-        var inHanoi = teacher("t-ch", hanoi);
-        var inThaiBinh = teacher("t-ct", thaiBinh);
-        contracts.save(contractOf(inHanoi));
-        contracts.save(contractOf(inThaiBinh));
-
-        assertThat(list("/api/payroll/contracts", thaiBinh, "accountId")).containsExactly(inThaiBinh.toString());
-    }
-
-    private static EmploymentContract contractOf(UUID accountId) {
-        return new EmploymentContract(accountId, PayrollConstants.ContractType.OFFICIAL, new BigDecimal("10000000"),
-                null, null, null, TODAY, List.of());
     }
 
     @Test

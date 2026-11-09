@@ -20,6 +20,7 @@ import com.eduerp.modules.billing.EnrollmentNotFoundException;
 import com.eduerp.modules.billing.MinimumComboSizeException;
 import com.eduerp.modules.billing.StudentMismatchInComboException;
 import com.eduerp.modules.billing.dto.CreateComboRequest;
+import com.eduerp.modules.billing.internal.TuitionInvoiceIssuer;
 import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.model.ComboDiscountTier;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
@@ -50,9 +51,10 @@ class CreateComboTest {
     private final CoursesManagement coursesManagement = mock(CoursesManagement.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
+    private final TuitionInvoiceIssuer issuer = mock(TuitionInvoiceIssuer.class);
     private final CreateCombo useCase =
             new CreateCombo(combos, tiers, enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class),
-                    discounts, mock(StudentsManagement.class));
+                    discounts, mock(StudentsManagement.class), issuer);
 
     private final UUID actorAccountId = UUID.randomUUID();
     private final UUID actorBranchId = UUID.randomUUID();
@@ -64,14 +66,15 @@ class CreateComboTest {
     private final UUID englishCourseId = UUID.randomUUID();
 
     private CreateComboRequest request(UUID... enrollmentIds) {
-        return new CreateComboRequest(studentProfileId, List.of(enrollmentIds), DUE_DATE);
+        return new CreateComboRequest(studentProfileId, List.of(enrollmentIds));
     }
 
     private void stubEnrollment(UUID enrollmentId, UUID courseId, UUID ownerStudentProfileId, UUID branchId,
             EnrollmentConstants.EnrollmentStatus status) {
         when(enrollmentManagement.getEnrollment(enrollmentId)).thenReturn(Optional.of(
                 new EnrollmentManagement.EnrollmentSummaryResponse(enrollmentId, ownerStudentProfileId, courseId,
-                        branchId, status)));
+                        branchId, status, UUID.randomUUID())));
+        when(issuer.earliestDueDateOf(any())).thenReturn(DUE_DATE);
     }
 
     private void stubTwoActiveEnrollments() {

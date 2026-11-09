@@ -1,10 +1,12 @@
 package com.eduerp.modules.identity.web;
 
 import com.eduerp.modules.access.AccessConstants;
+import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.dto.AccountSummaryResponse;
 import com.eduerp.modules.identity.dto.CreateAccountRequest;
 import com.eduerp.modules.identity.dto.TransferBranchRequest;
-import com.eduerp.modules.identity.usecase.CreateAccount;
+import com.eduerp.modules.identity.usecase.CloseAccount;
+import com.eduerp.modules.identity.usecase.CreateStaffAccount;
 import com.eduerp.modules.identity.usecase.DisableAccount;
 import com.eduerp.modules.identity.usecase.EnableAccount;
 import com.eduerp.modules.identity.usecase.ListAccounts;
@@ -39,7 +41,8 @@ class AccountAdminController {
 
     private final ListAccounts listAccounts;
     private final TransferAccountBranch transferAccountBranch;
-    private final CreateAccount createAccount;
+    private final CreateStaffAccount createAccount;
+    private final CloseAccount closeAccount;
     private final ResendAccountInvite resendAccountInvite;
     private final RevokeAccountInvite revokeAccountInvite;
     private final DisableAccount disableAccount;
@@ -47,12 +50,13 @@ class AccountAdminController {
     private final SignOutEverywhere signOutEverywhere;
 
     AccountAdminController(ListAccounts listAccounts, TransferAccountBranch transferAccountBranch,
-            CreateAccount createAccount, ResendAccountInvite resendAccountInvite,
+            CreateStaffAccount createAccount, CloseAccount closeAccount, ResendAccountInvite resendAccountInvite,
             RevokeAccountInvite revokeAccountInvite, DisableAccount disableAccount, EnableAccount enableAccount,
             SignOutEverywhere signOutEverywhere) {
         this.listAccounts = listAccounts;
         this.transferAccountBranch = transferAccountBranch;
         this.createAccount = createAccount;
+        this.closeAccount = closeAccount;
         this.resendAccountInvite = resendAccountInvite;
         this.revokeAccountInvite = revokeAccountInvite;
         this.disableAccount = disableAccount;
@@ -67,18 +71,28 @@ class AccountAdminController {
     @GetMapping("/accounts")
     @PreAuthorize(AccessConstants.AccessRules.READ_ACCOUNT)
     PageResponse<AccountSummaryResponse> listAccounts(@AuthenticationPrincipal AccountPrincipal principal,
-            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID branchId) {
-        return listAccounts.execute(principal.accountId(), pageable, branchId);
+            @PageableDefault(size = 20) Pageable pageable, @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) String roleCode,
+            @RequestParam(required = false) IdentityConstants.AccountStatus status,
+            @RequestParam(required = false) String query) {
+        return listAccounts.execute(principal.accountId(), pageable,
+                new ListAccounts.Filter(branchId, roleCode, status, query));
     }
 
     @PostMapping("/accounts/{accountId}/disable")
-    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    @PreAuthorize(AccessConstants.AccessRules.MANAGE_ACCOUNT_LIFECYCLE)
     void disable(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
         disableAccount.execute(accountId, principal.accountId(), principal.homeBranchId());
     }
 
+    @PostMapping("/accounts/{accountId}/close")
+    @PreAuthorize(AccessConstants.AccessRules.MANAGE_ACCOUNT_LIFECYCLE)
+    void close(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
+        closeAccount.execute(accountId, principal.accountId(), principal.homeBranchId());
+    }
+
     @PostMapping("/accounts/{accountId}/enable")
-    @PreAuthorize(AccessConstants.AccessRules.UPDATE_ACCOUNT)
+    @PreAuthorize(AccessConstants.AccessRules.MANAGE_ACCOUNT_LIFECYCLE)
     void enable(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID accountId) {
         enableAccount.execute(accountId, principal.accountId(), principal.homeBranchId());
     }

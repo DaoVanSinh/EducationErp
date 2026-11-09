@@ -56,12 +56,11 @@ public final class BillingConstants {
         private Limits() {
         }
 
-        public static final int MAX_INSTALLMENTS_PER_ENROLLMENT = 3;
+        /** Học viên hoàn thành học phí trong 7 ngày đầu: ngày khai giảng là ngày thứ nhất, nên hạn là khai giảng + 6. */
+        public static final int TUITION_DUE_DAYS_AFTER_START = 6;
 
-        /** Spec mục 1: 3 đợt cho CẢ combo, KHÔNG phải 3 đợt mỗi khoá trong combo. Để riêng khỏi
-         * {@link #MAX_INSTALLMENTS_PER_ENROLLMENT} vì đó là hai quyết định nghiệp vụ độc lập: đổi
-         * một cái không được kéo theo cái kia. */
-        public static final int MAX_INSTALLMENTS_PER_COMBO = 3;
+        /** Khớp cột {@code invoices.extension_reason VARCHAR(500)} (V40). */
+        public static final int MAX_EXTENSION_REASON_LENGTH = 500;
 
         /** Spec mục 6 bước 1: dưới mốc này thì đó không phải combo, chỉ là một ghi danh. */
         public static final int MIN_ENROLLMENTS_PER_COMBO = 2;
@@ -81,6 +80,8 @@ public final class BillingConstants {
 
         /** 1:00 sáng mỗi ngày (spec mục 5). */
         public static final String MARK_OVERDUE_CRON = "0 0 1 * * *";
+
+        public static final String CENTER_ZONE_ID = "Asia/Ho_Chi_Minh";
     }
 
     /** Nội dung hiển thị trên cổng thanh toán - người trả tiền thấy chuỗi này trên app MoMo/VNPay. */

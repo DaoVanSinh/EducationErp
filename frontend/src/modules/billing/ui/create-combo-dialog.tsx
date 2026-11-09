@@ -6,7 +6,6 @@ import { CheckableRow } from "@/shared/ui/checkable-row";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
-import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
 import { GlassSelect } from "@/shared/ui/glass-select";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -25,7 +24,7 @@ export function CreateComboDialog({ open, onClose }: CreateComboDialogProps) {
       open={open}
       onClose={onClose}
       title="Tạo combo khoá học"
-      description={`Chọn từ ${MIN_COMBO_ENROLLMENTS} khoá đang học của cùng một học viên. Combo thu tối đa 3 đợt, một hạn đóng chung.`}
+      description={`Chọn từ ${MIN_COMBO_ENROLLMENTS} khoá đang học của cùng một học viên. Hoá đơn lẻ chưa thu được thay bằng một hoá đơn đã giảm, thu đủ một lần, hạn là ngày thứ 7 từ lớp khai giảng sớm nhất.`}
     >
       <form id="create-combo-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
@@ -61,15 +60,6 @@ export function CreateComboDialog({ open, onClose }: CreateComboDialogProps) {
 
         <ComboPricePreview controller={controller} />
 
-        <FormField label="Hạn đóng của combo" htmlFor="combo-due-date" error={form.fieldErrors.dueDate}>
-          <GlassInput
-            id="combo-due-date"
-            type="date"
-            value={form.values.dueDate}
-            invalid={form.fieldErrors.dueDate !== undefined}
-            onChange={(event) => form.setValue("dueDate", event.target.value)}
-          />
-        </FormField>
       </form>
 
       <footer className="flex justify-end gap-2">

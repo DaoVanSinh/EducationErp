@@ -7,11 +7,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * @param teacherOutsideBranch lớp còn mở nhưng giáo viên thuộc chi nhánh khác: lớp cũ được giữ tới khi kết thúc, có cảnh báo
  * @param activeEnrollments số học viên đang học - để màn hình hiện "8/20 (tối thiểu 10)" và biết lớp đã đủ
  *        điều kiện khai giảng chưa
  */
 public record ClassResponse(UUID id, String code, UUID courseId, String courseName, UUID branchId,
         String branchName, UUID teacherId, String teacherName, int maxSeats, int minSeats, long activeEnrollments,
         CoursesConstants.ClassStatus status, LocalDate startDate, LocalDate endDate, Instant startedAt,
-        Instant endedAt, List<WeeklyScheduleSlot> schedule) {
+        Instant endedAt, List<WeeklyScheduleSlot> schedule, boolean teacherOutsideBranch) {
 }

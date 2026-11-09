@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,13 +18,13 @@ import com.eduerp.modules.billing.EnrollmentAlreadyInvoicedException;
 import com.eduerp.modules.billing.GroupMemberMismatchException;
 import com.eduerp.modules.billing.MinimumGroupSizeException;
 import com.eduerp.modules.billing.dto.CreateGroupRegistrationRequest;
+import com.eduerp.modules.billing.internal.TuitionInvoiceIssuer;
 import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.internal.model.ComboDiscountTier;
 import com.eduerp.modules.billing.internal.model.GroupRegistration;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboDiscountTierRepository;
 import com.eduerp.modules.billing.internal.repository.GroupRegistrationRepository;
-import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
@@ -40,12 +42,12 @@ class CreateGroupRegistrationTest {
 
     private final GroupRegistrationRepository groups = mock(GroupRegistrationRepository.class);
     private final ComboDiscountTierRepository tiers = mock(ComboDiscountTierRepository.class);
-    private final InvoiceRepository invoices = mock(InvoiceRepository.class);
+    private final TuitionInvoiceIssuer issuer = mock(TuitionInvoiceIssuer.class);
     private final EnrollmentDiscounts discounts = mock(EnrollmentDiscounts.class);
     private final EnrollmentManagement enrollmentManagement = mock(EnrollmentManagement.class);
     private final CoursesManagement coursesManagement = mock(CoursesManagement.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final CreateGroupRegistration useCase = new CreateGroupRegistration(groups, tiers, invoices, discounts,
+    private final CreateGroupRegistration useCase = new CreateGroupRegistration(groups, tiers, issuer, discounts,
             enrollmentManagement, coursesManagement, events, mock(BillingBranchGuard.class), mock(StudentsManagement.class));
 
     private final UUID actorAccountId = UUID.randomUUID();
@@ -56,7 +58,7 @@ class CreateGroupRegistrationTest {
         var enrollmentId = UUID.randomUUID();
         when(enrollmentManagement.getEnrollment(enrollmentId)).thenReturn(Optional.of(
                 new EnrollmentManagement.EnrollmentSummaryResponse(enrollmentId, studentProfileId, enrollmentCourseId,
-                        enrollmentBranchId, EnrollmentConstants.EnrollmentStatus.ACTIVE)));
+                        enrollmentBranchId, EnrollmentConstants.EnrollmentStatus.ACTIVE, UUID.randomUUID())));
         return enrollmentId;
     }
 
@@ -134,13 +136,17 @@ class CreateGroupRegistrationTest {
                 .isInstanceOf(EnrollmentAlreadyDiscountedException.class);
     }
 
+    /** Đã thu tiền theo giá thường thì giá nhóm sẽ lệch với số đã thu. */
     @Test
-    void rejectsAnEnrollmentThatAlreadyHasALiveInvoice() {
-        var invoiced = friend();
-        when(invoices.countByEnrollmentIdAndStatusNot(invoiced, BillingConstants.InvoiceStatus.CANCELLED))
-                .thenReturn(1L);
+    void rejectsAnEnrollmentThatHasAlreadyPaid() {
+        var paid = friend();
+        when(coursesManagement.getCourseTuition(courseId))
+                .thenReturn(Optional.of(new CoursesManagement.CourseTuitionResponse(courseId, TUITION, true)));
+        when(tiers.findFirstByActiveTrueAndMinCourseCountLessThanEqualOrderByMinCourseCountDesc(2))
+                .thenReturn(Optional.of(new ComboDiscountTier(2, new BigDecimal("10"))));
+        doThrow(new EnrollmentAlreadyInvoicedException(paid)).when(issuer).cancelUnpaidOf(eq(paid), any(), any());
 
-        assertThatThrownBy(() -> useCase.execute(actorAccountId, branchId, request(friend(), invoiced)))
+        assertThatThrownBy(() -> useCase.execute(actorAccountId, branchId, request(friend(), paid)))
                 .isInstanceOf(EnrollmentAlreadyInvoicedException.class);
     }
 

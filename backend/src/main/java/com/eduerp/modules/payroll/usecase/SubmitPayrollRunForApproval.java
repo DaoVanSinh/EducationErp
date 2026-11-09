@@ -1,25 +1,33 @@
 package com.eduerp.modules.payroll.usecase;
 
-import com.eduerp.modules.payroll.InvalidContractTermsException;
 import com.eduerp.modules.payroll.PayrollConstants;
+import com.eduerp.modules.payroll.PayrollPeriodNotEndedException;
 import com.eduerp.modules.payroll.PayrollRunEmptyException;
+import com.eduerp.modules.payroll.PayrollRunMissingPayTermsException;
 import com.eduerp.modules.payroll.PayrollRunNotEditableException;
 import com.eduerp.modules.payroll.PayrollRunNotFoundException;
+import com.eduerp.modules.payroll.internal.PayrollClock;
+import com.eduerp.modules.payroll.internal.PayslipSynchronizer;
 import com.eduerp.modules.payroll.internal.repository.PayrollRunRepository;
-import com.eduerp.modules.payroll.internal.repository.PayslipRepository;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Luôn tính lại trước khi gửi: người duyệt phải thấy số mới nhất, kể cả khi điểm danh vừa được sửa sau lần tính
+ * trước. Tháng chưa hết thì giờ dạy còn thiếu; còn người đã dạy mà chưa có mức lương thì họ sẽ bị bỏ sót.
+ */
 @Service
 public class SubmitPayrollRunForApproval {
 
     private final PayrollRunRepository runs;
-    private final PayslipRepository payslips;
+    private final PayslipSynchronizer synchronizer;
+    private final PayrollClock clock;
 
-    SubmitPayrollRunForApproval(PayrollRunRepository runs, PayslipRepository payslips) {
+    SubmitPayrollRunForApproval(PayrollRunRepository runs, PayslipSynchronizer synchronizer, PayrollClock clock) {
         this.runs = runs;
-        this.payslips = payslips;
+        this.synchronizer = synchronizer;
+        this.clock = clock;
     }
 
     @Transactional
@@ -28,15 +36,18 @@ public class SubmitPayrollRunForApproval {
         if (run.getStatus() != PayrollConstants.PayrollRunStatus.DRAFT) {
             throw new PayrollRunNotEditableException(payrollRunId);
         }
-        var runPayslips = payslips.findAllByPayrollRun_Id(payrollRunId);
-        if (runPayslips.isEmpty()) {
-            throw new PayrollRunEmptyException(payrollRunId);
+        var periodEnd = run.getPeriod().atEndOfMonth();
+        if (!clock.today().isAfter(periodEnd)) {
+            throw new PayrollPeriodNotEndedException(periodEnd);
         }
-        var hasUnfilledCollaboratorHours = runPayslips.stream()
-                .anyMatch(p -> p.getContractType() == PayrollConstants.ContractType.COLLABORATOR
-                        && p.getHoursWorked() != null && p.getHoursWorked().signum() == 0);
-        if (hasUnfilledCollaboratorHours) {
-            throw new InvalidContractTermsException("Còn phiếu lương CTV chưa nhập giờ dạy");
+        var unpaidTeachers = synchronizer.missingPayTerms(run.getPeriod()).values().stream()
+                .filter(sessionCount -> sessionCount > 0)
+                .count();
+        if (unpaidTeachers > 0) {
+            throw new PayrollRunMissingPayTermsException(unpaidTeachers);
+        }
+        if (synchronizer.synchronize(run).isEmpty()) {
+            throw new PayrollRunEmptyException(payrollRunId);
         }
         run.submitForApproval();
     }

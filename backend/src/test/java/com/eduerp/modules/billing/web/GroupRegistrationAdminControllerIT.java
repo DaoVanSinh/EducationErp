@@ -155,9 +155,17 @@ class GroupRegistrationAdminControllerIT {
         return postJson(admin, GROUPS, new CreateGroupRegistrationRequest(ids));
     }
 
-    private MvcResult invoice(Cookie admin, String enrollmentId, String amount) throws Exception {
-        return postJson(admin, "/api/billing/invoices",
-                new CreateInvoiceRequest(UUID.fromString(enrollmentId), new BigDecimal(amount), DUE_DATE));
+    private MvcResult invoice(Cookie admin, String enrollmentId) throws Exception {
+        return postJson(admin, "/api/billing/invoices", new CreateInvoiceRequest(UUID.fromString(enrollmentId)));
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode unpaidInvoiceOf(Cookie admin, String enrollmentId)
+            throws Exception {
+        var listed = mockMvc.perform(get("/api/billing/invoices").cookie(admin).param("enrollmentId", enrollmentId)
+                .param("status", com.eduerp.modules.billing.BillingConstants.InvoiceStatus.UNPAID.name())).andReturn();
+        var items = objectMapper.readTree(listed.getResponse().getContentAsString()).get("items");
+        assertThat(items).hasSize(1);
+        return items.get(0);
     }
 
     private void resetTiersTo(int minCount, String discountPercent) {
@@ -166,7 +174,7 @@ class GroupRegistrationAdminControllerIT {
     }
 
     @Test
-    void eachFriendPaysTheirOwnInvoicesCappedAtTheGroupTuition() throws Exception {
+    void joiningAGroupReplacesEachListPriceInvoiceWithTheGroupPrice() throws Exception {
         var admin = signIn("grp-admin-1@eduerp.local");
         resetTiersTo(2, "10");
         var pair = twoFriendsInOneClass(admin);
@@ -177,22 +185,25 @@ class GroupRegistrationAdminControllerIT {
         assertThat(body.get("members")).hasSize(2);
         assertThat(body.get("members").get(0).get("discountedTuitionFee").asLong()).isEqualTo(4_050_000L);
 
-        assertThat(invoice(admin, pair.first(), "4500000").getResponse().getStatus()).isEqualTo(409);
-        assertThat(invoice(admin, pair.first(), "4050000").getResponse().getStatus()).isEqualTo(200);
-        assertThat(invoice(admin, pair.second(), "2000000").getResponse().getStatus()).isEqualTo(200);
+        assertThat(unpaidInvoiceOf(admin, pair.first()).get("amount").asLong()).isEqualTo(4_050_000L);
+        assertThat(unpaidInvoiceOf(admin, pair.second()).get("amount").asLong()).isEqualTo(4_050_000L);
+        assertThat(invoice(admin, pair.first()).getResponse().getStatus()).isEqualTo(409);
 
         var listed = mockMvc.perform(get(GROUPS).cookie(admin)).andReturn();
         assertThat(listed.getResponse().getContentAsString()).contains(body.get("id").asText());
     }
 
     @Test
-    void refusesToCancelAGroupOnceAMemberHasBeenInvoicedButCancelsAFreshOne() throws Exception {
+    void refusesToCancelAGroupOnceAMemberHasPaidButCancelsAnUnpaidOne() throws Exception {
         var admin = signIn("grp-admin-2@eduerp.local");
         resetTiersTo(2, "10");
         var invoicedPair = twoFriendsInOneClass(admin);
         var invoicedGroup = objectMapper.readTree(createGroup(admin, invoicedPair.first(), invoicedPair.second())
                 .getResponse().getContentAsString()).get("id").asText();
-        invoice(admin, invoicedPair.first(), "1000000");
+        var paid = unpaidInvoiceOf(admin, invoicedPair.first());
+        assertThat(postJson(admin, "/api/billing/invoices/" + paid.get("id").asText() + "/manual-payment",
+                new com.eduerp.modules.billing.dto.RecordManualPaymentRequest(paid.get("amount").decimalValue()))
+                .getResponse().getStatus()).isEqualTo(200);
 
         var refused = postJson(admin, GROUPS + "/" + invoicedGroup + "/cancel", null);
         assertThat(refused.getResponse().getStatus()).isEqualTo(409);
@@ -203,8 +214,8 @@ class GroupRegistrationAdminControllerIT {
                 .getResponse().getContentAsString()).get("id").asText();
         assertThat(postJson(admin, GROUPS + "/" + freshGroup + "/cancel", null).getResponse().getStatus())
                 .isEqualTo(200);
-        // Huỷ xong, trần trở về học phí niêm yết.
-        assertThat(invoice(admin, freshPair.first(), "4500000").getResponse().getStatus()).isEqualTo(200);
+        // Huỷ xong, hoá đơn được lập lại theo học phí niêm yết.
+        assertThat(unpaidInvoiceOf(admin, freshPair.first()).get("amount").asLong()).isEqualTo(4_500_000L);
     }
 
     /** Combo và nhóm loại trừ nhau, và ghi danh trong combo không được phát hành hoá đơn lẻ. */
@@ -217,15 +228,15 @@ class GroupRegistrationAdminControllerIT {
         var secondCourse = enrol(admin, pair.firstStudent(), newClass(pair.branchId()));
 
         var combo = postJson(admin, "/api/billing/combos", new CreateComboRequest(pair.firstStudent(),
-                List.of(UUID.fromString(pair.first()), UUID.fromString(secondCourse)), DUE_DATE));
+                List.of(UUID.fromString(pair.first()), UUID.fromString(secondCourse))));
         assertThat(combo.getResponse().getStatus()).isEqualTo(409);
         assertThat(combo.getResponse().getContentAsString()).contains("BILLING_ENROLLMENT_ALREADY_DISCOUNTED");
 
         var thirdCourse = enrol(admin, pair.firstStudent(), newClass(pair.branchId()));
         assertThat(postJson(admin, "/api/billing/combos", new CreateComboRequest(pair.firstStudent(),
-                List.of(UUID.fromString(secondCourse), UUID.fromString(thirdCourse)), DUE_DATE))
+                List.of(UUID.fromString(secondCourse), UUID.fromString(thirdCourse))))
                 .getResponse().getStatus()).isEqualTo(200);
-        var single = invoice(admin, secondCourse, "1000000");
+        var single = invoice(admin, secondCourse);
         assertThat(single.getResponse().getStatus()).isEqualTo(409);
         assertThat(single.getResponse().getContentAsString()).contains("BILLING_ENROLLMENT_BILLED_BY_COMBO");
     }

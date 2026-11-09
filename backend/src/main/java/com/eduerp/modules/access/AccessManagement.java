@@ -1,6 +1,7 @@
 package com.eduerp.modules.access;
 
 import com.eduerp.modules.access.internal.model.AccountRoleAssignment;
+import com.eduerp.modules.access.internal.permission.EffectivePermissionCalculator;
 import com.eduerp.modules.access.internal.permission.PermissionCacheService;
 import com.eduerp.modules.access.internal.permission.RoleAssignmentService;
 import com.eduerp.modules.access.internal.repository.AccountRoleAssignmentRepository;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AccessManagement {
 
+    private final EffectivePermissionCalculator calculator;
     private final PermissionCacheService permissionCache;
     private final AccountRoleAssignmentRepository accountRoles;
     private final RoleRepository roles;
@@ -28,7 +30,9 @@ public class AccessManagement {
     private final AccountBranchLookup branchLookup;
 
     AccessManagement(PermissionCacheService permissionCache, AccountRoleAssignmentRepository accountRoles,
-            RoleRepository roles, RoleAssignmentService roleAssignment, AccountBranchLookup branchLookup) {
+            RoleRepository roles, RoleAssignmentService roleAssignment, AccountBranchLookup branchLookup,
+            EffectivePermissionCalculator calculator) {
+        this.calculator = calculator;
         this.permissionCache = permissionCache;
         this.accountRoles = accountRoles;
         this.roles = roles;
@@ -102,6 +106,27 @@ public class AccessManagement {
         return roles.findByCode(code)
                 .orElseThrow(() -> new IllegalStateException("Role " + code + " chưa được seed"))
                 .getId();
+    }
+
+    /** Mã của một vai trò theo id. */
+    @Transactional(readOnly = true)
+    public String roleCodeOf(UUID roleId) {
+        return roles.findById(roleId).orElseThrow(() -> new AccessReferenceNotFoundException("ROLE", roleId)).getCode();
+    }
+
+    /** Vai trò có năng lực {@code resource:action} không - tính từ DB, không qua cache của từng tài khoản. */
+    @Transactional(readOnly = true)
+    public boolean roleGrants(UUID roleId, String resource, String action) {
+        var role = roles.findById(roleId).orElseThrow(() -> new AccessReferenceNotFoundException("ROLE", roleId));
+        return EffectivePermission.grants(calculator.calculate(role), resource, action);
+    }
+
+    /** Id các tài khoản giữ một vai trò - để màn Tài khoản lọc theo vai trò mà không JOIN xuyên module. */
+    @Transactional(readOnly = true)
+    public List<UUID> accountIdsWithRole(String roleCode) {
+        return roles.findByCode(roleCode)
+                .map(role -> accountRoles.findAccountIdsByRoleIds(List.of(role.getId())))
+                .orElse(List.of());
     }
 
     /** Có ít nhất một account đang giữ role này không — dùng để quyết định có cần seed Admin mặc định không. */

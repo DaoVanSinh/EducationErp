@@ -253,7 +253,6 @@ class EduErpMcpToolService:
             method=spec.method,
             path=path,
             json_body=payload,
-            multipart_part=spec.multipart_part,
         )
         self._audit.record(
             actor=ctx.email or str(ctx.account_id),

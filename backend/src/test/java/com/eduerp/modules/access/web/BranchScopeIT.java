@@ -86,6 +86,12 @@ class BranchScopeIT {
     BranchRepository branches;
 
     @Autowired
+    com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository teacherProfiles;
+
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    @Autowired
     PasswordEncoder passwordEncoder;
 
     private Branch branchA;
@@ -120,6 +126,7 @@ class BranchScopeIT {
         course = courses.save(new Course("BS-" + suffix, "Khoá chi nhánh " + suffix, null, null, null));
         teacherId = account("bs-teacher-" + suffix + "@eduerp.local", branchA.getId());
         access.assignRole(teacherId, AccessConstants.RoleCodes.TEACHER);
+        com.eduerp.modules.teachers.TeacherFixtures.makeAssignable(teacherProfiles, jdbc, teacherId);
         classes.save(ClassFixtures.inProgress(course, "BS-A-" + suffix, branchA.getId(), teacherId, 20));
         classes.save(ClassFixtures.inProgress(course, "BS-B-" + suffix, branchB.getId(), teacherId, 20));
 

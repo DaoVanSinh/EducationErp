@@ -173,105 +173,117 @@ class ComboPaymentFlowIT {
         var result = mockMvc.perform(post(COMBOS).cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateComboRequest(studentProfileId,
-                                List.of(UUID.fromString(maths), UUID.fromString(english)), DUE_DATE))))
+                                List.of(UUID.fromString(maths), UUID.fromString(english))))))
                 .andReturn();
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         var comboId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
         return new Fixture(studentProfileId, maths, english, comboId);
     }
 
-    private String issueComboInvoice(Cookie admin, String comboId, String amount, LocalDate dueDate)
-            throws Exception {
+    private String reissueComboInvoice(Cookie admin, String comboId) throws Exception {
         var result = mockMvc.perform(post(COMBO_INVOICES).cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateComboInvoiceRequest(
-                                UUID.fromString(comboId), new BigDecimal(amount), dueDate))))
+                                UUID.fromString(comboId)))))
                 .andReturn();
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
+    /** Lập combo tự có hoá đơn. */
+    private String comboInvoiceId(Cookie admin, String comboId) throws Exception {
+        var detail = mockMvc.perform(get(COMBOS + "/" + comboId).cookie(admin)).andReturn();
+        return objectMapper.readTree(detail.getResponse().getContentAsString()).get("invoices").get(0).get("id")
+                .asText();
+    }
+
+    private org.springframework.test.web.servlet.MvcResult pay(Cookie admin, String invoiceId, String amount)
+            throws Exception {
+        return mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin)
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RecordManualPaymentRequest(new BigDecimal(amount)))))
+                .andReturn();
+    }
+
     /**
-     * Review Focus #7: rút khỏi MỘT khoá trong combo. {@code WithdrawEnrollment} không biết gì về
-     * combo (và không được dạy), nên combo giữ nguyên tổng tiền, giữ nguyên % giảm, hoá đơn đã phát
-     * hành vẫn còn - đúng quyết định "rút khỏi lớp giữ nguyên công nợ" đã chốt ở Phase 3. Hệ thống
-     * KHÔNG tự tính lại giảm giá theo số khoá còn lại: đó là việc của kế toán, bằng tay.
+     * Rút một khoá khỏi combo chưa thu: giá đã giảm không còn đúng, nên combo được giải thể và khoá còn lại quay về hoá
+     * đơn giá thường. Học viên không mang khoản nợ của lớp đã rút.
      */
     @Test
-    void withdrawingFromOneCourseLeavesTheComboAndItsInvoicesUntouched() throws Exception {
+    void withdrawingFromAnUnpaidComboDissolvesItAndReissuesTheRemainingCourse() throws Exception {
         var admin = signIn("cpf-admin-1@eduerp.local");
         var fixture = newCombo(admin);
-        var invoiceId = issueComboInvoice(admin, fixture.comboId(), "18900000", DUE_DATE);
+
+        var withdraw = mockMvc.perform(post("/api/enrollment/enrollments/" + fixture.firstEnrollmentId()
+                + "/withdraw").cookie(admin).with(csrf())).andReturn();
+        assertThat(withdraw.getResponse().getStatus()).isEqualTo(200);
+
+        assertThat(mockMvc.perform(get(COMBOS + "/" + fixture.comboId()).cookie(admin)).andReturn().getResponse()
+                .getStatus()).isEqualTo(404);
+        var unpaid = mockMvc.perform(get(INVOICES).cookie(admin)
+                .param("studentProfileId", fixture.studentProfileId().toString())
+                .param("status", BillingConstants.InvoiceStatus.UNPAID.name())).andReturn();
+        assertThat(objectMapper.readTree(unpaid.getResponse().getContentAsString()).get("items"))
+                .singleElement().satisfies(invoice -> {
+                    assertThat(invoice.get("enrollmentId").asText()).isEqualTo(fixture.secondEnrollmentId());
+                    assertThat(invoice.get("amount").asLong()).isEqualTo(ENGLISH_FEE.longValue());
+                });
+    }
+
+    /** Đã thu tiền thì giữ nguyên combo và số đã thu để đối soát hoàn phí bằng tay. */
+    @Test
+    void withdrawingAfterPaymentKeepsTheComboUntouched() throws Exception {
+        var admin = signIn("cpf-admin-6@eduerp.local");
+        var fixture = newCombo(admin);
+        var invoiceId = comboInvoiceId(admin, fixture.comboId());
+        assertThat(pay(admin, invoiceId, "18900000").getResponse().getStatus()).isEqualTo(200);
 
         var withdraw = mockMvc.perform(post("/api/enrollment/enrollments/" + fixture.firstEnrollmentId()
                 + "/withdraw").cookie(admin).with(csrf())).andReturn();
         assertThat(withdraw.getResponse().getStatus()).isEqualTo(200);
 
         var detail = mockMvc.perform(get(COMBOS + "/" + fixture.comboId()).cookie(admin)).andReturn();
-        assertThat(detail.getResponse().getStatus()).isEqualTo(200);
         var body = objectMapper.readTree(detail.getResponse().getContentAsString());
-        assertThat(body.get("combo").get("totalOriginalAmount").asLong()).isEqualTo(21_000_000L);
         assertThat(body.get("combo").get("totalDiscountedAmount").asLong()).isEqualTo(18_900_000L);
-        assertThat(body.get("combo").get("discountPercent").asDouble()).isEqualTo(10.0);
-        assertThat(body.get("combo").get("courseCount").asInt()).isEqualTo(2);
-        assertThat(body.get("enrollments")).hasSize(2);
-        assertThat(body.get("invoices")).hasSize(1);
-        assertThat(body.get("invoices").get(0).get("id").asText()).isEqualTo(invoiceId);
         assertThat(body.get("invoices").get(0).get("status").asText())
-                .isEqualTo(BillingConstants.InvoiceStatus.UNPAID.name());
+                .isEqualTo(BillingConstants.InvoiceStatus.PAID.name());
     }
 
-    /** Review Focus #9: thu tay một phần rồi thu hết - cùng endpoint, cùng hành vi như hoá đơn đơn
-     * khoá; trạng thái đi UNPAID → PARTIALLY_PAID → PAID. */
+    /** Thu đủ một lần: số gửi lên phải đúng phần còn lại, trả một phần bị từ chối. */
     @Test
-    void recordsManualPaymentsOnAComboInvoiceExactlyLikeASingleCourseInvoice() throws Exception {
+    void refusesAPartialPaymentOnAComboInvoiceAndAcceptsTheFullAmount() throws Exception {
         var admin = signIn("cpf-admin-2@eduerp.local");
         var fixture = newCombo(admin);
-        var invoiceId = issueComboInvoice(admin, fixture.comboId(), "10000000", DUE_DATE);
+        var invoiceId = comboInvoiceId(admin, fixture.comboId());
 
-        var partial = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin)
-                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RecordManualPaymentRequest(new BigDecimal("4000000")))))
-                .andReturn();
-        assertThat(partial.getResponse().getStatus()).isEqualTo(200);
-        assertThat(objectMapper.readTree(partial.getResponse().getContentAsString()).get("status").asText())
-                .isEqualTo(BillingConstants.InvoiceStatus.PARTIALLY_PAID.name());
+        var partial = pay(admin, invoiceId, "4000000");
+        assertThat(partial.getResponse().getStatus()).isEqualTo(400);
+        assertThat(partial.getResponse().getContentAsString()).contains("BILLING_INVALID_PAYMENT_AMOUNT");
 
-        var settled = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin)
-                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RecordManualPaymentRequest(new BigDecimal("6000000")))))
-                .andReturn();
+        var settled = pay(admin, invoiceId, "18900000");
         var body = objectMapper.readTree(settled.getResponse().getContentAsString());
         assertThat(body.get("status").asText()).isEqualTo(BillingConstants.InvoiceStatus.PAID.name());
-        assertThat(body.get("amountPaid").asLong()).isEqualTo(10_000_000L);
+        assertThat(body.get("amountPaid").asLong()).isEqualTo(18_900_000L);
         assertThat(body.get("comboId").asText()).isEqualTo(fixture.comboId());
 
-        // Thu quá số còn lại vẫn bị chặn đúng như hoá đơn đơn-khoá.
-        var tooMuch = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin)
-                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RecordManualPaymentRequest(new BigDecimal("1")))))
-                .andReturn();
+        var tooMuch = pay(admin, invoiceId, "1");
         assertThat(tooMuch.getResponse().getStatus()).isEqualTo(409);
         assertThat(tooMuch.getResponse().getContentAsString()).contains("BILLING_INVOICE_NOT_PAYABLE");
     }
 
-    /** Review Focus #9: huỷ hoá đơn combo cũng chạy qua đúng {@code CancelInvoice}, và đợt đã huỷ
-     * không chiếm chỗ trong 3 đợt của combo. */
+    /** Huỷ hoá đơn combo chạy qua đúng {@code CancelInvoice}, rồi lập lại được đủ tổng sau giảm giá. */
     @Test
     void cancelsAComboInvoiceAndFreesItsInstallmentSlot() throws Exception {
         var admin = signIn("cpf-admin-3@eduerp.local");
         var fixture = newCombo(admin);
-        var invoiceId = issueComboInvoice(admin, fixture.comboId(), "18900000", DUE_DATE);
+        var invoiceId = comboInvoiceId(admin, fixture.comboId());
 
         var cancel = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/cancel").cookie(admin).with(csrf()))
                 .andReturn();
         assertThat(cancel.getResponse().getStatus()).isEqualTo(200);
 
         // Đợt đã huỷ không tính vào tổng và không chiếm số đợt → phát hành lại cả tổng combo được.
-        var reissuedId = issueComboInvoice(admin, fixture.comboId(), "18900000", DUE_DATE);
+        var reissuedId = reissueComboInvoice(admin, fixture.comboId());
         var reissued = mockMvc.perform(get(INVOICES + "/" + reissuedId).cookie(admin)).andReturn();
         assertThat(objectMapper.readTree(reissued.getResponse().getContentAsString()).get("invoice")
                 .get("installmentNumber").asInt()).isEqualTo(1);
@@ -283,18 +295,17 @@ class ComboPaymentFlowIT {
     void marksAnOverdueComboInvoiceJustLikeAnyOtherInvoice() throws Exception {
         var admin = signIn("cpf-admin-4@eduerp.local");
         var fixture = newCombo(admin);
-        var invoiceId = issueComboInvoice(admin, fixture.comboId(), "18900000", PAST_DUE_DATE);
+        var invoiceId = comboInvoiceId(admin, fixture.comboId());
+        var issued = invoices.findById(UUID.fromString(invoiceId)).orElseThrow();
+        issued.rescheduleDue(PAST_DUE_DATE);
+        invoices.saveAndFlush(issued);
 
         markOverdueInvoices.execute();
 
         assertThat(invoices.findById(UUID.fromString(invoiceId)).orElseThrow().getStatus())
                 .isEqualTo(BillingConstants.InvoiceStatus.OVERDUE);
         // OVERDUE vẫn thu được (nhãn nhắc nợ, không phải khoá sổ) - đúng BillingRules.isPayable.
-        assertThat(mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin)
-                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RecordManualPaymentRequest(new BigDecimal("1000000")))))
-                .andReturn().getResponse().getStatus()).isEqualTo(200);
+        assertThat(pay(admin, invoiceId, "18900000").getResponse().getStatus()).isEqualTo(200);
     }
 
     /** Review Focus #9: danh sách hoá đơn lọc theo học viên trả về cả hoá đơn combo - học viên đó chỉ
@@ -303,10 +314,9 @@ class ComboPaymentFlowIT {
     void listsComboInvoicesAlongsideSingleCourseOnesForTheSameStudent() throws Exception {
         var admin = signIn("cpf-admin-5@eduerp.local");
         var fixture = newCombo(admin);
-        issueComboInvoice(admin, fixture.comboId(), "5000000", DUE_DATE);
-
         var listed = mockMvc.perform(get(INVOICES).cookie(admin)
-                .param("studentProfileId", fixture.studentProfileId().toString())).andReturn();
+                .param("studentProfileId", fixture.studentProfileId().toString())
+                .param("status", BillingConstants.InvoiceStatus.UNPAID.name())).andReturn();
 
         assertThat(listed.getResponse().getStatus()).isEqualTo(200);
         var items = objectMapper.readTree(listed.getResponse().getContentAsString()).get("items");

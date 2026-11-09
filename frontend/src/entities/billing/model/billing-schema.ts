@@ -86,6 +86,11 @@ export const MIN_COMBO_ENROLLMENTS = 2;
  * (comboId) - backend có CHECK constraint chk_invoices_enrollment_xor_combo bảo đảm điều đó. Ba field
  * này nullable nên mọi nơi hiển thị phải xử lý null, không được .slice() thẳng.
  */
+/** Mỗi ghi danh một hoá đơn thu đủ một lần; số đợt lớn hơn 1 chỉ còn ở dữ liệu chia đợt cũ. */
+export function invoiceTitle(invoice: { readonly installmentNumber: number }): string {
+  return invoice.installmentNumber > 1 ? `Học phí đợt ${invoice.installmentNumber}` : "Học phí";
+}
+
 export const invoiceSummarySchema = z.object({
   id: z.string().uuid(),
   enrollmentId: z.string().uuid().nullable(),
@@ -109,9 +114,17 @@ export const invoiceSummarySchema = z.object({
   ]),
   dueDate: z.string(),
   issuedAt: z.string(),
+  /** Đã được admin gốc gia hạn: đổi ngày khai giảng về sau không kéo hạn này theo. */
+  dueExtended: z.boolean(),
+  extensionReason: z.string().nullable(),
+  /** Tài khoản học viên, để danh sách quá hạn tạm đóng được. */
+  studentAccountId: z.string().uuid().nullable(),
 });
 
 export type InvoiceSummary = z.infer<typeof invoiceSummarySchema>;
+
+/** Khớp BillingConstants.Limits.MAX_EXTENSION_REASON_LENGTH. */
+export const MAX_EXTENSION_REASON_LENGTH = 500;
 
 /** Khớp từng field với PaymentResponse ở backend - KHÔNG có gatewayTransactionId (payload này đi ra
  * một endpoint public, backend cố ý không trả mã giao dịch). */
@@ -235,17 +248,14 @@ export interface CreateGroupRegistrationPayload {
   readonly enrollmentIds: readonly string[];
 }
 
+/** Hoá đơn của combo tự lập, hạn là ngày thứ 7 từ lớp khai giảng sớm nhất. */
 export interface CreateComboPayload {
   readonly studentProfileId: string;
   readonly enrollmentIds: readonly string[];
-  /** ISO date (yyyy-MM-dd) - backend nhận LocalDate. */
-  readonly dueDate: string;
 }
 
 export interface CreateComboInvoicePayload {
   readonly comboId: string;
-  readonly amount: number;
-  readonly dueDate: string;
 }
 
 export interface CreateComboDiscountTierPayload {
@@ -258,11 +268,15 @@ export interface UpdateComboDiscountTierPayload {
   readonly active: boolean;
 }
 
+/** Số tiền và hạn do hệ thống tính. */
 export interface CreateInvoicePayload {
   readonly enrollmentId: string;
-  readonly amount: number;
+}
+
+export interface ExtendInvoiceDuePayload {
   /** ISO date (yyyy-MM-dd) - backend nhận LocalDate. */
   readonly dueDate: string;
+  readonly reason: string;
 }
 
 export interface InitiateOnlinePaymentPayload {

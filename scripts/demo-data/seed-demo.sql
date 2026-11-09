@@ -1,4 +1,4 @@
--- Dữ liệu demo cho buổi xem tiến độ: chi nhánh, giáo viên + hợp đồng, học viên, khoá học, lớp ở đủ trạng
+-- Dữ liệu demo cho buổi xem tiến độ: chi nhánh, giáo viên + mức lương, học viên, khoá học, lớp ở đủ trạng
 -- thái, ghi danh, hoá đơn + thanh toán + combo, điểm danh, điểm, bài tập/mini-test, mini-task + lượt làm,
 -- nhật ký đăng nhập. Mọi ngày tháng tính theo "hôm nay" lúc chạy nên chạy lại vào hôm khác vẫn hợp lý.
 --
@@ -62,25 +62,25 @@ SELECT ref, (SELECT id FROM pool WHERE k = ((ref - 1) % total) + 1) AS id
 FROM generate_series(1, 3) ref, (SELECT max(total) AS total FROM pool) t;
 
 -- ---------------------------------------------------------------------------------------------------
--- 2. Giáo viên (12) + hồ sơ + môn dạy + hợp đồng
+-- 2. Giáo viên (12) + hồ sơ + môn dạy + mức lương
 -- ---------------------------------------------------------------------------------------------------
 CREATE TEMP TABLE sd_teacher_src (
     n int, tag text, full_name text, branch_ref int, phone text, bio text, subjects text[],
-    contract_type text, base_salary numeric, hourly_rate numeric, months_ago int, probation boolean
+    pay_type text, monthly_salary numeric, hourly_rate numeric, months_ago int, probation boolean
 ) ON COMMIT DROP;
 INSERT INTO sd_teacher_src VALUES
- (1,  'gv01', 'Nguyễn Thu Hương',  1, '0912345601', '8 năm dạy tiếng Anh giao tiếp, IELTS 8.0.',            ARRAY['Tiếng Anh giao tiếp','IELTS'], 'OFFICIAL', 15000000, NULL, 30, false),
- (2,  'gv02', 'Trần Minh Quân',    1, '0912345602', 'Thạc sĩ TESOL, chuyên luyện thi IELTS.',                ARRAY['IELTS'],                       'OFFICIAL', 16000000, NULL, 26, false),
- (3,  'gv03', 'Lê Hoàng Nam',      2, '0912345603', 'TOEIC 970, 5 năm luyện thi TOEIC cho sinh viên.',       ARRAY['TOEIC'],                       'OFFICIAL', 12000000, NULL, 20, false),
- (4,  'gv04', 'Phạm Ngọc Ánh',     3, '0912345604', 'Chứng chỉ TKT, dạy tiếng Anh thiếu nhi Cambridge.',     ARRAY['Tiếng Anh thiếu nhi'],         'OFFICIAL', 11000000, NULL, 18, false),
- (5,  'gv05', 'Vũ Đức Thắng',      2, '0912345605', 'Giáo viên Toán THCS, ôn thi vào lớp 10.',               ARRAY['Toán'],                        'OFFICIAL', 10000000, NULL, 1,  true),
- (6,  'gv06', 'Đặng Thị Mai',      1, '0912345606', 'Cử nhân Ngôn ngữ Trung, HSK 6.',                        ARRAY['Tiếng Trung'],                 'OFFICIAL', 11500000, NULL, 14, false),
- (7,  'gv07', 'Bùi Khánh Linh',    3, '0912345607', 'Du học sinh Nhật Bản, JLPT N1.',                        ARRAY['Tiếng Nhật'],                  'OFFICIAL', 11500000, NULL, 1,  true),
- (8,  'gv08', 'Hoàng Gia Bảo',     2, '0912345608', 'Cộng tác viên luyện đề IELTS/TOEIC cuối tuần.',         ARRAY['IELTS','TOEIC'],               'COLLABORATOR', NULL, 350000, 10, false),
- (9,  'gv09', 'Đỗ Phương Thảo',    1, '0912345609', 'Dạy tiếng Anh giao tiếp cho người đi làm.',             ARRAY['Tiếng Anh giao tiếp'],         'COLLABORATOR', NULL, 250000, 8,  false),
- (10, 'gv10', 'Ngô Quang Huy',     1, '0912345610', 'Giáo viên Toán trường THCS, dạy thêm buổi tối.',        ARRAY['Toán'],                        'COLLABORATOR', NULL, 220000, 6,  false),
- (11, 'gv11', 'David Miller',      3, '0912345611', 'Giáo viên bản ngữ (Anh), CELTA, phụ trách Speaking.',   ARRAY['IELTS','Tiếng Anh giao tiếp'], 'COLLABORATOR', NULL, 450000, 12, false),
- (12, 'gv12', 'Sarah Johnson',     3, '0912345612', 'Giáo viên bản ngữ (Mỹ), dạy phát âm và giao tiếp.',     ARRAY['Tiếng Anh giao tiếp'],         'COLLABORATOR', NULL, 400000, 9,  false);
+ (1,  'gv01', 'Nguyễn Thu Hương',  1, '0912345601', '8 năm dạy tiếng Anh giao tiếp, IELTS 8.0.',            ARRAY['Tiếng Anh giao tiếp','IELTS'], 'MONTHLY', 15000000, NULL, 30, false),
+ (2,  'gv02', 'Trần Minh Quân',    1, '0912345602', 'Thạc sĩ TESOL, chuyên luyện thi IELTS.',                ARRAY['IELTS'],                       'MONTHLY', 16000000, NULL, 26, false),
+ (3,  'gv03', 'Lê Hoàng Nam',      2, '0912345603', 'TOEIC 970, 5 năm luyện thi TOEIC cho sinh viên.',       ARRAY['TOEIC'],                       'MONTHLY', 12000000, NULL, 20, false),
+ (4,  'gv04', 'Phạm Ngọc Ánh',     3, '0912345604', 'Chứng chỉ TKT, dạy tiếng Anh thiếu nhi Cambridge.',     ARRAY['Tiếng Anh thiếu nhi'],         'MONTHLY', 11000000, NULL, 18, false),
+ (5,  'gv05', 'Vũ Đức Thắng',      2, '0912345605', 'Giáo viên Toán THCS, ôn thi vào lớp 10.',               ARRAY['Toán'],                        'MONTHLY', 10000000, NULL, 1,  true),
+ (6,  'gv06', 'Đặng Thị Mai',      1, '0912345606', 'Cử nhân Ngôn ngữ Trung, HSK 6.',                        ARRAY['Tiếng Trung'],                 'MONTHLY', 11500000, NULL, 14, false),
+ (7,  'gv07', 'Bùi Khánh Linh',    3, '0912345607', 'Du học sinh Nhật Bản, JLPT N1.',                        ARRAY['Tiếng Nhật'],                  'MONTHLY', 11500000, NULL, 1,  true),
+ (8,  'gv08', 'Hoàng Gia Bảo',     2, '0912345608', 'Cộng tác viên luyện đề IELTS/TOEIC cuối tuần.',         ARRAY['IELTS','TOEIC'],               'HOURLY', NULL, 350000, 10, false),
+ (9,  'gv09', 'Đỗ Phương Thảo',    1, '0912345609', 'Dạy tiếng Anh giao tiếp cho người đi làm.',             ARRAY['Tiếng Anh giao tiếp'],         'HOURLY', NULL, 250000, 8,  false),
+ (10, 'gv10', 'Ngô Quang Huy',     1, '0912345610', 'Giáo viên Toán trường THCS, dạy thêm buổi tối.',        ARRAY['Toán'],                        'HOURLY', NULL, 220000, 6,  false),
+ (11, 'gv11', 'David Miller',      3, '0912345611', 'Giáo viên bản ngữ (Anh), CELTA, phụ trách Speaking.',   ARRAY['IELTS','Tiếng Anh giao tiếp'], 'HOURLY', NULL, 450000, 12, false),
+ (12, 'gv12', 'Sarah Johnson',     3, '0912345612', 'Giáo viên bản ngữ (Mỹ), dạy phát âm và giao tiếp.',     ARRAY['Tiếng Anh giao tiếp'],         'HOURLY', NULL, 400000, 9,  false);
 
 INSERT INTO accounts (id, email, password_hash, full_name, status, home_branch_id, last_login)
 SELECT pg_temp.did(2, t.n), c.mail_local || '+' || t.tag || '@' || c.mail_domain, c.pw_hash, t.full_name,
@@ -90,28 +90,31 @@ FROM sd_teacher_src t CROSS JOIN sd_ctx c JOIN sd_branch b ON b.ref = t.branch_r
 INSERT INTO account_roles (account_id, role_id)
 SELECT pg_temp.did(2, t.n), (SELECT id FROM roles WHERE code = 'TEACHER') FROM sd_teacher_src t;
 
-INSERT INTO teacher_profiles (id, account_id, phone, bio, active)
-SELECT pg_temp.did(4, t.n), pg_temp.did(2, t.n), t.phone, t.bio, true FROM sd_teacher_src t;
+INSERT INTO teacher_profiles (id, account_id, phone, bio, active, pay_type, monthly_salary, hourly_rate,
+                              work_start_date, probation_end_date, dependent_count)
+SELECT pg_temp.did(4, t.n), pg_temp.did(2, t.n), t.phone, t.bio, true, t.pay_type, t.monthly_salary, t.hourly_rate,
+       (date_trunc('month', c.today - make_interval(months => t.months_ago)))::date,
+       CASE WHEN t.probation THEN (c.today - make_interval(months => t.months_ago) + interval '2 months')::date END,
+       CASE WHEN t.pay_type = 'MONTHLY' THEN t.n % 3 ELSE 0 END
+FROM sd_teacher_src t CROSS JOIN sd_ctx c;
 
 INSERT INTO teacher_profile_subjects (teacher_profile_id, subject)
 SELECT pg_temp.did(4, t.n), s FROM sd_teacher_src t, unnest(t.subjects) s;
 
-INSERT INTO employment_contracts (id, account_id, contract_type, status, base_salary, hourly_rate,
-                                  probation_start_date, probation_end_date, start_date, end_date, contract_file_key)
-SELECT pg_temp.did(20, t.n), pg_temp.did(2, t.n), t.contract_type, 'ACTIVE', t.base_salary, t.hourly_rate,
-       CASE WHEN t.probation THEN (c.today - make_interval(months => t.months_ago))::date END,
-       CASE WHEN t.probation THEN (c.today - make_interval(months => t.months_ago) + interval '2 months')::date END,
-       (date_trunc('month', c.today - make_interval(months => t.months_ago)))::date,
-       CASE WHEN t.contract_type = 'COLLABORATOR'
-            THEN (date_trunc('month', c.today - make_interval(months => t.months_ago)) + interval '2 years')::date END,
-       NULL
-FROM sd_teacher_src t CROSS JOIN sd_ctx c;
-
-INSERT INTO contract_allowances (contract_id, name, amount)
-SELECT pg_temp.did(20, t.n), a.name, a.amount
+INSERT INTO teacher_allowances (teacher_profile_id, name, amount)
+SELECT pg_temp.did(4, t.n), a.name, a.amount
 FROM sd_teacher_src t
 CROSS JOIN (VALUES ('Phụ cấp ăn trưa', 730000), ('Phụ cấp xăng xe', 400000)) a(name, amount)
-WHERE t.contract_type = 'OFFICIAL';
+WHERE t.pay_type = 'MONTHLY';
+
+-- Quản trị chi nhánh demo: mỗi chi nhánh một người, phạm vi BRANCH.
+INSERT INTO accounts (id, email, password_hash, full_name, status, home_branch_id, last_login)
+SELECT pg_temp.did(25, b.ref), c.mail_local || '+qtcn' || b.ref || '@' || c.mail_domain, c.pw_hash,
+       'Quản trị chi nhánh ' || b.ref, 'ACTIVE', b.id, now() - interval '2 days'
+FROM sd_branch b CROSS JOIN sd_ctx c;
+
+INSERT INTO account_roles (account_id, role_id)
+SELECT pg_temp.did(25, b.ref), (SELECT id FROM roles WHERE code = 'BRANCH_ADMIN') FROM sd_branch b;
 
 -- ref giáo viên của lớp: 1..12 = giáo viên demo; 101, 102 = giáo viên THẬT đang có trong hệ thống (để
 -- đăng nhập bằng tài khoản thật cũng thấy lớp có dữ liệu). Thiếu giáo viên thật thì dùng giáo viên demo.
@@ -120,7 +123,10 @@ INSERT INTO sd_teacher SELECT n, pg_temp.did(2, n) FROM generate_series(1, 12) n
 INSERT INTO sd_teacher
 SELECT 100 + row_number() OVER (ORDER BY a.email), a.id
 FROM accounts a JOIN account_roles ar ON ar.account_id = a.id JOIN roles r ON r.id = ar.role_id
-WHERE r.code = 'TEACHER' AND a.status = 'ACTIVE' AND a.id::text NOT LIKE 'de30%';
+JOIN teacher_profiles tp ON tp.account_id = a.id
+-- Chỉ giáo viên phân công được: đang làm việc, đã có lương, có chi nhánh chủ quản.
+WHERE r.code = 'TEACHER' AND a.status = 'ACTIVE' AND a.id::text NOT LIKE 'de30%'
+  AND tp.active AND tp.pay_type IS NOT NULL AND a.home_branch_id IS NOT NULL;
 INSERT INTO sd_teacher VALUES (101, pg_temp.did(2, 1)), (102, pg_temp.did(2, 10)) ON CONFLICT (ref) DO NOTHING;
 
 -- ---------------------------------------------------------------------------------------------------
@@ -220,12 +226,15 @@ INSERT INTO sd_class_src VALUES
  (20, 'JLPT-K02',     7, 2, 7,   'CANCELLED',    -10, ARRAY['TUE','FRI'], '18:30', '20:00', 15, 8,  3, 140);
 
 CREATE TEMP TABLE sd_class ON COMMIT DROP AS
-SELECT s.*, pg_temp.did(8, s.n) AS id, c.subject, c.fee, t.account_id AS teacher_id, b.id AS branch_id,
+SELECT s.*, pg_temp.did(8, s.n) AS id, c.subject, c.fee, t.account_id AS teacher_id,
+       -- Giáo viên chỉ dạy lớp thuộc chi nhánh chủ quản, nên chi nhánh của lớp theo giáo viên.
+       COALESCE(ta.home_branch_id, b.id) AS branch_id,
        (x.today + s.start_off)::date AS start_date,
        CASE WHEN s.status = 'CANCELLED' THEN NULL ELSE (x.today + s.start_off + s.duration)::date END AS end_date
 FROM sd_class_src s
 JOIN sd_course c ON c.n = s.course_n
 JOIN sd_teacher t ON t.ref = s.teacher_ref
+JOIN accounts ta ON ta.id = t.account_id
 JOIN sd_branch b ON b.ref = s.branch_ref
 CROSS JOIN sd_ctx x;
 
@@ -236,6 +245,9 @@ SELECT id, pg_temp.did(6, course_n), code, branch_id, teacher_id, max_seats, sta
        CASE WHEN status = 'COMPLETED' THEN pg_temp.at_vn(end_date, '21:00')
             WHEN status = 'CANCELLED' THEN pg_temp.at_vn(start_date - 1, '17:00') END
 FROM sd_class;
+
+INSERT INTO class_teacher_assignments (class_id, teacher_id, effective_from)
+SELECT id, teacher_id, start_date FROM sd_class;
 
 INSERT INTO class_schedules (id, class_id, day_of_week, start_time, end_time)
 SELECT pg_temp.did(9, c.n * 10 + d.k), c.id, d.day, c.start_time, c.end_time
@@ -304,7 +316,7 @@ CREATE TEMP TABLE sd_combo ON COMMIT DROP AS
 SELECT k.n, pg_temp.did(22, k.n) AS id, k.student_profile_id, k.discount_percent,
        min(e.branch_id::text)::uuid AS branch_id, sum(e.fee) AS total_original,
        round(sum(e.fee) * (100 - k.discount_percent) / 100, 0) AS total_discounted,
-       min(e.start_date) + 7 AS due_date, max(e.enrolled_on) AS created_on
+       min(e.start_date) + 6 AS due_date, max(e.enrolled_on) AS created_on
 FROM sd_combo_pick k JOIN sd_enroll e ON e.n = ANY (k.enroll_ns)
 GROUP BY k.n, k.student_profile_id, k.discount_percent;
 
@@ -319,7 +331,7 @@ SELECT pg_temp.did(23, row_number() OVER (ORDER BY k.n, e.n)), pg_temp.did(22, k
        pg_temp.did(6, e.course_n), e.fee
 FROM sd_combo_pick k JOIN sd_enroll e ON e.n = ANY (k.enroll_ns);
 
--- Kế hoạch hoá đơn: mỗi dòng một kỳ. paid_on null = chưa trả.
+-- Kế hoạch hoá đơn: mỗi ghi danh một hoá đơn, thu đủ một lần, hạn là ngày thứ 7 từ khai giảng. paid_on null = chưa trả.
 CREATE TEMP TABLE sd_invoice_plan (
     enroll_n bigint, combo_n bigint, installment int, amount numeric, amount_paid numeric, status text,
     due_date date, issued_on date, paid_on date
@@ -336,38 +348,23 @@ WITH e AS (
 )
 INSERT INTO sd_invoice_plan
 -- Đã học xong: trả đủ.
-SELECT n, NULL::bigint, 1, fee, fee, 'PAID', enrolled_on + 7, enrolled_on, enrolled_on + 2 FROM e WHERE status = 'COMPLETED'
+SELECT n, NULL::bigint, 1, fee, fee, 'PAID', start_date + 6, enrolled_on, enrolled_on + 2 FROM e WHERE status = 'COMPLETED'
 UNION ALL
--- Rút khỏi lớp: hoá đơn bị huỷ.
-SELECT n, NULL, 1, fee, 0, 'CANCELLED', enrolled_on + 7, enrolled_on, NULL FROM e WHERE status = 'WITHDRAWN'
+-- Rút khỏi lớp: hoá đơn chưa thu bị huỷ.
+SELECT n, NULL, 1, fee, 0, 'CANCELLED', start_date + 6, enrolled_on, NULL FROM e WHERE status = 'WITHDRAWN'
 UNION ALL
--- Đang học - trả đủ một lần.
-SELECT n, NULL, 1, fee, fee, 'PAID', enrolled_on + 7, enrolled_on, enrolled_on + 3
-FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r < 50
+-- Đang học - đã đóng đủ một lần.
+SELECT n, NULL, 1, fee, fee, 'PAID', start_date + 6, enrolled_on, LEAST(enrolled_on + 3, today)
+FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r < 80
 UNION ALL
--- Đang học - chia 2 kỳ: kỳ 1 đã trả.
-SELECT n, NULL, 1, round(fee / 2, -3), round(fee / 2, -3), 'PAID', enrolled_on + 7, enrolled_on, enrolled_on + 2
-FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r >= 50 AND r < 75
+-- Đang học - chưa đóng: quá hạn nếu đã qua ngày thứ 7, vào danh sách xử lý của admin.
+SELECT n, NULL, 1, fee, 0, CASE WHEN start_date + 6 < today THEN 'OVERDUE' ELSE 'UNPAID' END, start_date + 6,
+       enrolled_on, NULL
+FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r >= 80
 UNION ALL
--- ... kỳ 2: quá hạn chưa trả / đã trả / chưa tới hạn.
-SELECT n, NULL, 2, fee - round(fee / 2, -3),
-       CASE WHEN start_date + 45 < today AND r >= 63 THEN fee - round(fee / 2, -3) ELSE 0 END,
-       CASE WHEN start_date + 45 >= today THEN 'UNPAID' WHEN r < 63 THEN 'OVERDUE' ELSE 'PAID' END,
-       start_date + 45, start_date + 15,
-       CASE WHEN start_date + 45 < today AND r >= 63 THEN start_date + 40 END
-FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r >= 50 AND r < 75
-UNION ALL
--- Đang học - mới trả một phần, hạn còn ở phía trước.
-SELECT n, NULL, 1, fee, round(fee * 0.4, -3), 'PARTIALLY_PAID', today + 10, enrolled_on, enrolled_on + 3
-FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r >= 75 AND r < 88
-UNION ALL
--- Đang học - quá hạn chưa đóng đồng nào.
-SELECT n, NULL, 1, fee, 0, 'OVERDUE', start_date + 7, enrolled_on, NULL
-FROM e WHERE status = 'ACTIVE' AND class_status = 'IN_PROGRESS' AND r >= 88
-UNION ALL
--- Lớp sắp khai giảng: đã đóng sớm hoặc chờ đóng trước ngày khai giảng.
+-- Lớp sắp khai giảng: đã đóng sớm hoặc còn trong hạn.
 SELECT n, NULL, 1, fee, CASE WHEN r < 55 THEN fee ELSE 0 END, CASE WHEN r < 55 THEN 'PAID' ELSE 'UNPAID' END,
-       start_date, enrolled_on, CASE WHEN r < 55 THEN enrolled_on END
+       start_date + 6, enrolled_on, CASE WHEN r < 55 THEN enrolled_on END
 FROM e WHERE status = 'ACTIVE' AND class_status = 'ENROLLING';
 
 CREATE TEMP TABLE sd_invoice ON COMMIT DROP AS
@@ -415,11 +412,13 @@ CROSS JOIN LATERAL generate_series(c.start_date, LEAST(c.end_date, x.today - 1),
 WHERE c.status IN ('COMPLETED', 'IN_PROGRESS')
   AND (ARRAY['MON','TUE','WED','THU','FRI','SAT','SUN'])[extract(isodow FROM d)::int] = ANY (c.days);
 
-INSERT INTO attendance_sessions (id, class_id, session_date, note, created_by_account_id, created_at, updated_at)
+INSERT INTO attendance_sessions (id, class_id, session_date, note, created_by_account_id, teacher_account_id,
+                                 duration_minutes, created_at, updated_at)
 SELECT pg_temp.did(13, s.n), s.class_id, s.session_date,
        CASE WHEN pg_temp.rnd('note' || s.n) < 10 THEN 'Ôn tập và chữa bài kiểm tra' END,
-       s.teacher_id, pg_temp.at_vn(s.session_date, '21:00'), pg_temp.at_vn(s.session_date, '21:00')
-FROM sd_session s;
+       s.teacher_id, s.teacher_id, (EXTRACT(EPOCH FROM (c.end_time - c.start_time)) / 60)::int,
+       pg_temp.at_vn(s.session_date, '21:00'), pg_temp.at_vn(s.session_date, '21:00')
+FROM sd_session s JOIN sd_class c ON c.n = s.class_n;
 
 INSERT INTO attendance_records (id, session_id, enrollment_id, status, note)
 SELECT pg_temp.did(14, row_number() OVER (ORDER BY s.n, e.n)), pg_temp.did(13, s.n), e.id, st.status,
@@ -662,7 +661,7 @@ UNION ALL SELECT 'Ghi danh', count(*) FROM enrollments WHERE id::text LIKE 'de30
 UNION ALL SELECT 'Hoá đơn', count(*) FROM invoices WHERE id::text LIKE 'de30%'
 UNION ALL SELECT 'Thanh toán', count(*) FROM payments WHERE id::text LIKE 'de30%'
 UNION ALL SELECT 'Combo', count(*) FROM combos WHERE id::text LIKE 'de30%'
-UNION ALL SELECT 'Hợp đồng lao động', count(*) FROM employment_contracts WHERE id::text LIKE 'de30%'
+UNION ALL SELECT 'Giáo viên đã thiết lập lương', count(*) FROM teacher_profiles WHERE id::text LIKE 'de30%' AND pay_type IS NOT NULL
 UNION ALL SELECT 'Buổi điểm danh', count(*) FROM attendance_sessions WHERE id::text LIKE 'de30%'
 UNION ALL SELECT 'Lượt điểm danh', count(*) FROM attendance_records WHERE id::text LIKE 'de30%'
 UNION ALL SELECT 'Điểm thành phần', count(*) FROM grade_entries WHERE id::text LIKE 'de30%'

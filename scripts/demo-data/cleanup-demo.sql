@@ -38,7 +38,10 @@ DELETE FROM mini_tasks WHERE class_id IN (SELECT id FROM cl_classes);
 DELETE FROM assignment_results WHERE enrollment_id IN (SELECT id FROM cl_enrollments);
 DELETE FROM assignments WHERE class_id IN (SELECT id FROM cl_classes);
 DELETE FROM attendance_records WHERE enrollment_id IN (SELECT id FROM cl_enrollments);
-DELETE FROM attendance_sessions WHERE class_id IN (SELECT id FROM cl_classes);
+-- Theo cả giáo viên được tính giờ: lớp thật có thể từng do giáo viên demo dạy trước khi đổi giáo viên.
+DELETE FROM attendance_sessions
+WHERE class_id IN (SELECT id FROM cl_classes)
+   OR teacher_account_id IN (SELECT id FROM cl_accounts);
 DELETE FROM grade_entries
 WHERE enrollment_id IN (SELECT id FROM cl_enrollments)
    OR course_grade_column_id IN (SELECT id FROM course_grade_columns WHERE course_id IN (SELECT id FROM cl_courses));
@@ -57,9 +60,16 @@ DELETE FROM enrollments WHERE id IN (SELECT id FROM cl_enrollments);
 DELETE FROM classes WHERE id IN (SELECT id FROM cl_classes);
 DELETE FROM courses WHERE id IN (SELECT id FROM cl_courses);
 
--- Nhân sự: phiếu lương (kể cả của bảng lương người dùng tạo trong lúc demo), hợp đồng.
+-- Nhân sự: phiếu lương (kể cả của kỳ lương người dùng tạo trong lúc demo). Phụ cấp xoá theo hồ sơ giáo viên.
 DELETE FROM payslips WHERE account_id IN (SELECT id FROM cl_accounts);
-DELETE FROM employment_contracts WHERE account_id IN (SELECT id FROM cl_accounts);
+UPDATE payslips SET paid_by_account_id = NULL WHERE paid_by_account_id IN (SELECT id FROM cl_accounts);
+UPDATE payslips SET branch_id = NULL WHERE branch_id IN (SELECT id FROM cl_branches);
+DELETE FROM class_teacher_assignments WHERE teacher_id IN (SELECT id FROM cl_accounts);
+DELETE FROM account_branch_history
+WHERE account_id IN (SELECT id FROM cl_accounts)
+   OR changed_by_account_id IN (SELECT id FROM cl_accounts)
+   OR from_branch_id IN (SELECT id FROM cl_branches)
+   OR to_branch_id IN (SELECT id FROM cl_branches);
 
 -- Hồ sơ, nhật ký, tài khoản (account_roles/account_groups xoá theo cascade).
 DELETE FROM teacher_profiles WHERE account_id IN (SELECT id FROM cl_accounts);

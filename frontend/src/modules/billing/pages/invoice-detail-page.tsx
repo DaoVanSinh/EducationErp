@@ -1,4 +1,4 @@
-import { INVOICE_STATUS_LABEL } from "@/entities/billing";
+import { INVOICE_STATUS_LABEL, invoiceTitle } from "@/entities/billing";
 import { Can, RequirePermission } from "@/entities/permission";
 import { useInvoiceDetailController } from "@/modules/billing/hooks/use-invoice-detail-controller";
 import { ManualPaymentDialog } from "@/modules/billing/ui/manual-payment-dialog";
@@ -31,16 +31,19 @@ export function InvoiceDetailPage() {
           <>
             <GlassPanel className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-sm text-mist-100">Đợt {controller.detail.data.invoice.installmentNumber}</p>
+                <p className="text-sm text-mist-100">{invoiceTitle(controller.detail.data.invoice)}</p>
                 <Badge tone={controller.isPayable ? "neutral" : "positive"}>
                   {INVOICE_STATUS_LABEL[controller.detail.data.invoice.status]}
                 </Badge>
                 <p className="text-xs text-mist-500">
-                  Hạn {controller.detail.data.invoice.dueDate}
+                  Hạn {formatter.date(controller.detail.data.invoice.dueDate)}
                 </p>
+                {controller.detail.data.invoice.dueExtended ? (
+                  <Badge tone="accent">Đã gia hạn: {controller.detail.data.invoice.extensionReason}</Badge>
+                ) : null}
               </div>
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <AmountCell label="Số tiền đợt này" value={controller.detail.data.invoice.amount} />
+                <AmountCell label="Số tiền" value={controller.detail.data.invoice.amount} />
                 <AmountCell label="Đã thu" value={controller.detail.data.invoice.amountPaid} />
                 <AmountCell label="Còn lại" value={controller.remaining} />
               </dl>

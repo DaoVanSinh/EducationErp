@@ -24,9 +24,11 @@ public final class AuditConstants {
         public static final String ACCOUNT_CREATE = "ACCOUNT_CREATE";
         public static final String ACCOUNT_INVITE_RESEND = "ACCOUNT_INVITE_RESEND";
         public static final String ACCOUNT_INVITE_REVOKE = "ACCOUNT_INVITE_REVOKE";
-        public static final String CONTRACT_CREATE = "CONTRACT_CREATE";
-        public static final String CONTRACT_TERMINATE = "CONTRACT_TERMINATE";
+        public static final String TEACHER_PAY_UPDATE = "TEACHER_PAY_UPDATE";
+        public static final String TEACHER_LEAVE = "TEACHER_LEAVE";
         public static final String PAYROLL_RUN_APPROVE = "PAYROLL_RUN_APPROVE";
+        public static final String PAYSLIP_PAY = "PAYSLIP_PAY";
+        public static final String PAYSLIP_PAYMENT_UNDO = "PAYSLIP_PAYMENT_UNDO";
         public static final String ENROLLMENT_CREATE = "ENROLLMENT_CREATE";
         public static final String ENROLLMENT_ACCEPT_SCHEDULE_CONFLICT = "ENROLLMENT_ACCEPT_SCHEDULE_CONFLICT";
         public static final String ENROLLMENT_WITHDRAW = "ENROLLMENT_WITHDRAW";
@@ -35,6 +37,7 @@ public final class AuditConstants {
         public static final String PAYMENT_RECEIVED = "PAYMENT_RECEIVED";
         public static final String INVOICE_OVERDUE = "INVOICE_OVERDUE";
         public static final String INVOICE_CANCEL = "INVOICE_CANCEL";
+        public static final String INVOICE_DUE_EXTEND = "INVOICE_DUE_EXTEND";
         public static final String COMBO_CREATE = "COMBO_CREATE";
         public static final String COMBO_CANCEL = "COMBO_CANCEL";
         public static final String GROUP_REGISTRATION_CREATE = "GROUP_REGISTRATION_CREATE";
@@ -49,6 +52,7 @@ public final class AuditConstants {
         public static final String ACCOUNT_ROLE_CHANGE = "ACCOUNT_ROLE_CHANGE";
         public static final String ACCOUNT_DISABLE = "ACCOUNT_DISABLE";
         public static final String ACCOUNT_ENABLE = "ACCOUNT_ENABLE";
+        public static final String ACCOUNT_CLOSE = "ACCOUNT_CLOSE";
         public static final String ACCOUNT_SIGN_OUT_EVERYWHERE = "ACCOUNT_SIGN_OUT_EVERYWHERE";
         public static final String CLASS_START = "CLASS_START";
         public static final String CLASS_COMPLETE = "CLASS_COMPLETE";
@@ -65,8 +69,9 @@ public final class AuditConstants {
         public static final String BRANCH = "BRANCH";
         public static final String COURSE = "COURSE";
         public static final String CLASS = "CLASS";
-        public static final String CONTRACT = "CONTRACT";
+        public static final String TEACHER_PROFILE = "TEACHER_PROFILE";
         public static final String PAYROLL_RUN = "PAYROLL_RUN";
+        public static final String PAYSLIP = "PAYSLIP";
         public static final String ENROLLMENT = "ENROLLMENT";
         public static final String INVOICE = "INVOICE";
         public static final String COMBO = "COMBO";

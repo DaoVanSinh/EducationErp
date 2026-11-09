@@ -24,7 +24,7 @@ export function GroupRegistrationsPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Đăng ký nhóm"
-          description="Nhiều học viên rủ nhau học chung một lớp được giảm theo số người. Mỗi người vẫn tự đóng học phí của mình, tối đa 3 đợt."
+          description="Nhiều học viên rủ nhau học chung một lớp được giảm theo số người. Mỗi người tự đóng đủ học phí của mình một lần."
           actions={
             <Can {...ACCESS_RULE.createInvoice}>
               <GlassButton onClick={controller.openCreateDialog} icon={<Plus size={16} aria-hidden />}>

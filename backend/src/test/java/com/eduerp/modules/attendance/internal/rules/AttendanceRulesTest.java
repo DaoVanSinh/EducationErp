@@ -3,11 +3,40 @@ package com.eduerp.modules.attendance.internal.rules;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.eduerp.modules.attendance.AttendanceConstants.AttendanceStatus;
+import com.eduerp.modules.courses.CoursesConstants;
+import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AttendanceRulesTest {
+
+    private static final LocalDate A_MONDAY = LocalDate.of(2026, 10, 26);
+
+    private static WeeklyScheduleSlot slot(CoursesConstants.DayOfWeek day, int startHour, int endHour, int endMinute) {
+        return new WeeklyScheduleSlot(day, LocalTime.of(startHour, 0), LocalTime.of(endHour, endMinute));
+    }
+
+    @Test
+    void sessionMinutesAddsEverySlotOfThatWeekday() {
+        var schedule = List.of(slot(CoursesConstants.DayOfWeek.MON, 8, 9, 30), slot(CoursesConstants.DayOfWeek.MON, 14, 15, 0),
+                slot(CoursesConstants.DayOfWeek.WED, 8, 12, 0));
+
+        assertThat(AttendanceRules.sessionMinutes(schedule, A_MONDAY)).isEqualTo(150);
+    }
+
+    @Test
+    void aMakeUpSessionOnAnUnscheduledDayCountsAsTheLongestSlot() {
+        var schedule = List.of(slot(CoursesConstants.DayOfWeek.TUE, 8, 9, 30), slot(CoursesConstants.DayOfWeek.THU, 8, 10, 0));
+
+        assertThat(AttendanceRules.sessionMinutes(schedule, A_MONDAY)).isEqualTo(120);
+    }
+
+    @Test
+    void aClassWithoutASchedulehasNoDuration() {
+        assertThat(AttendanceRules.sessionMinutes(List.of(), A_MONDAY)).isZero();
+    }
 
     @Test
     void countsEachStatusAndTreatsLateAsAttended() {

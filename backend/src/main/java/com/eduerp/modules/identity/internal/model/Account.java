@@ -87,4 +87,12 @@ public class Account {
     public void disable() {
         this.status = IdentityConstants.AccountStatus.DISABLED;
     }
+
+    public void close() {
+        this.status = IdentityConstants.AccountStatus.CLOSED;
+    }
+
+    public boolean isClosed() {
+        return this.status == IdentityConstants.AccountStatus.CLOSED;
+    }
 }

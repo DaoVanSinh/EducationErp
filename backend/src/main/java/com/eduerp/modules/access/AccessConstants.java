@@ -75,6 +75,8 @@ public final class AccessConstants {
         public static final String ADMIN = "ADMIN";
         public static final String TEACHER = "TEACHER";
         public static final String STUDENT = "STUDENT";
+        public static final String BRANCH_ADMIN = "BRANCH_ADMIN";
+        public static final String FORMER_STAFF = "FORMER_STAFF";
     }
 
     public static final class Authorities {
@@ -119,6 +121,7 @@ public final class AccessConstants {
         public static final String OUT_OF_BRANCH_SCOPE = "ACCESS_OUT_OF_BRANCH_SCOPE";
         public static final String SCOPE_DENIED = "ACCESS_SCOPE_DENIED";
         public static final String NO_HOME_BRANCH = "ACCESS_NO_HOME_BRANCH";
+        public static final String ROLE_CHANGE_REQUIRES_NEW_ACCOUNT = "ACCESS_ROLE_CHANGE_REQUIRES_NEW_ACCOUNT";
     }
 
     /**
@@ -167,6 +170,9 @@ public final class AccessConstants {
                 + CHECK_SEPARATOR + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String UPDATE_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        /** Tạm đóng, mở lại, đóng tài khoản: use case kiểm tiếp tài khoản có thuộc chi nhánh của người gọi không. */
+        public static final String MANAGE_ACCOUNT_LIFECYCLE = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String READ_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String CREATE_ACCOUNT = CHECK_PREFIX + Resources.ACCOUNT + CHECK_SEPARATOR
@@ -195,12 +201,13 @@ public final class AccessConstants {
                 + Actions.READ + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String UPDATE_CLASS = CHECK_PREFIX + Resources.CLASS + CHECK_SEPARATOR
                 + Actions.UPDATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
+        /** Giáo viên gắn với một chi nhánh: admin chi nhánh tạo và sửa được, use case kiểm đúng chi nhánh. */
         public static final String CREATE_TEACHER = CHECK_PREFIX + Resources.TEACHER + CHECK_SEPARATOR
-                + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+                + Actions.CREATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String READ_TEACHER = CHECK_PREFIX + Resources.TEACHER + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String UPDATE_TEACHER = CHECK_PREFIX + Resources.TEACHER + CHECK_SEPARATOR
-                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
+                + Actions.UPDATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String CREATE_STUDENT = CHECK_PREFIX + Resources.STUDENT + CHECK_SEPARATOR
                 + Actions.CREATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String READ_STUDENT = CHECK_PREFIX + Resources.STUDENT + CHECK_SEPARATOR
@@ -215,6 +222,11 @@ public final class AccessConstants {
                 + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         public static final String APPROVE_PAYROLL = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
                 + Actions.APPROVE + MINIMUM_SCOPE + CHECK_SUFFIX;
+        /** Phiếu lương đã duyệt của chi nhánh mình, và đánh dấu đã chi trả - use case lọc theo chi nhánh. */
+        public static final String READ_BRANCH_PAYSLIPS = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
+                + Actions.READ + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
+        public static final String PAY_BRANCH_PAYSLIPS = CHECK_PREFIX + Resources.PAYROLL + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String CREATE_ENROLLMENT = CHECK_PREFIX + Resources.ENROLLMENT + CHECK_SEPARATOR
                 + Actions.CREATE + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         public static final String READ_ENROLLMENT = CHECK_PREFIX + Resources.ENROLLMENT + CHECK_SEPARATOR
@@ -227,6 +239,9 @@ public final class AccessConstants {
         public static final String READ_INVOICE = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
                 + Actions.READ + MINIMUM_SCOPE_BRANCH + CHECK_SUFFIX;
         /** Thu tiền/huỷ hoá đơn cũng là chuyển state của Invoice, dùng UPDATE (spec mục 5). */
+        /** Gia hạn học phí chỉ admin gốc quyết. */
+        public static final String EXTEND_INVOICE = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
+                + Actions.UPDATE + MINIMUM_SCOPE + CHECK_SUFFIX;
         /** Bậc giảm giá combo là cấu hình giá toàn trung tâm - chỉ ORGANIZATION, khác hoá đơn của từng chi nhánh. */
         public static final String CREATE_COMBO_DISCOUNT_TIER = CHECK_PREFIX + Resources.INVOICE + CHECK_SEPARATOR
                 + Actions.CREATE + MINIMUM_SCOPE + CHECK_SUFFIX;

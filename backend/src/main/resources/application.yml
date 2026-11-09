@@ -34,7 +34,7 @@ spring:
     check-template-location: false
   servlet:
     multipart:
-      # Mặc định Spring Boot là 1MB/10MB - một hợp đồng scan thường vượt 1MB.
+      # Mặc định Spring Boot là 1MB/10MB - ảnh đại diện chụp từ điện thoại thường vượt 1MB.
       max-file-size: 10MB
       max-request-size: 12MB
 

@@ -11,17 +11,17 @@ const NOTE_PLACEHOLDER: Record<OfflinePaymentMethod, string> = {
 };
 
 /**
- * Form ghi nhận thu tay: số tiền, kênh thu (tiền mặt / chuyển khoản), ghi chú đối soát. Mặc định là
- * tiền mặt - kênh phổ biến nhất ở quầy.
+ * Form ghi nhận thu tay: kênh thu (tiền mặt / chuyển khoản) và ghi chú đối soát. Thu đủ một lần nên số tiền luôn là
+ * phần còn lại, không nhập tay. Mặc định là tiền mặt - kênh phổ biến nhất ở quầy.
  */
-export function useManualPaymentForm(invoiceId: string, onClose: () => void) {
+export function useManualPaymentForm(invoiceId: string, remaining: number, onClose: () => void) {
   const recordManualPayment = useRecordManualPayment(invoiceId);
 
   const form = useZodForm({
     schema: manualPaymentFormSchema,
-    initialValues: { amount: "", method: PAYMENT_METHOD.cash, note: "" },
-    onSubmit: async ({ amount, method, note }) => {
-      await recordManualPayment.mutateAsync({ amount, method, note: note === "" ? undefined : note });
+    initialValues: { method: PAYMENT_METHOD.cash, note: "" },
+    onSubmit: async ({ method, note }) => {
+      await recordManualPayment.mutateAsync({ amount: remaining, method, note: note === "" ? undefined : note });
       form.reset();
       onClose();
     },

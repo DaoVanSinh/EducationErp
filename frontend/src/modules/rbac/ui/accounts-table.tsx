@@ -10,11 +10,18 @@ import { m } from "framer-motion";
 export interface AccountsTableProps {
   readonly rows: readonly AccountSummary[];
   readonly currentAccountId: string | undefined;
+  readonly canManageOrganization: boolean;
   readonly onOpenDialog: (kind: AccountsDialogKind, account: AccountSummary) => void;
   readonly onCommand: (account: AccountSummary, command: AccountCommand) => void;
 }
 
-export function AccountsTable({ rows, currentAccountId, onOpenDialog, onCommand }: AccountsTableProps) {
+export function AccountsTable({
+  rows,
+  currentAccountId,
+  canManageOrganization,
+  onOpenDialog,
+  onCommand,
+}: AccountsTableProps) {
   return (
     <ul className="flex flex-col gap-2.5 min-w-0 w-full">
       {rows.map((account, index) => (
@@ -53,7 +60,8 @@ export function AccountsTable({ rows, currentAccountId, onOpenDialog, onCommand 
           <AccountActionsMenu
             account={account}
             isSelf={account.id === currentAccountId}
-            commands={availableCommands(account, currentAccountId)}
+            canManageOrganization={canManageOrganization}
+            commands={availableCommands(account, currentAccountId, canManageOrganization)}
             onOpenDialog={onOpenDialog}
             onCommand={onCommand}
           />

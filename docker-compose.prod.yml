@@ -2,7 +2,7 @@
 # có agent-postgres/redis-stack như máy dev. Postgres, Redis, MinIO (S3-compatible) đều là container
 # riêng của chính stack này, dữ liệu bền qua volume.
 #
-# MinIO phục vụ integrations.storage (lưu file hợp đồng lao động của modules.payroll) qua S3 API.
+# MinIO phục vụ integrations.storage (lưu ảnh đại diện của modules.identity) qua S3 API.
 #
 # Chạy: docker compose -f docker-compose.prod.yml --env-file backend/.env.docker.prod up -d --build
 name: eduerp-prod

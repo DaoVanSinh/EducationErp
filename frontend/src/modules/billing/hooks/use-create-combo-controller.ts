@@ -25,7 +25,7 @@ export interface ComboCandidate {
 /**
  * Toàn bộ state/query/mutation của dialog tạo combo. Trình tự: chọn học viên → nạp ghi danh ACTIVE
  * của chính học viên đó (filter server-side, spec mục 7) → tick ≥ 2 khoá → xem trước % giảm và tổng
- * sau giảm → nhập hạn đóng → tạo.
+ * sau giảm → tạo. Hoá đơn lẻ chưa thu của các khoá được thay bằng một hoá đơn combo, hạn do hệ thống tính.
  */
 export function useCreateComboController(onCreated: () => void) {
   const createCombo = useCreateCombo();
@@ -35,12 +35,11 @@ export function useCreateComboController(onCreated: () => void) {
 
   const form = useZodForm({
     schema: createComboFormSchema,
-    initialValues: { studentProfileId: "", enrollmentIds: [], dueDate: "" },
+    initialValues: { studentProfileId: "", enrollmentIds: [] },
     onSubmit: async (values) => {
       const payload: CreateComboPayload = {
         studentProfileId: values.studentProfileId,
         enrollmentIds: values.enrollmentIds,
-        dueDate: values.dueDate,
       };
       await createCombo.mutateAsync(payload);
       form.reset();

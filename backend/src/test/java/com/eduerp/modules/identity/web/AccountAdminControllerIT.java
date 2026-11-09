@@ -102,7 +102,7 @@ class AccountAdminControllerIT {
     void createsAnAccountAndSendsInvite() throws Exception {
         var admin = signIn("account-admin@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var request = new CreateAccountRequest("new-teacher@eduerp.local", "Cô Lan", null,
-                access.roleIdOf(AccessConstants.RoleCodes.TEACHER));
+                access.roleIdOf(AccessConstants.RoleCodes.FORMER_STAFF));
 
         var result = mockMvc.perform(post("/api/rbac/accounts").cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -136,7 +136,7 @@ class AccountAdminControllerIT {
     void rejectsADuplicateEmail() throws Exception {
         var admin = signIn("account-admin-2@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var request = new CreateAccountRequest("account-admin-2@eduerp.local", "Trùng email", null,
-                access.roleIdOf(AccessConstants.RoleCodes.TEACHER));
+                access.roleIdOf(AccessConstants.RoleCodes.FORMER_STAFF));
 
         var result = mockMvc.perform(post("/api/rbac/accounts").cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -153,7 +153,7 @@ class AccountAdminControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new CreateAccountRequest("resend-target@eduerp.local", "Thầy X", null,
-                                        access.roleIdOf(AccessConstants.RoleCodes.TEACHER)))))
+                                        access.roleIdOf(AccessConstants.RoleCodes.FORMER_STAFF)))))
                 .andReturn();
         var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
 
@@ -178,7 +178,7 @@ class AccountAdminControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new CreateAccountRequest("revoke-target@eduerp.local", "Thầy Y", null,
-                                        access.roleIdOf(AccessConstants.RoleCodes.TEACHER)))))
+                                        access.roleIdOf(AccessConstants.RoleCodes.FORMER_STAFF)))))
                 .andReturn();
         var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
 
@@ -214,7 +214,7 @@ class AccountAdminControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new CreateAccountRequest("audited@eduerp.local", "Có audit", null,
-                                        access.roleIdOf(AccessConstants.RoleCodes.TEACHER)))))
+                                        access.roleIdOf(AccessConstants.RoleCodes.FORMER_STAFF)))))
                 .andReturn();
         var accountId = objectMapper.readValue(created.getResponse().getContentAsString(), UUID.class);
 

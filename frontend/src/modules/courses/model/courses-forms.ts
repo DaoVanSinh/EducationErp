@@ -169,6 +169,7 @@ export const createClassFormSchema = z
 export const updateClassFormSchema = z
   .object({
     teacherId: z.string().uuid("Chọn giáo viên"),
+    teacherEffectiveFrom: optionalDate,
     maxSeats: seatCount("Nhập sĩ số tối đa"),
     minSeats: seatCount("Nhập sĩ số tối thiểu để khai giảng"),
     startDate: z.string().min(1, "Chọn ngày khai giảng"),

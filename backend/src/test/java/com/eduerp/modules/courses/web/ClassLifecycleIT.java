@@ -99,6 +99,12 @@ class ClassLifecycleIT {
     AutoStartClasses autoStartClasses;
 
     @Autowired
+    com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository teacherProfiles;
+
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    @Autowired
     PasswordEncoder passwordEncoder;
 
     private UUID account(String email, String roleCode) {
@@ -106,6 +112,15 @@ class ClassLifecycleIT {
         account.recordFirstLogin();
         accounts.save(account);
         access.assignRole(account.getId(), roleCode);
+        return account.getId();
+    }
+
+    private UUID teacherAt(String email, UUID branchId) {
+        var account = new Account(email, passwordEncoder.encode(PASSWORD), email, branchId);
+        account.recordFirstLogin();
+        accounts.save(account);
+        access.assignRole(account.getId(), AccessConstants.RoleCodes.TEACHER);
+        com.eduerp.modules.teachers.TeacherFixtures.makeAssignable(teacherProfiles, jdbc, account.getId());
         return account.getId();
     }
 
@@ -125,7 +140,7 @@ class ClassLifecycleIT {
             throws Exception {
         var course = courses.save(new Course(code + "-C", "Khoá " + code, null, null, null));
         var branch = branches.save(new Branch(code + "-B", "Chi nhánh " + code, null));
-        var teacher = account(code.toLowerCase() + "-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
+        var teacher = teacherAt(code.toLowerCase() + "-teacher@eduerp.local", branch.getId());
         var result = postJson(admin, "/api/courses/classes", new CreateClassRequest(course.getId(), code,
                 branch.getId(), teacher, maxSeats, minSeats, startDate, null, MON_EVENING));
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
@@ -252,15 +267,15 @@ class ClassLifecycleIT {
         assertThat(late.getResponse().getStatus()).as("còn chỗ nhưng lớp đã khai giảng").isEqualTo(409);
         assertThat(late.getResponse().getContentAsString()).contains("ENROLLMENT_CLASS_NOT_ACTIVE");
 
-        var raised = patchClass(admin, classId, new UpdateClassRequest(teacherId, 3, 1, TODAY, null, MON_EVENING));
+        var raised = patchClass(admin, classId, new UpdateClassRequest(teacherId, 3, 1, TODAY, null, MON_EVENING, null));
         assertThat(raised.getResponse().getStatus()).isEqualTo(400);
         assertThat(raised.getResponse().getContentAsString()).contains("sĩ số tối đa");
-        var lowered = patchClass(admin, classId, new UpdateClassRequest(teacherId, 1, 1, TODAY, null, MON_EVENING));
+        var lowered = patchClass(admin, classId, new UpdateClassRequest(teacherId, 1, 1, TODAY, null, MON_EVENING, null));
         assertThat(lowered.getResponse().getStatus()).isEqualTo(400);
         assertThat(coursesManagement.getClassInfo(classId).orElseThrow().maxSeats()).isEqualTo(2);
 
         var sameSeats = patchClass(admin, classId, new UpdateClassRequest(teacherId, 2, 1, TODAY, TODAY.plusDays(60),
-                MON_EVENING));
+                MON_EVENING, null));
         assertThat(sameSeats.getResponse().getStatus()).as("các trường khác vẫn sửa được").isEqualTo(200);
     }
 
@@ -289,7 +304,7 @@ class ClassLifecycleIT {
         var shrink = mockMvc.perform(patch("/api/courses/classes/" + classId).cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new UpdateClassRequest(info.teacherId(), 1, 1,
-                                TODAY, null, MON_EVENING))))
+                                TODAY, null, MON_EVENING, null))))
                 .andReturn();
         assertThat(shrink.getResponse().getStatus()).isEqualTo(409);
         assertThat(shrink.getResponse().getContentAsString()).contains("COURSES_CLASS_SEATS_BELOW_ENROLLED");

@@ -1,5 +1,6 @@
 import {
   INVOICE_STATUS_LABEL,
+  invoiceTitle,
   PAYMENT_METHOD_LABEL,
   PAYMENT_STATUS,
   PAYMENT_STATUS_LABEL,
@@ -28,7 +29,8 @@ export function InvoiceCard({ detail, courseName, onPayVnpay, isPaying }: Invoic
         <div className="min-w-0">
           <h2 className="truncate text-base font-semibold text-mist-100">{courseName ?? "Học phí combo khóa học"}</h2>
           <p className="text-xs text-mist-400">
-            Đợt {invoice.installmentNumber} · Hạn đóng {formatter.date(invoice.dueDate)}
+            {invoiceTitle(invoice)} · Hạn đóng {formatter.date(invoice.dueDate)}
+            {invoice.dueExtended ? " · Đã gia hạn" : ""}
           </p>
         </div>
         <Badge tone={invoiceTone(invoice.status)}>{INVOICE_STATUS_LABEL[invoice.status]}</Badge>

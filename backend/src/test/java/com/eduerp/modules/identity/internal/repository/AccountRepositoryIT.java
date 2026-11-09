@@ -38,7 +38,7 @@ class AccountRepositoryIT {
                 branchId, "QA-" + branchId.toString().substring(0, 8), "Chi nhánh test");
 
         accounts.save(new Account("teacher@eduerp.local", "hashed", "Nguyễn Văn A", branchId));
-        var found = accounts.findByEmail("teacher@eduerp.local");
+        var found = accounts.findByTypedEmail("teacher@eduerp.local");
 
         assertThat(found).isPresent();
         assertThat(found.get().getHomeBranchId()).isEqualTo(branchId);
@@ -51,6 +51,5 @@ class AccountRepositoryIT {
 
         assertThat(saved.getEmail()).isEqualTo("teacher.case@eduerp.local");
         assertThat(accounts.findByTypedEmail("TEACHER.CASE@eduerp.LOCAL")).isPresent();
-        assertThat(accounts.findByEmail("Teacher.Case@EduERP.Local")).isEmpty();
     }
 }

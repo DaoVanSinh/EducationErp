@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 import uuid
 from typing import Any
@@ -62,13 +61,8 @@ class EduErpBackendClient:
         path: str,
         params: dict[str, Any] | None = None,
         json_body: dict[str, Any] | None = None,
-        multipart_part: str = "",
     ) -> tuple[int, Any]:
-        """Perform a single bounded HTTP request against EduERP and return (status_code, body).
-
-        With `multipart_part`, `json_body` is sent as that JSON part of a multipart request, for
-        controllers that take @RequestPart instead of @RequestBody.
-        """
+        """Perform a single bounded HTTP request against EduERP and return (status_code, body)."""
         normalized_path = path if path.startswith("/") else f"/{path}"
         token = self.mint_internal_access_jwt(account_id)
         csrf_token = uuid.uuid4().hex
@@ -88,12 +82,6 @@ class EduErpBackendClient:
             else None
         )
 
-        body_args: dict[str, Any] = (
-            {"files": {multipart_part: (None, json.dumps(json_body or {}), "application/json")}}
-            if multipart_part
-            else {"json": json_body}
-        )
-
         async with httpx.AsyncClient(
             base_url=self._base_url,
             timeout=self._timeout,
@@ -105,7 +93,7 @@ class EduErpBackendClient:
                 url=normalized_path,
                 params=clean_params,
                 headers=headers,
-                **body_args,
+                json=json_body,
             ) as response:
                 status = response.status_code
                 try:

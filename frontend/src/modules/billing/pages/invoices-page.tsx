@@ -25,11 +25,11 @@ export function InvoicesPage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Hoá đơn học phí"
-          description="Mỗi ghi danh thu tối đa 3 đợt, tổng các đợt không vượt học phí khoá học."
+          description="Mỗi ghi danh một hoá đơn, tự lập khi ghi danh, thu đủ một lần, hạn là ngày thứ 7 từ ngày khai giảng."
           actions={
             <Can {...ACCESS_RULE.createInvoice}>
               <GlassButton onClick={controller.openCreateDialog} icon={<Plus size={16} aria-hidden />}>
-                Tạo đợt thu
+                Lập lại hoá đơn
               </GlassButton>
             </Can>
           }
@@ -96,7 +96,7 @@ function InvoicesListSection({
       <EmptyState
         icon={<Receipt size={28} aria-hidden />}
         title="Chưa có hoá đơn nào"
-        description="Tạo đợt thu đầu tiên cho một ghi danh đang học."
+        description="Hoá đơn được lập tự động khi ghi danh vào lớp."
       />
     );
   }

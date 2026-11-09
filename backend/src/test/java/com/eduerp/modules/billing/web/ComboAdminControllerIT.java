@@ -163,8 +163,7 @@ class ComboAdminControllerIT {
                         .content(objectMapper.writeValueAsString(new CreateComboRequest(
                                 fixture.studentProfileId(),
                                 List.of(UUID.fromString(fixture.firstEnrollmentId()),
-                                        UUID.fromString(fixture.secondEnrollmentId())),
-                                DUE_DATE))))
+                                        UUID.fromString(fixture.secondEnrollmentId()))))))
                 .andReturn();
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
@@ -192,12 +191,12 @@ class ComboAdminControllerIT {
             assertThat(member.get("classCode").asText()).startsWith("CMBW-K-");
         });
 
-        assertThat(issueComboInvoice(admin, comboId, "10000000").getResponse().getStatus()).isEqualTo(200);
-        assertThat(issueComboInvoice(admin, comboId, "7850000").getResponse().getStatus()).isEqualTo(200);
-
+        // Lập combo tự có đúng một hoá đơn đủ tổng sau giảm giá, không cần kế toán nhập số tiền.
         var afterInvoices = mockMvc.perform(get(COMBOS + "/" + comboId).cookie(admin)).andReturn();
         assertThat(objectMapper.readTree(afterInvoices.getResponse().getContentAsString()).get("invoices"))
-                .hasSize(2).allSatisfy(invoice -> {
+                .hasSize(1).allSatisfy(invoice -> {
+                    assertThat(invoice.get("amount").asLong()).isEqualTo(17_850_000L);
+                    assertThat(invoice.get("installmentNumber").asInt()).isEqualTo(1);
                     assertThat(invoice.get("studentName").asText()).isEqualTo("HV");
                     assertThat(invoice.get("courseNames")).hasSize(2);
                     assertThat(invoice.get("courseNames").get(0).asText()).isEqualTo("Khoá");
@@ -212,10 +211,10 @@ class ComboAdminControllerIT {
                     assertThat(enrollment.get("classCode").asText()).startsWith("CMBW-K-");
                 });
 
-        var tooMuch = issueComboInvoice(admin, comboId, "1");
+        var tooMuch = issueComboInvoice(admin, comboId);
         assertThat(tooMuch.getResponse().getStatus()).isEqualTo(409);
         assertThat(tooMuch.getResponse().getContentAsString())
-                .contains("BILLING_INVOICE_AMOUNT_EXCEEDS_TUITION");
+                .contains("BILLING_COMBO_ALREADY_INVOICED");
     }
 
     /** Hoá đơn combo trả về comboId và KHÔNG có enrollmentId/courseId - hợp đồng với Zod ở frontend. */
@@ -225,18 +224,17 @@ class ComboAdminControllerIT {
         resetTiersTo(2, "10");
         var comboId = createCombo(admin, newTwoCourseFixture(admin));
 
-        var body = issueComboInvoice(admin, comboId, "1000000").getResponse().getContentAsString();
+        var invoice = comboInvoice(admin, comboId);
 
-        var invoice = objectMapper.readTree(body);
         assertThat(invoice.get("comboId").asText()).isEqualTo(comboId);
         assertThat(invoice.get("enrollmentId").isNull()).isTrue();
         assertThat(invoice.get("courseId").isNull()).isTrue();
         assertThat(invoice.get("installmentNumber").asInt()).isEqualTo(1);
     }
 
-    /** Review Focus #6 qua HTTP: huỷ được khi chưa có hoá đơn, bị chặn 409 sau khi có hoá đơn. */
+    /** Huỷ được khi chưa thu đồng nào, các ghi danh quay về hoá đơn giá thường. Đã thu tiền thì bị chặn 409. */
     @Test
-    void cancelsAComboBeforeItsFirstInvoiceAndRefusesAfterwards() throws Exception {
+    void cancelsAnUnpaidComboAndRefusesOnceItHasBeenPaid() throws Exception {
         var admin = signIn("cmb-admin-3@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         resetTiersTo(2, "10");
         var fixture = newTwoCourseFixture(admin);
@@ -249,8 +247,20 @@ class ComboAdminControllerIT {
                 .getResponse().getStatus()).isEqualTo(404);
 
         // Xoá cứng giải phóng enrollment_id, nên gộp lại chính hai ghi danh đó phải được.
+        var reissued = mockMvc.perform(get("/api/billing/invoices").cookie(admin)
+                .param("enrollmentId", fixture.firstEnrollmentId())
+                .param("status", com.eduerp.modules.billing.BillingConstants.InvoiceStatus.UNPAID.name())).andReturn();
+        assertThat(objectMapper.readTree(reissued.getResponse().getContentAsString()).get("items"))
+                .singleElement().satisfies(invoice -> assertThat(invoice.get("amount").asLong())
+                        .isEqualTo(MATHS_FEE.longValue()));
+
         var rebuilt = createCombo(admin, fixture);
-        issueComboInvoice(admin, rebuilt, "1000000");
+        var invoice = comboInvoice(admin, rebuilt);
+        assertThat(mockMvc.perform(post("/api/billing/invoices/" + invoice.get("id").asText() + "/manual-payment")
+                        .cookie(admin).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new com.eduerp.modules.billing.dto
+                                .RecordManualPaymentRequest(invoice.get("amount").decimalValue()))))
+                .andReturn().getResponse().getStatus()).isEqualTo(200);
 
         var refused = mockMvc.perform(post(COMBOS + "/" + rebuilt + "/cancel").cookie(admin).with(csrf()))
                 .andReturn();
@@ -271,8 +281,7 @@ class ComboAdminControllerIT {
                         .content(objectMapper.writeValueAsString(new CreateComboRequest(
                                 mine.studentProfileId(),
                                 List.of(UUID.fromString(mine.firstEnrollmentId()),
-                                        UUID.fromString(someoneElse.firstEnrollmentId())),
-                                DUE_DATE))))
+                                        UUID.fromString(someoneElse.firstEnrollmentId()))))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
@@ -293,8 +302,7 @@ class ComboAdminControllerIT {
                         .content(objectMapper.writeValueAsString(new CreateComboRequest(
                                 fixture.studentProfileId(),
                                 List.of(UUID.fromString(fixture.firstEnrollmentId()),
-                                        UUID.fromString(fixture.secondEnrollmentId())),
-                                DUE_DATE))))
+                                        UUID.fromString(fixture.secondEnrollmentId()))))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(409);
@@ -319,8 +327,7 @@ class ComboAdminControllerIT {
                         .content(objectMapper.writeValueAsString(new CreateComboRequest(
                                 fixture.studentProfileId(),
                                 List.of(UUID.fromString(fixture.firstEnrollmentId()),
-                                        UUID.fromString(thirdEnrollmentId)),
-                                DUE_DATE))))
+                                        UUID.fromString(thirdEnrollmentId))))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(409);
@@ -360,7 +367,7 @@ class ComboAdminControllerIT {
         assertThat(mockMvc.perform(post(COMBO_INVOICES).cookie(outsider).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateComboInvoiceRequest(
-                                UUID.fromString(comboId), new BigDecimal("1000000"), DUE_DATE))))
+                                UUID.fromString(comboId)))))
                 .andReturn().getResponse().getStatus()).isEqualTo(403);
     }
 
@@ -369,12 +376,17 @@ class ComboAdminControllerIT {
         assertThat(mockMvc.perform(get(COMBOS)).andReturn().getResponse().getStatus()).isEqualTo(401);
     }
 
-    private org.springframework.test.web.servlet.MvcResult issueComboInvoice(Cookie admin, String comboId,
-            String amount) throws Exception {
+    private org.springframework.test.web.servlet.MvcResult issueComboInvoice(Cookie admin, String comboId)
+            throws Exception {
         return mockMvc.perform(post(COMBO_INVOICES).cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CreateComboInvoiceRequest(
-                                UUID.fromString(comboId), new BigDecimal(amount), DUE_DATE))))
+                                UUID.fromString(comboId)))))
                 .andReturn();
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode comboInvoice(Cookie admin, String comboId) throws Exception {
+        var detail = mockMvc.perform(get(COMBOS + "/" + comboId).cookie(admin)).andReturn();
+        return objectMapper.readTree(detail.getResponse().getContentAsString()).get("invoices").get(0);
     }
 }

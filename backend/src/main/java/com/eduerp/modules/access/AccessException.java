@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 public sealed class AccessException extends AppException
         permits AccessReferenceNotFoundException, AccessException.SystemAdminLocked,
         AccessException.SelfModificationForbidden, AccessException.OutOfBranchScope,
-        AccessException.ScopeDenied, AccessException.NoHomeBranch {
+        AccessException.ScopeDenied, AccessException.NoHomeBranch, AccessException.RoleChangeRequiresNewAccount {
 
     protected AccessException(String errorCode, HttpStatus status, String message) {
         super(errorCode, status, message);
@@ -47,6 +47,14 @@ public sealed class AccessException extends AppException
     }
 
     /** Scope BRANCH mà tài khoản không thuộc chi nhánh nào - không có dữ liệu nào để xem. */
+    /** Vào hoặc ra khỏi Giáo viên, Học viên là một đợt mới: đóng tài khoản cũ rồi tạo tài khoản mới cùng email. */
+    public static final class RoleChangeRequiresNewAccount extends AccessException {
+        public RoleChangeRequiresNewAccount() {
+            super(AccessConstants.ErrorCodes.ROLE_CHANGE_REQUIRES_NEW_ACCOUNT, HttpStatus.CONFLICT,
+                    "Không đổi vai trò vào hoặc ra khỏi Giáo viên, Học viên. Hãy đóng tài khoản này rồi tạo tài khoản mới cùng email");
+        }
+    }
+
     public static final class NoHomeBranch extends AccessException {
         public NoHomeBranch() {
             super(AccessConstants.ErrorCodes.NO_HOME_BRANCH, HttpStatus.FORBIDDEN,

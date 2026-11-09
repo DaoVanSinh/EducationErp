@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 /**
  * Hồ sơ giáo viên đi theo NĂNG LỰC giảng dạy (cổng giảng dạy {@code TEACHING:READ}), không theo mã vai
  * trò - cùng luật với {@code StudentRoleParticipant} của students: có năng lực thì có hồ sơ, mất năng lực
- * thì hồ sơ "ngừng hoạt động" (không xoá - còn hợp đồng, phiếu lương, lịch sử dạy).
+ * thì hồ sơ "ngừng hoạt động" (không xoá - còn phiếu lương, lịch sử dạy).
  */
 @Component
 class TeacherRoleParticipant implements RoleAssignmentParticipant {

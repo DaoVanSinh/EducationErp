@@ -11,4 +11,8 @@ public interface PayrollRunAggregateRow {
     long getPayslipCount();
 
     BigDecimal getTotalGrossPay();
+
+    BigDecimal getTotalNetPay();
+
+    BigDecimal getTotalEmployerInsurance();
 }

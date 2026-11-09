@@ -15,6 +15,7 @@ import com.eduerp.modules.billing.MinimumComboSizeException;
 import com.eduerp.modules.billing.StudentMismatchInComboException;
 import com.eduerp.modules.billing.dto.ComboResponse;
 import com.eduerp.modules.billing.dto.CreateComboRequest;
+import com.eduerp.modules.billing.internal.TuitionInvoiceIssuer;
 import com.eduerp.modules.billing.internal.model.Combo;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboDiscountTierRepository;
@@ -40,7 +41,8 @@ import org.springframework.transaction.annotation.Transactional;
  * cách {@code CreateInvoice} làm, không cần thêm một quyền ghi xuyên module nào (spec mục 3).
  *
  * <p>Thứ tự kiểm tra: số lượng → ghi danh tồn tại/ACTIVE → cùng học viên và cùng chi nhánh → học phí
- * từng khoá → bậc giảm giá → lưu. Dừng ở bước đầu tiên sai, không gom lỗi.
+ * từng khoá → bậc giảm giá → lưu. Dừng ở bước đầu tiên sai, không gom lỗi. Hoá đơn lẻ chưa thu của các ghi danh bị huỷ
+ * và thay bằng một hoá đơn combo đã giảm, hạn là ngày thứ 7 từ lớp khai giảng sớm nhất.
  */
 @Service
 public class CreateCombo {
@@ -54,12 +56,14 @@ public class CreateCombo {
     private final BillingBranchGuard branchGuard;
     private final EnrollmentDiscounts discounts;
     private final StudentsManagement students;
+    private final TuitionInvoiceIssuer issuer;
 
     CreateCombo(ComboRepository combos, ComboDiscountTierRepository tiers,
             EnrollmentManagement enrollmentManagement, CoursesManagement coursesManagement,
             ApplicationEventPublisher events, BillingBranchGuard branchGuard, EnrollmentDiscounts discounts,
-            StudentsManagement students) {
+            StudentsManagement students, TuitionInvoiceIssuer issuer) {
         this.students = students;
+        this.issuer = issuer;
         this.branchGuard = branchGuard;
         this.discounts = discounts;
         this.combos = combos;
@@ -97,11 +101,14 @@ public class CreateCombo {
                 .orElseThrow(() -> new ComboDiscountTierNotConfiguredException(priced.size()));
 
         var combo = new Combo(request.studentProfileId(), comboBranchId, totalOriginalAmount,
-                tier.getDiscountPercent(), request.dueDate(), actorAccountId);
+                tier.getDiscountPercent(), issuer.earliestDueDateOf(members.stream()
+                        .map(EnrollmentManagement.EnrollmentSummaryResponse::classId).toList()), actorAccountId);
         priced.forEach(item -> combo.addEnrollment(item.enrollmentId(), item.courseId(), item.tuitionFee()));
 
+        enrollmentIds.forEach(id -> issuer.cancelUnpaidOf(id, actorAccountId, actorBranchId));
         var saved = save(combo, enrollmentIds);
         events.publishEvent(new BillingEvents.ComboCreated(saved.getId(), actorAccountId, actorBranchId));
+        issuer.issueForCombo(saved, actorAccountId, actorBranchId);
         var studentName = students.displayNamesOf(List.of(request.studentProfileId())).get(request.studentProfileId());
         return toResponse(saved, studentName);
     }

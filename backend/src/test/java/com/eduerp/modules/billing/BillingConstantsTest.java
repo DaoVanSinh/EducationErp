@@ -17,9 +17,10 @@ class BillingConstantsTest {
                 BillingConstants.InvoiceStatus.CANCELLED);
     }
 
+    /** Ngày khai giảng là ngày thứ nhất của 7 ngày đóng học phí. */
     @Test
-    void installmentLimitIsThree() {
-        assertThat(BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT).isEqualTo(3);
+    void tuitionIsDueOnTheSeventhDayFromTheClassStart() {
+        assertThat(BillingConstants.Limits.TUITION_DUE_DAYS_AFTER_START).isEqualTo(6);
     }
 
     /**
@@ -43,13 +44,9 @@ class BillingConstantsTest {
         assertThat(BillingConstants.Schedules.MARK_OVERDUE_CRON).isEqualTo("0 0 1 * * *");
     }
 
-    /** Spec mục 1 + 12: 3 đợt là cho CẢ combo, không phải 3 đợt mỗi khoá - hai hạn mức là hai hằng
-     * riêng để không ai vô tình dùng chung rồi nhân lên theo số khoá. */
     @Test
-    void comboLimitsAreThreeInstallmentsAndTwoEnrollments() {
-        assertThat(BillingConstants.Limits.MAX_INSTALLMENTS_PER_COMBO).isEqualTo(3);
+    void aComboNeedsTwoEnrollments() {
         assertThat(BillingConstants.Limits.MIN_ENROLLMENTS_PER_COMBO).isEqualTo(2);
-        assertThat(BillingConstants.Limits.MAX_INSTALLMENTS_PER_ENROLLMENT).isEqualTo(3);
     }
 
     /** Hai event combo mang đúng hình dạng 4 event billing đã có: (id, actorAccountId, actorBranchId). */

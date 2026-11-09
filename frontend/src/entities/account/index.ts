@@ -5,6 +5,7 @@ export { useSession } from "@/entities/account/api/use-session";
 export {
   ACCOUNT_STATUS,
   ACCOUNT_STATUS_LABEL,
+  type AccountListFilters,
   type AccountStatus,
   type AccountSummary,
   type AvatarUploadResponse,

@@ -1,5 +1,6 @@
 package com.eduerp.modules.courses;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public final class CoursesEvents {
@@ -17,6 +18,10 @@ public final class CoursesEvents {
     }
 
     public record ClassUpdated(UUID classId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
+    /** Riêng với {@link ClassUpdated}: sửa phòng hay lịch không được làm đổi hạn đóng học phí. */
+    public record ClassStartDateChanged(UUID classId, LocalDate oldStartDate, LocalDate newStartDate) {
     }
 
     /** {@code actorAccountId} null = tác vụ tự khai giảng của hệ thống (mirror {@code InvoiceOverdue}). */

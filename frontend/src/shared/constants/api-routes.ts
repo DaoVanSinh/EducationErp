@@ -27,6 +27,7 @@ export const API_ROUTE = {
     accountRole: (accountId: string) => `/api/rbac/accounts/${accountId}/role`,
     accountDisable: (accountId: string) => `/api/rbac/accounts/${accountId}/disable`,
     accountEnable: (accountId: string) => `/api/rbac/accounts/${accountId}/enable`,
+    accountClose: (accountId: string) => `/api/rbac/accounts/${accountId}/close`,
     accountSignOutEverywhere: (accountId: string) => `/api/rbac/accounts/${accountId}/sign-out-everywhere`,
   },
   dashboard: {
@@ -50,22 +51,25 @@ export const API_ROUTE = {
   teachers: {
     profiles: "/api/teachers/profiles",
     profile: (profileId: string) => `/api/teachers/profiles/${profileId}`,
+    /** Điều khoản lương - cần quyền lương, không phải quyền giáo viên. */
+    profilePay: (profileId: string) => `/api/teachers/profiles/${profileId}/pay`,
+    profileLeave: (profileId: string) => `/api/teachers/profiles/${profileId}/leave`,
+    profileBranchHistory: (profileId: string) => `/api/teachers/profiles/${profileId}/branch-history`,
   },
   students: {
     profiles: "/api/students/profiles",
     profile: (profileId: string) => `/api/students/profiles/${profileId}`,
   },
   payroll: {
-    contracts: "/api/payroll/contracts",
-    contract: (contractId: string) => `/api/payroll/contracts/${contractId}`,
-    contractTerminate: (contractId: string) => `/api/payroll/contracts/${contractId}/terminate`,
-    contractFile: (contractId: string) => `/api/payroll/contracts/${contractId}/file`,
-    /** Hợp đồng/phiếu lương CỦA CHÍNH người gọi - không cần quyền READ_PAYROLL, dùng cho tab
-     * "Lương"/"Hợp đồng" của trang Hồ sơ của tôi. */
-    myContracts: "/api/payroll/me/contracts",
+    /** Phiếu lương CỦA CHÍNH người gọi - không cần quyền READ_PAYROLL, dùng cho tab "Lương" của trang Hồ sơ của tôi. */
     myPayslips: "/api/payroll/me/payslips",
+    /** Phiếu đã duyệt để chi trả: admin chi nhánh luôn bị ép về chi nhánh của mình. */
+    branchPayslips: "/api/payroll/branch-payslips",
+    branchPayslipPay: (payslipId: string) => `/api/payroll/branch-payslips/${payslipId}/pay`,
+    branchPayslipUndo: (payslipId: string) => `/api/payroll/branch-payslips/${payslipId}/undo-payment`,
     runs: "/api/payroll/runs",
     run: (runId: string) => `/api/payroll/runs/${runId}`,
+    runRecalculate: (runId: string) => `/api/payroll/runs/${runId}/recalculate`,
     runSubmit: (runId: string) => `/api/payroll/runs/${runId}/submit`,
     runApprove: (runId: string) => `/api/payroll/runs/${runId}/approve`,
     runReject: (runId: string) => `/api/payroll/runs/${runId}/reject`,
@@ -83,6 +87,7 @@ export const API_ROUTE = {
     invoiceOnlinePayment: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/online-payment`,
     invoiceManualPayment: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/manual-payment`,
     invoiceCancel: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/cancel`,
+    invoiceExtend: (invoiceId: string) => `/api/billing/invoices/${invoiceId}/extend`,
     combos: "/api/billing/combos",
     combo: (comboId: string) => `/api/billing/combos/${comboId}`,
     comboCancel: (comboId: string) => `/api/billing/combos/${comboId}/cancel`,
@@ -119,6 +124,8 @@ export const API_ROUTE = {
     classAttendance: (classId: string) => `/api/attendance/classes/${classId}`,
     /** Cổng học tập: điểm danh của CHÍNH học viên (READ_LEARNING). */
     myClasses: "/api/attendance/me/classes",
+    /** Lớp giáo viên từng dạy, kể cả đã bàn giao - tính từ các buổi được ghi giờ cho họ. */
+    myTaughtClasses: "/api/attendance/me/taught-classes",
   },
   assessment: {
     assignments: "/api/assessment/assignments",

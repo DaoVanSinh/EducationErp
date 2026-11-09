@@ -7,7 +7,6 @@ import com.eduerp.modules.billing.ComboDiscountTierNotConfiguredException;
 import com.eduerp.modules.billing.CourseNotFoundException;
 import com.eduerp.modules.billing.CourseTuitionNotConfiguredException;
 import com.eduerp.modules.billing.EnrollmentAlreadyDiscountedException;
-import com.eduerp.modules.billing.EnrollmentAlreadyInvoicedException;
 import com.eduerp.modules.billing.EnrollmentNotActiveForBillingException;
 import com.eduerp.modules.billing.EnrollmentNotFoundException;
 import com.eduerp.modules.billing.GroupMemberMismatchException;
@@ -15,12 +14,12 @@ import com.eduerp.modules.billing.MinimumGroupSizeException;
 import com.eduerp.modules.billing.dto.CreateGroupRegistrationRequest;
 import com.eduerp.modules.billing.dto.GroupRegistrationMemberResponse;
 import com.eduerp.modules.billing.dto.GroupRegistrationResponse;
+import com.eduerp.modules.billing.internal.TuitionInvoiceIssuer;
 import com.eduerp.modules.billing.internal.access.BillingBranchGuard;
 import com.eduerp.modules.billing.internal.model.GroupRegistration;
 import com.eduerp.modules.billing.internal.pricing.EnrollmentDiscounts;
 import com.eduerp.modules.billing.internal.repository.ComboDiscountTierRepository;
 import com.eduerp.modules.billing.internal.repository.GroupRegistrationRepository;
-import com.eduerp.modules.billing.internal.repository.InvoiceRepository;
 import com.eduerp.modules.courses.CoursesManagement;
 import com.eduerp.modules.enrollment.EnrollmentConstants;
 import com.eduerp.modules.enrollment.EnrollmentManagement;
@@ -41,15 +40,16 @@ import org.springframework.transaction.annotation.Transactional;
  * Lập nhóm từ các ghi danh ĐANG HỌC đã có sẵn (không tạo ghi danh mới - mirror {@code CreateCombo}).
  *
  * <p>Thứ tự kiểm tra: số lượng → ghi danh tồn tại/đang học → cùng khoá, cùng chi nhánh, mỗi học viên một lần →
- * chưa hưởng ưu đãi khác → chưa có hoá đơn sống → học phí khoá → bậc giảm giá → lưu. Bậc giảm giá dùng chung
- * với combo: "từ N suất học" - N khoá của một người hay N người cùng một khoá.
+ * chưa hưởng ưu đãi khác → học phí khoá → bậc giảm giá → lưu. Bậc giảm giá dùng chung với combo: "từ N suất học" -
+ * N khoá của một người hay N người cùng một khoá. Hoá đơn giá thường chưa thu bị huỷ và lập lại theo giá nhóm; thành
+ * viên đã đóng tiền thì bị chặn vì số đã thu lệch với giá mới.
  */
 @Service
 public class CreateGroupRegistration {
 
     private final GroupRegistrationRepository groups;
     private final ComboDiscountTierRepository tiers;
-    private final InvoiceRepository invoices;
+    private final TuitionInvoiceIssuer issuer;
     private final EnrollmentDiscounts discounts;
     private final EnrollmentManagement enrollmentManagement;
     private final CoursesManagement coursesManagement;
@@ -58,13 +58,13 @@ public class CreateGroupRegistration {
     private final StudentsManagement students;
 
     CreateGroupRegistration(GroupRegistrationRepository groups, ComboDiscountTierRepository tiers,
-            InvoiceRepository invoices, EnrollmentDiscounts discounts, EnrollmentManagement enrollmentManagement,
+            TuitionInvoiceIssuer issuer, EnrollmentDiscounts discounts, EnrollmentManagement enrollmentManagement,
             CoursesManagement coursesManagement, ApplicationEventPublisher events, BillingBranchGuard branchGuard,
             StudentsManagement students) {
         this.students = students;
         this.groups = groups;
         this.tiers = tiers;
-        this.invoices = invoices;
+        this.issuer = issuer;
         this.discounts = discounts;
         this.enrollmentManagement = enrollmentManagement;
         this.coursesManagement = coursesManagement;
@@ -84,7 +84,7 @@ public class CreateGroupRegistration {
         var first = members.get(0);
         branchGuard.require(actorAccountId, AccessConstants.Actions.CREATE, first.branchId());
         requireSameCourseBranchAndDistinctStudents(members, first);
-        members.forEach(member -> requireNotDiscountedNorInvoiced(member.enrollmentId(), enrollmentIds));
+        members.forEach(member -> requireNotDiscounted(member.enrollmentId(), enrollmentIds));
 
         var tuitionFee = tuitionOf(first.courseId());
         var tier = tiers.findFirstByActiveTrueAndMinCourseCountLessThanEqualOrderByMinCourseCountDesc(members.size())
@@ -94,8 +94,10 @@ public class CreateGroupRegistration {
                 actorAccountId);
         members.forEach(member -> group.addMember(member.enrollmentId(), member.studentProfileId(), tuitionFee));
 
+        enrollmentIds.forEach(id -> issuer.cancelUnpaidOf(id, actorAccountId, actorBranchId));
         var saved = save(group, enrollmentIds);
         events.publishEvent(new BillingEvents.GroupRegistrationCreated(saved.getId(), actorAccountId, actorBranchId));
+        members.forEach(member -> issuer.issueFor(member, actorAccountId, actorBranchId));
         var studentNames = students.displayNamesOf(
                 members.stream().map(EnrollmentSummaryResponse::studentProfileId).toList());
         var courseName = coursesManagement.courseNamesOf(List.of(first.courseId())).get(first.courseId());
@@ -123,12 +125,9 @@ public class CreateGroupRegistration {
         }
     }
 
-    private void requireNotDiscountedNorInvoiced(UUID enrollmentId, List<UUID> allIds) {
+    private void requireNotDiscounted(UUID enrollmentId, List<UUID> allIds) {
         if (discounts.isDiscounted(enrollmentId)) {
             throw new EnrollmentAlreadyDiscountedException(allIds);
-        }
-        if (invoices.countByEnrollmentIdAndStatusNot(enrollmentId, BillingConstants.InvoiceStatus.CANCELLED) > 0) {
-            throw new EnrollmentAlreadyInvoicedException(enrollmentId);
         }
     }
 

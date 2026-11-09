@@ -5,8 +5,8 @@ import org.springframework.http.HttpStatus;
 
 /**
  * Kỳ lương không có phiếu lương nào thì không được gửi duyệt: mỗi tháng chỉ có MỘT kỳ lương
- * ({@link PayrollRunAlreadyExistsException}), duyệt một kỳ rỗng là khoá luôn tháng đó, giáo viên ký
- * hợp đồng muộn hơn không bao giờ được tính lương tháng ấy nữa.
+ * ({@link PayrollRunAlreadyExistsException}), duyệt một kỳ rỗng là khoá luôn tháng đó, giáo viên được thiết lập
+ * lương muộn hơn không bao giờ được tính lương tháng ấy nữa.
  */
 public final class PayrollRunEmptyException extends PayrollException {
     public PayrollRunEmptyException(UUID payrollRunId) {

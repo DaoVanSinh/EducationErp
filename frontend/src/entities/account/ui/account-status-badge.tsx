@@ -5,10 +5,12 @@ import {
 } from "@/entities/account/model/account-schema";
 import { Badge } from "@/shared/ui/badge";
 
+const STATUS_TONE = {
+  [ACCOUNT_STATUS.active]: "positive",
+  [ACCOUNT_STATUS.disabled]: "warning",
+  [ACCOUNT_STATUS.closed]: "neutral",
+} as const;
+
 export function AccountStatusBadge({ status }: { readonly status: AccountStatus }) {
-  return (
-    <Badge tone={status === ACCOUNT_STATUS.active ? "positive" : "danger"}>
-      {ACCOUNT_STATUS_LABEL[status]}
-    </Badge>
-  );
+  return <Badge tone={STATUS_TONE[status]}>{ACCOUNT_STATUS_LABEL[status]}</Badge>;
 }

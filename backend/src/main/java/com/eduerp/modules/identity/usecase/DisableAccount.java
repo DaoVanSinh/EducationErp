@@ -5,6 +5,7 @@ import com.eduerp.modules.identity.AccountNotFoundException;
 import com.eduerp.modules.identity.IdentityConstants;
 import com.eduerp.modules.identity.IdentityEvents;
 import com.eduerp.modules.identity.IdentityException;
+import com.eduerp.modules.identity.internal.access.AccountLifecycleGuard;
 import com.eduerp.modules.identity.internal.repository.AccountRepository;
 import com.eduerp.modules.identity.internal.token.SessionRevocationService;
 import java.util.UUID;
@@ -16,7 +17,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Khoá một tài khoản (nhân viên nghỉ việc, học viên thôi học). Không đăng nhập được nữa, và mọi phiên
+ * Tạm đóng một tài khoản, mở lại được. Lương vẫn tính vì đây chỉ là chặn đăng nhập. Không đăng nhập được nữa, và mọi phiên
  * đang mở bị thu hồi ngay - không đợi access token hết hạn. Lời mời còn treo (nếu chưa kích hoạt) cũng
  * bị huỷ, để mật khẩu tạm trong email không còn dùng được.
  *
@@ -27,13 +28,15 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class DisableAccount {
 
     private final AccountRepository accounts;
+    private final AccountLifecycleGuard guard;
     private final SessionRevocationService revocations;
     private final StringRedisTemplate redis;
     private final ApplicationEventPublisher events;
 
-    DisableAccount(AccountRepository accounts, SessionRevocationService revocations, StringRedisTemplate redis,
-            ApplicationEventPublisher events) {
+    DisableAccount(AccountRepository accounts, AccountLifecycleGuard guard, SessionRevocationService revocations,
+            StringRedisTemplate redis, ApplicationEventPublisher events) {
         this.accounts = accounts;
+        this.guard = guard;
         this.revocations = revocations;
         this.redis = redis;
         this.events = events;
@@ -41,10 +44,11 @@ public class DisableAccount {
 
     @Transactional
     public void execute(UUID accountId, UUID actorAccountId, UUID actorBranchId) {
-        if (accountId.equals(actorAccountId)) {
-            throw new IdentityException.CannotModifyOwnAccount();
-        }
         var account = accounts.findById(accountId).orElseThrow(() -> new AccountNotFoundException(accountId));
+        guard.require(actorAccountId, account);
+        if (account.isClosed()) {
+            throw new IdentityException.AccountClosed(accountId);
+        }
         if (account.getStatus() == IdentityConstants.AccountStatus.DISABLED) {
             return;
         }

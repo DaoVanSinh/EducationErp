@@ -54,7 +54,7 @@ export function CreateClassDialog({ open, onClose }: CreateClassDialogProps) {
             />
           </FormField>
           <BranchSelect controller={controller} />
-          <FormField label="Giáo viên" htmlFor="class-teacher" error={fieldErrors.teacherId}>
+          <FormField label="Giáo viên" htmlFor="class-teacher" hint={controller.teacherHint} error={fieldErrors.teacherId}>
             <GlassSelect
               id="class-teacher"
               value={values.teacherId}

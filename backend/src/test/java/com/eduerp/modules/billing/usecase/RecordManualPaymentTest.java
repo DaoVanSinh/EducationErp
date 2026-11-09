@@ -102,6 +102,15 @@ class RecordManualPaymentTest {
                 .isInstanceOf(InvalidPaymentAmountException.class);
     }
 
+    /** Thu đủ một lần: trả một phần không được ghi nhận, kể cả với dữ liệu cũ còn dở. */
+    @Test
+    void rejectsAPartialPayment() {
+        var invoice = stubbedInvoice("6000000");
+
+        assertThatThrownBy(() -> useCase.execute(invoice.getId(), cash("1000000"), actorAccountId, actorBranchId))
+                .isInstanceOf(InvalidPaymentAmountException.class);
+    }
+
     @Test
     void acceptsAnAmountExactlyEqualToWhatIsStillOwed() {
         var invoice = stubbedInvoice("6000000");
@@ -118,7 +127,7 @@ class RecordManualPaymentTest {
     void storesASucceededCashPaymentRecordedByTheActor() {
         var invoice = stubbedInvoice("6000000");
 
-        useCase.execute(invoice.getId(), cash("2000000"), actorAccountId, actorBranchId);
+        useCase.execute(invoice.getId(), cash("6000000"), actorAccountId, actorBranchId);
 
         var payment = savedPayment();
         assertThat(payment.getMethod()).isEqualTo(BillingConstants.PaymentMethod.CASH);
@@ -132,7 +141,7 @@ class RecordManualPaymentTest {
     @Test
     void storesABankTransferWithItsTrimmedNote() {
         var invoice = stubbedInvoice("6000000");
-        var request = new RecordManualPaymentRequest(new BigDecimal("1500000"),
+        var request = new RecordManualPaymentRequest(new BigDecimal("6000000"),
                 BillingConstants.OfflinePaymentMethod.BANK_TRANSFER, "  CK VCB 123456  ");
 
         useCase.execute(invoice.getId(), request, actorAccountId, actorBranchId);
@@ -145,7 +154,7 @@ class RecordManualPaymentTest {
     @Test
     void blankNoteIsStoredAsNull() {
         var invoice = stubbedInvoice("6000000");
-        var request = new RecordManualPaymentRequest(new BigDecimal("1000000"), null, "   ");
+        var request = new RecordManualPaymentRequest(new BigDecimal("6000000"), null, "   ");
 
         useCase.execute(invoice.getId(), request, actorAccountId, actorBranchId);
 

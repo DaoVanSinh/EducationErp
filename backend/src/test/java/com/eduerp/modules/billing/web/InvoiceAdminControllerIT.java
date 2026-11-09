@@ -126,32 +126,35 @@ class InvoiceAdminControllerIT {
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
-    private String createInvoice(Cookie admin, String enrollmentId, BigDecimal amount) throws Exception {
-        var result = mockMvc.perform(post(INVOICES).cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new CreateInvoiceRequest(UUID.fromString(enrollmentId), amount, DUE_DATE))))
-                .andReturn();
-        assertThat(result.getResponse().getStatus()).isEqualTo(200);
-        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+    /** Ghi danh tự có một hoá đơn. */
+    private String invoiceOf(Cookie admin, String enrollmentId) throws Exception {
+        var listed = mockMvc.perform(get(INVOICES).cookie(admin).param("enrollmentId", enrollmentId)
+                .param("status", BillingConstants.InvoiceStatus.UNPAID.name())).andReturn();
+        var items = objectMapper.readTree(listed.getResponse().getContentAsString()).get("items");
+        assertThat(items).hasSize(1);
+        return items.get(0).get("id").asText();
     }
 
+    private org.springframework.test.web.servlet.MvcResult reissue(Cookie admin, String enrollmentId) throws Exception {
+        return mockMvc.perform(post(INVOICES).cookie(admin).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateInvoiceRequest(UUID.fromString(enrollmentId)))))
+                .andReturn();
+    }
+
+    /** Mỗi ghi danh một hoá đơn đủ học phí, tự lập khi ghi danh; lập thêm bị chặn. */
     @Test
-    void createsTwoInstallmentsThenRefusesAnythingBeyondTheTuition() throws Exception {
+    void issuesTheFullTuitionOnEnrollmentThenRefusesAnotherInvoice() throws Exception {
         var admin = signIn("bil-admin-1@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        createInvoice(admin, enrollmentId, HALF);
-        createInvoice(admin, enrollmentId, HALF);
 
-        // Review Focus #3 ở tầng HTTP: đợt 3 với số tiền dương nhỏ nhất cũng bị chặn.
-        var third = mockMvc.perform(post(INVOICES).cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateInvoiceRequest(
-                                UUID.fromString(enrollmentId), new BigDecimal("1"), DUE_DATE))))
-                .andReturn();
+        var issued = mockMvc.perform(get(INVOICES + "/" + invoiceOf(admin, enrollmentId)).cookie(admin)).andReturn();
+        var invoice = objectMapper.readTree(issued.getResponse().getContentAsString()).get("invoice");
+        assertThat(invoice.get("amount").asLong()).isEqualTo(TUITION.longValue());
+        assertThat(invoice.get("installmentNumber").asInt()).isEqualTo(1);
 
-        assertThat(third.getResponse().getStatus()).isEqualTo(409);
-        assertThat(third.getResponse().getContentAsString()).contains("BILLING_INVOICE_AMOUNT_EXCEEDS_TUITION");
+        var second = reissue(admin, enrollmentId);
+        assertThat(second.getResponse().getStatus()).isEqualTo(409);
+        assertThat(second.getResponse().getContentAsString()).contains("BILLING_ENROLLMENT_ALREADY_INVOICED");
     }
 
     @Test
@@ -159,44 +162,37 @@ class InvoiceAdminControllerIT {
         var admin = signIn("bil-admin-2@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, null);
 
-        var result = mockMvc.perform(post(INVOICES).cookie(admin).with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new CreateInvoiceRequest(
-                                UUID.fromString(enrollmentId), HALF, DUE_DATE))))
-                .andReturn();
+        var result = reissue(admin, enrollmentId);
 
         assertThat(result.getResponse().getStatus()).isEqualTo(409);
         assertThat(result.getResponse().getContentAsString()).contains("BILLING_COURSE_TUITION_NOT_CONFIGURED");
     }
 
+    /** Thu đủ một lần: trả một phần bị từ chối, trả đúng phần còn lại thì xong. */
     @Test
-    void recordsAPartialManualPaymentThenCompletesTheInvoice() throws Exception {
+    void refusesAPartialManualPaymentAndAcceptsTheFullAmount() throws Exception {
         var admin = signIn("bil-admin-3@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        var invoiceId = createInvoice(admin, enrollmentId, HALF);
+        var invoiceId = invoiceOf(admin, enrollmentId);
 
         var partial = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin)
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new RecordManualPaymentRequest(new BigDecimal("2000000")))))
                 .andReturn();
-        assertThat(partial.getResponse().getStatus()).isEqualTo(200);
-        var afterPartial = objectMapper.readTree(partial.getResponse().getContentAsString());
-        assertThat(afterPartial.get("status").asText())
-                .isEqualTo(BillingConstants.InvoiceStatus.PARTIALLY_PAID.name());
-        assertThat(afterPartial.get("amountPaid").asLong()).isEqualTo(2_000_000L);
+        assertThat(partial.getResponse().getStatus()).isEqualTo(400);
+        assertThat(partial.getResponse().getContentAsString()).contains("BILLING_INVALID_PAYMENT_AMOUNT");
 
-        var rest = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin).with(csrf())
+        var full = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RecordManualPaymentRequest(new BigDecimal("4000000")))))
+                        .content(objectMapper.writeValueAsString(new RecordManualPaymentRequest(TUITION))))
                 .andReturn();
-        assertThat(objectMapper.readTree(rest.getResponse().getContentAsString()).get("status").asText())
+        assertThat(objectMapper.readTree(full.getResponse().getContentAsString()).get("status").asText())
                 .isEqualTo(BillingConstants.InvoiceStatus.PAID.name());
 
         var detail = mockMvc.perform(get(INVOICES + "/" + invoiceId).cookie(admin)).andReturn();
         var payments = objectMapper.readTree(detail.getResponse().getContentAsString()).get("payments");
-        assertThat(payments).hasSize(2);
+        assertThat(payments).hasSize(1);
         assertThat(detail.getResponse().getContentAsString()).doesNotContain("gatewayTransactionId");
     }
 
@@ -204,12 +200,12 @@ class InvoiceAdminControllerIT {
     void refusesAManualPaymentLargerThanTheRemainingBalance() throws Exception {
         var admin = signIn("bil-admin-4@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        var invoiceId = createInvoice(admin, enrollmentId, HALF);
+        var invoiceId = invoiceOf(admin, enrollmentId);
 
         var result = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new RecordManualPaymentRequest(new BigDecimal("6000001")))))
+                                new RecordManualPaymentRequest(TUITION.add(BigDecimal.ONE)))))
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
@@ -220,14 +216,16 @@ class InvoiceAdminControllerIT {
     void cancelsAnUnpaidInvoiceAndFreesItsInstallmentSlot() throws Exception {
         var admin = signIn("bil-admin-5@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        var invoiceId = createInvoice(admin, enrollmentId, TUITION);
+        var invoiceId = invoiceOf(admin, enrollmentId);
 
         var cancel = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/cancel").cookie(admin).with(csrf()))
                 .andReturn();
         assertThat(cancel.getResponse().getStatus()).isEqualTo(200);
 
         // Hoá đơn đã huỷ không chiếm chỗ và không tính vào tổng, nên phát hành lại cả học phí được.
-        var reissuedId = createInvoice(admin, enrollmentId, TUITION);
+        var created = reissue(admin, enrollmentId);
+        assertThat(created.getResponse().getStatus()).isEqualTo(200);
+        var reissuedId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
         var reissued = mockMvc.perform(get(INVOICES + "/" + reissuedId).cookie(admin)).andReturn();
         assertThat(objectMapper.readTree(reissued.getResponse().getContentAsString()).get("invoice")
                 .get("installmentNumber").asInt()).isEqualTo(1);
@@ -237,11 +235,10 @@ class InvoiceAdminControllerIT {
     void refusesToCancelAnInvoiceThatAlreadyReceivedMoney() throws Exception {
         var admin = signIn("bil-admin-6@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        var invoiceId = createInvoice(admin, enrollmentId, HALF);
+        var invoiceId = invoiceOf(admin, enrollmentId);
         mockMvc.perform(post(INVOICES + "/" + invoiceId + "/manual-payment").cookie(admin).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(
-                        new RecordManualPaymentRequest(new BigDecimal("1000000")))));
+                .content(objectMapper.writeValueAsString(new RecordManualPaymentRequest(TUITION))));
 
         var cancel = mockMvc.perform(post(INVOICES + "/" + invoiceId + "/cancel").cookie(admin).with(csrf()))
                 .andReturn();
@@ -254,7 +251,6 @@ class InvoiceAdminControllerIT {
     void filtersTheInvoiceListByEnrollmentAndStatus() throws Exception {
         var admin = signIn("bil-admin-7@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        createInvoice(admin, enrollmentId, HALF);
 
         var filtered = mockMvc.perform(get(INVOICES).cookie(admin)
                 .param("enrollmentId", enrollmentId)
@@ -270,7 +266,7 @@ class InvoiceAdminControllerIT {
         var admin = signIn("bil-admin-8@eduerp.local", AccessConstants.RoleCodes.ADMIN);
         var outsider = signIn("bil-outsider-1@eduerp.local", AccessConstants.RoleCodes.TEACHER);
         var enrollmentId = newActiveEnrollmentId(admin, TUITION);
-        var invoiceId = createInvoice(admin, enrollmentId, HALF);
+        var invoiceId = invoiceOf(admin, enrollmentId);
 
         assertThat(mockMvc.perform(get(INVOICES).cookie(outsider)).andReturn().getResponse().getStatus())
                 .isEqualTo(403);

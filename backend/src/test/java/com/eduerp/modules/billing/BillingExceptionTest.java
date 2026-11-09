@@ -54,22 +54,6 @@ class BillingExceptionTest {
     }
 
     @Test
-    void installmentLimitExceededIsConflictAndNamesTheLimit() {
-        var ex = new InstallmentLimitExceededException(UUID.randomUUID(), 3);
-        assertThat(ex.getErrorCode()).isEqualTo("BILLING_INSTALLMENT_LIMIT_EXCEEDED");
-        assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(ex.getMessage()).contains("3");
-    }
-
-    @Test
-    void invoiceAmountExceedsTuitionIsConflictAndNamesBothNumbers() {
-        var ex = new InvoiceAmountExceedsTuitionException(new BigDecimal("13000000"), new BigDecimal("12000000"));
-        assertThat(ex.getErrorCode()).isEqualTo("BILLING_INVOICE_AMOUNT_EXCEEDS_TUITION");
-        assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(ex.getMessage()).contains("13000000", "12000000");
-    }
-
-    @Test
     void invoiceNotPayableIsConflict() {
         var ex = new InvoiceNotPayableException(UUID.randomUUID(), BillingConstants.InvoiceStatus.PAID);
         assertThat(ex.getErrorCode()).isEqualTo("BILLING_INVOICE_NOT_PAYABLE");
@@ -164,20 +148,17 @@ class BillingExceptionTest {
         assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
     }
 
-    /** Spec mục 6: combo dùng LẠI đúng hai exception này (cùng type, cùng errorCode) - chỉ câu chữ
-     * của message đổi theo đơn vị neo, để kế toán không đọc thấy chữ "Ghi danh" trên màn hình combo. */
     @Test
-    void comboVariantsKeepTheSameErrorCodeButNameTheComboInTheMessage() {
-        var comboId = UUID.randomUUID();
-        var limit = InstallmentLimitExceededException.forCombo(comboId, 3);
-        assertThat(limit.getErrorCode()).isEqualTo("BILLING_INSTALLMENT_LIMIT_EXCEEDED");
-        assertThat(limit.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(limit.getMessage()).contains("Combo", comboId.toString(), "3").doesNotContain("Ghi danh");
+    void comboAlreadyInvoicedIsConflict() {
+        var ex = new ComboAlreadyInvoicedException(UUID.randomUUID());
+        assertThat(ex.getErrorCode()).isEqualTo("BILLING_COMBO_ALREADY_INVOICED");
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+    }
 
-        var exceeds = InvoiceAmountExceedsTuitionException.forCombo(new BigDecimal("18000000"),
-                new BigDecimal("17850000"));
-        assertThat(exceeds.getErrorCode()).isEqualTo("BILLING_INVOICE_AMOUNT_EXCEEDS_TUITION");
-        assertThat(exceeds.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(exceeds.getMessage()).contains("18000000", "17850000", "combo");
+    @Test
+    void unpaidInvoicesBlockClosingAnAccountWithAConflict() {
+        var ex = new StudentHasUnpaidInvoicesException(UUID.randomUUID());
+        assertThat(ex.getErrorCode()).isEqualTo("BILLING_STUDENT_HAS_UNPAID_INVOICES");
+        assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
     }
 }

@@ -6,7 +6,6 @@ import { useZodForm } from "@/shared/lib/use-zod-form";
 import { ErrorNotice } from "@/shared/ui/error-notice";
 import { FormField } from "@/shared/ui/form-field";
 import { GlassButton } from "@/shared/ui/glass-button";
-import { GlassInput } from "@/shared/ui/glass-input";
 import { GlassModal } from "@/shared/ui/glass-modal";
 import { GlassSelect } from "@/shared/ui/glass-select";
 
@@ -16,12 +15,13 @@ export interface CreateInvoiceDialogProps {
   readonly enrollments: readonly EnrollmentSummary[];
 }
 
+/** Hoá đơn tự lập khi ghi danh; ở đây chỉ dùng khi hoá đơn đã bị huỷ, khoá mới có giá, hoặc dữ liệu chia đợt cũ còn dở. */
 export function CreateInvoiceDialog({ open, onClose, enrollments }: CreateInvoiceDialogProps) {
   const createInvoice = useCreateInvoice();
 
   const form = useZodForm({
     schema: createInvoiceFormSchema,
-    initialValues: { enrollmentId: "", amount: "", dueDate: "" },
+    initialValues: { enrollmentId: "" },
     onSubmit: async (values) => {
       await createInvoice.mutateAsync(values);
       form.reset();
@@ -33,13 +33,13 @@ export function CreateInvoiceDialog({ open, onClose, enrollments }: CreateInvoic
     <GlassModal
       open={open}
       onClose={onClose}
-      title="Tạo đợt thu học phí"
-      description="Tối đa 3 đợt cho mỗi ghi danh; tổng các đợt không vượt học phí khoá học."
+      title="Lập lại hoá đơn học phí"
+      description="Hệ thống tính phần học phí chưa có hoá đơn, thu đủ một lần, hạn là ngày thứ 7 từ ngày khai giảng."
     >
       <form id="create-invoice-form" onSubmit={form.handleSubmit} className="flex flex-col gap-4" noValidate>
         {form.submitError ? <ErrorNotice error={form.submitError} /> : null}
 
-        <FormField label="Ghi danh" htmlFor="invoice-enrollment" hint="Chỉ ghi danh đang học phát hành được." error={form.fieldErrors.enrollmentId}>
+        <FormField label="Ghi danh" htmlFor="invoice-enrollment" hint="Chỉ ghi danh đang học." error={form.fieldErrors.enrollmentId}>
           <GlassSelect
             id="invoice-enrollment"
             className="w-full"
@@ -58,28 +58,6 @@ export function CreateInvoiceDialog({ open, onClose, enrollments }: CreateInvoic
               ))}
           </GlassSelect>
         </FormField>
-
-        <FormField label="Số tiền đợt này (VND)" htmlFor="invoice-amount" error={form.fieldErrors.amount}>
-          <GlassInput
-            id="invoice-amount"
-            type="number"
-            min={1}
-            step={1000}
-            value={form.values.amount}
-            invalid={form.fieldErrors.amount !== undefined}
-            onChange={(event) => form.setValue("amount", event.target.value)}
-          />
-        </FormField>
-
-        <FormField label="Hạn thanh toán" htmlFor="invoice-due-date" error={form.fieldErrors.dueDate}>
-          <GlassInput
-            id="invoice-due-date"
-            type="date"
-            value={form.values.dueDate}
-            invalid={form.fieldErrors.dueDate !== undefined}
-            onChange={(event) => form.setValue("dueDate", event.target.value)}
-          />
-        </FormField>
       </form>
 
       <footer className="flex justify-end gap-2">
@@ -87,7 +65,7 @@ export function CreateInvoiceDialog({ open, onClose, enrollments }: CreateInvoic
           Huỷ
         </GlassButton>
         <GlassButton type="submit" form="create-invoice-form" loading={form.isSubmitting}>
-          Tạo đợt thu
+          Lập hoá đơn
         </GlassButton>
       </footer>
     </GlassModal>

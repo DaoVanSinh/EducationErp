@@ -134,8 +134,6 @@ class BillingRepositoryIT {
         cancelled.cancel();
         invoices.saveAndFlush(cancelled);
 
-        assertThat(invoices.countByEnrollmentIdAndStatusNot(enrollmentId,
-                BillingConstants.InvoiceStatus.CANCELLED)).isEqualTo(1);
         var live = invoices.findAllByEnrollmentIdAndStatusNot(enrollmentId,
                 BillingConstants.InvoiceStatus.CANCELLED);
         assertThat(live).singleElement()
@@ -302,14 +300,10 @@ class BillingRepositoryIT {
         cancelled.cancel();
         invoices.saveAndFlush(cancelled);
 
-        assertThat(invoices.countByComboIdAndStatusNot(comboId, BillingConstants.InvoiceStatus.CANCELLED))
-                .isEqualTo(1);
         assertThat(invoices.findAllByComboIdAndStatusNot(comboId, BillingConstants.InvoiceStatus.CANCELLED))
                 .singleElement().satisfies(invoice -> assertThat(invoice.getAmount())
                         .isEqualByComparingTo(new BigDecimal("10000000")));
-        // countByComboId/findAllByComboId đếm MỌI trạng thái - CancelCombo (Review Focus #6) và màn
-        // chi tiết combo đều cần thấy cả hoá đơn đã huỷ.
-        assertThat(invoices.countByComboId(comboId)).isEqualTo(2);
+        // findAllByComboId lấy MỌI trạng thái: màn chi tiết combo cần thấy cả hoá đơn đã huỷ.
         assertThat(invoices.findAllByComboId(comboId)).hasSize(2);
     }
 

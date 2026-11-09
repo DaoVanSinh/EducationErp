@@ -106,8 +106,7 @@ class GradeAdminController {
         return getStudentAcademicSummary.execute(principal.accountId(), studentProfileId);
     }
 
-    /** Không có {@code Content-Disposition} kèm tên file thì trình duyệt lưu file không có phần mở
-     * rộng - mirror {@code ContractAdminController.downloadFile}. */
+    /** Không có {@code Content-Disposition} kèm tên file thì trình duyệt lưu file không có phần mở rộng. */
     private static ResponseEntity<byte[]> toDownload(ExportedFileResponse exported) {
         var disposition = ContentDisposition.attachment()
                 .filename(exported.fileName(), StandardCharsets.UTF_8).build();

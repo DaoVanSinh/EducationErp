@@ -31,11 +31,6 @@ SELF_SERVICE_ENDPOINTS: tuple[EndpointSpec, ...] = (
         body_fields=("fullName", "avatarUrl"),
     ),
     endpoint(
-        "payroll.my_contracts", "self", "GET", "/api/payroll/me/contracts", _ACCOUNT_READ,
-        "Hợp đồng lao động của chính tài khoản đang kết nối.",
-        query_params=PAGING,
-    ),
-    endpoint(
         "landing.overview", "self", "GET", "/api/landing/overview", _ACCOUNT_READ,
         "Thông tin công khai của trung tâm: khóa học, lớp đang mở, chi nhánh, liên hệ.",
     ),
@@ -84,6 +79,11 @@ STUDENT_ENDPOINTS: tuple[EndpointSpec, ...] = (
 )
 
 TEACHER_ENDPOINTS: tuple[EndpointSpec, ...] = (
+    endpoint(
+        "teaching.my_taught_classes", "teaching", "GET", "/api/attendance/me/taught-classes",
+        (C.Resources.TEACHING, C.Actions.READ, _PERSONAL),
+        "Lớp đã dạy của chính giáo viên, kể cả lớp đã bàn giao.",
+    ),
     endpoint(
         "teaching.my_classes", "teaching", "GET", "/api/courses/me/classes",
         (C.Resources.TEACHING, C.Actions.READ, _PERSONAL),

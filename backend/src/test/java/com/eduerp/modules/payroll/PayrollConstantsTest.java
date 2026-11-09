@@ -19,9 +19,14 @@ class PayrollConstantsTest {
     }
 
     @Test
-    void contractTypesHaveExactlyTwoValues() {
-        assertThat(PayrollConstants.ContractType.values())
-                .containsExactly(PayrollConstants.ContractType.OFFICIAL, PayrollConstants.ContractType.COLLABORATOR);
+    void taxBracketsAreOrderedAndOnlyTheLastOneIsOpenEnded() {
+        var brackets = PayrollConstants.IncomeTax.BRACKETS;
+
+        assertThat(brackets).hasSize(5);
+        assertThat(brackets.get(brackets.size() - 1).upperBound()).isNull();
+        for (int i = 1; i < brackets.size() - 1; i++) {
+            assertThat(brackets.get(i).upperBound()).isGreaterThan(brackets.get(i - 1).upperBound());
+        }
     }
 
     @Test

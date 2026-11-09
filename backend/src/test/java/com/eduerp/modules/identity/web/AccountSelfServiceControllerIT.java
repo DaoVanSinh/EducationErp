@@ -184,7 +184,7 @@ class AccountSelfServiceControllerIT {
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
-        assertThat(accounts.findByEmail("profile@eduerp.local").orElseThrow().getFullName()).isEqualTo("New Name");
+        assertThat(accounts.findByTypedEmail("profile@eduerp.local").orElseThrow().getFullName()).isEqualTo("New Name");
     }
 
     @Test
@@ -211,7 +211,7 @@ class AccountSelfServiceControllerIT {
                 .andReturn();
 
         assertThat(uploadResult.getResponse().getStatus()).isEqualTo(200);
-        var updatedAccount = accounts.findByEmail("avatar-minio@eduerp.local").orElseThrow();
+        var updatedAccount = accounts.findByTypedEmail("avatar-minio@eduerp.local").orElseThrow();
         assertThat(updatedAccount.getAvatarUrl()).startsWith(IdentityConstants.Avatar.KEY_QUERY_PREFIX);
 
         var downloadResult = mockMvc.perform(get("/api/account/avatar").cookie(access)).andReturn();
@@ -225,6 +225,6 @@ class AccountSelfServiceControllerIT {
                         .with(csrf()))
                 .andReturn();
         assertThat(removeResult.getResponse().getStatus()).isEqualTo(200);
-        assertThat(accounts.findByEmail("avatar-minio@eduerp.local").orElseThrow().getAvatarUrl()).isNull();
+        assertThat(accounts.findByTypedEmail("avatar-minio@eduerp.local").orElseThrow().getAvatarUrl()).isNull();
     }
 }

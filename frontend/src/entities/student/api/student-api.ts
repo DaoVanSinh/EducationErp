@@ -12,9 +12,9 @@ const studentProfilePageSchema = pageResponseSchema(studentProfileSummarySchema)
 const createdStudentProfileIdSchema = z.string().uuid();
 
 export const studentApi = {
-  async listProfiles(page: number, size: number, branchId?: string) {
+  async listProfiles(page: number, size: number, branchId?: string, query?: string) {
     return studentProfilePageSchema.parse(
-      await apiClient.get<unknown>(API_ROUTE.students.profiles, { page, size, branchId }),
+      await apiClient.get<unknown>(API_ROUTE.students.profiles, { page, size, branchId, query }),
     );
   },
 

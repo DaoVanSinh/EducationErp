@@ -117,26 +117,42 @@ class RoleManagementIT {
                 .andReturn().getResponse().getStatus();
     }
 
+    /** Vào hay ra khỏi Giáo viên, Học viên thì đóng tài khoản cũ, tạo mới: mỗi tài khoản là một đợt làm hoặc học trọn vẹn. */
     @Test
-    void fixesAStudentCreatedByMistakeIntoATeacherAndGivesThemATeacherProfile() throws Exception {
+    void refusesToTurnAStudentIntoATeacherByChangingTheirRole() throws Exception {
         var admin = admin("fix");
-        var mistaken = account("role-mistaken@eduerp.local", AccessConstants.RoleCodes.STUDENT);
-        assertThat(students.findProfileByAccountId(mistaken)).isPresent();
+        var student = account("role-mistaken@eduerp.local", AccessConstants.RoleCodes.STUDENT);
 
-        assertThat(changeRole(admin, mistaken, AccessConstants.RoleCodes.TEACHER)).isEqualTo(200);
+        assertThat(changeRole(admin, student, AccessConstants.RoleCodes.TEACHER)).isEqualTo(409);
 
-        assertThat(access.roleOf(mistaken)).map(AccessManagement.RoleSummary::code)
-                .contains(AccessConstants.RoleCodes.TEACHER);
-        assertThat(teachers.teacherProfileExists(mistaken)).isTrue();
-        assertThat(students.findProfileByAccountId(mistaken))
-                .hasValueSatisfying(profile -> assertThat(profile.active())
-                        .as("hồ sơ học viên cũ còn đó nhưng ngừng hoạt động").isFalse());
-        assertThat(access.grants(mistaken, AccessConstants.Resources.TEACHING, AccessConstants.Actions.READ))
-                .as("cache quyền được xoá - năng lực mới có hiệu lực ngay").isTrue();
+        assertThat(access.roleOf(student)).map(AccessManagement.RoleSummary::code)
+                .contains(AccessConstants.RoleCodes.STUDENT);
+        assertThat(teachers.teacherProfileExists(student)).isFalse();
+        assertThat(students.findProfileByAccountId(student))
+                .hasValueSatisfying(profile -> assertThat(profile.active()).isTrue());
     }
 
     @Test
-    void refusesToTakeTheTeachingCapabilityFromSomeoneStillTeachingAnOpenClass() throws Exception {
+    void staffRolesStillChangeThroughChangeRole() throws Exception {
+        var admin = admin("staff");
+        var staff = account("role-staff@eduerp.local", AccessConstants.RoleCodes.BRANCH_ADMIN);
+
+        assertThat(changeRole(admin, staff, AccessConstants.RoleCodes.FORMER_STAFF)).isEqualTo(200);
+
+        assertThat(access.roleOf(staff)).map(AccessManagement.RoleSummary::code)
+                .contains(AccessConstants.RoleCodes.FORMER_STAFF);
+    }
+
+    @Test
+    void nobodyElseCanBeGivenTheSystemAdminRole() throws Exception {
+        var admin = admin("promote");
+        var staff = account("role-promote@eduerp.local", AccessConstants.RoleCodes.FORMER_STAFF);
+
+        assertThat(changeRole(admin, staff, AccessConstants.RoleCodes.ADMIN)).isEqualTo(409);
+    }
+
+    @Test
+    void refusesToChangeATeacherIntoAnotherRole() throws Exception {
         var admin = admin("busy");
         var teacher = account("role-busy-teacher@eduerp.local", AccessConstants.RoleCodes.TEACHER);
         var course = courses.save(new Course("ROLE-C", "Khoá đổi vai trò", null, null, null));
@@ -150,7 +166,7 @@ class RoleManagementIT {
                 .andReturn();
 
         assertThat(result.getResponse().getStatus()).isEqualTo(409);
-        assertThat(result.getResponse().getContentAsString()).contains("COURSES_TEACHER_HAS_OPEN_CLASSES");
+        assertThat(result.getResponse().getContentAsString()).contains("ACCESS_ROLE_CHANGE_REQUIRES_NEW_ACCOUNT");
         assertThat(access.roleOf(teacher)).map(AccessManagement.RoleSummary::code)
                 .contains(AccessConstants.RoleCodes.TEACHER);
     }

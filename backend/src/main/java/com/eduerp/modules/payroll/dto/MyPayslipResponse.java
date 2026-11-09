@@ -1,12 +1,18 @@
 package com.eduerp.modules.payroll.dto;
 
 import com.eduerp.modules.payroll.PayrollConstants;
+import com.eduerp.modules.teachers.TeachersConstants;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
-/** Một phiếu lương trong tab "Lương" của trang Hồ sơ của tôi. {@code year}/{@code month} đi kèm vì
- * đây là dữ liệu XUYÊN NHIỀU kỳ lương - khác {@code PayslipResponse} (luôn đọc trong ngữ cảnh MỘT
- * kỳ lương đã biết qua URL, nên không cần lặp lại year/month). */
-public record MyPayslipResponse(UUID id, int year, int month, PayrollConstants.ContractType contractType,
-        BigDecimal grossPay, BigDecimal netPay, boolean inProbation) {
+/**
+ * Một phiếu lương trong tab "Lương" của trang Hồ sơ của tôi, chỉ từ kỳ đã duyệt. Có đủ cách tính để giáo viên tự
+ * đối chiếu; không có phần BHXH trung tâm đóng vì đó là chi phí của trung tâm. {@code paidOn} null là chờ thanh toán.
+ */
+public record MyPayslipResponse(UUID id, int year, int month, LocalDate periodStart, LocalDate periodEnd,
+        TeachersConstants.PayType payType, BigDecimal payRate, int sessionCount, BigDecimal hoursWorked, int paidDays,
+        int probationDays, BigDecimal grossPay, BigDecimal allowancesTotal, BigDecimal adjustment,
+        BigDecimal socialInsuranceEmployee, BigDecimal incomeTaxWithheld, BigDecimal netPay, String note, LocalDate paidOn,
+        PayrollConstants.PaymentMethod paymentMethod) {
 }

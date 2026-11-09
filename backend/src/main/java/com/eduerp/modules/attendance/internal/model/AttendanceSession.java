@@ -45,6 +45,14 @@ public class AttendanceSession {
     @Column(name = "created_by_account_id", nullable = false, updatable = false)
     private UUID createdByAccountId;
 
+    /** Giáo viên phụ trách lớp lúc điểm danh - người được tính giờ dạy, có thể khác người bấm điểm danh (admin). */
+    @Column(name = "teacher_account_id", nullable = false, updatable = false)
+    private UUID teacherAccountId;
+
+    /** Thời lượng buổi theo lịch lúc điểm danh: đổi lịch lớp về sau không làm đổi buổi đã dạy. */
+    @Column(name = "duration_minutes", nullable = false, updatable = false)
+    private int durationMinutes;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -54,11 +62,14 @@ public class AttendanceSession {
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AttendanceRecord> records = new ArrayList<>();
 
-    public AttendanceSession(UUID classId, LocalDate sessionDate, String note, UUID createdByAccountId) {
+    public AttendanceSession(UUID classId, LocalDate sessionDate, String note, UUID createdByAccountId,
+            UUID teacherAccountId, int durationMinutes) {
         this.classId = classId;
         this.sessionDate = sessionDate;
         this.note = note;
         this.createdByAccountId = createdByAccountId;
+        this.teacherAccountId = teacherAccountId;
+        this.durationMinutes = durationMinutes;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }

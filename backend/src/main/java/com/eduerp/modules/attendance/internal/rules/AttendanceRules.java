@@ -2,10 +2,14 @@ package com.eduerp.modules.attendance.internal.rules;
 
 import com.eduerp.modules.attendance.AttendanceConstants;
 import com.eduerp.modules.attendance.dto.AttendanceSummary;
+import com.eduerp.modules.courses.CoursesConstants;
+import com.eduerp.modules.courses.dto.WeeklyScheduleSlot;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 
 /** Quyết định thuần của điểm danh - không I/O. */
 public final class AttendanceRules {
@@ -30,6 +34,26 @@ public final class AttendanceRules {
     /** Không điểm danh trước cho một ngày chưa tới - "hôm nay" tính theo giờ trung tâm. */
     public static boolean isFutureDate(LocalDate sessionDate, LocalDate today) {
         return sessionDate.isAfter(today);
+    }
+
+    /**
+     * Thời lượng một buổi theo lịch lớp: tổng các ca đúng thứ của ngày đó. Buổi học bù rơi vào ngày không có ca
+     * thì lấy ca dài nhất của lớp, vì một buổi bù thay cho một buổi học bình thường.
+     */
+    public static int sessionMinutes(List<WeeklyScheduleSlot> schedule, LocalDate sessionDate) {
+        var dayOfWeek = CoursesConstants.DayOfWeek.values()[sessionDate.getDayOfWeek().getValue() - 1];
+        var sameDayMinutes = schedule.stream()
+                .filter(slot -> slot.dayOfWeek() == dayOfWeek)
+                .mapToInt(AttendanceRules::slotMinutes)
+                .sum();
+        if (sameDayMinutes > 0) {
+            return sameDayMinutes;
+        }
+        return schedule.stream().mapToInt(AttendanceRules::slotMinutes).max().orElse(0);
+    }
+
+    private static int slotMinutes(WeeklyScheduleSlot slot) {
+        return Math.toIntExact(Duration.between(slot.startTime(), slot.endTime()).toMinutes());
     }
 
     private static int count(Collection<AttendanceConstants.AttendanceStatus> statuses,

@@ -1,39 +1,34 @@
 package com.eduerp.modules.teachers.usecase;
 
-import com.eduerp.modules.identity.IdentityManagement;
+import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.teachers.TeacherProfileNotFoundException;
 import com.eduerp.modules.teachers.dto.TeacherProfileResponse;
-import com.eduerp.modules.teachers.internal.model.TeacherProfile;
+import com.eduerp.modules.teachers.internal.TeacherProfileAssembler;
+import com.eduerp.modules.teachers.internal.access.TeacherBranchGuard;
 import com.eduerp.modules.teachers.internal.repository.TeacherProfileRepository;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Mirror {@code ListTeacherProfiles}, cho đúng một hồ sơ theo id - trang chi tiết giáo viên cần
- * fullName/email chứ không chỉ accountId. */
+/** Một hồ sơ theo id. Admin chi nhánh chỉ xem được giáo viên thuộc chi nhánh mình. */
 @Service
 public class GetTeacherProfile {
 
     private final TeacherProfileRepository profiles;
-    private final IdentityManagement identity;
+    private final TeacherBranchGuard branchGuard;
+    private final TeacherProfileAssembler assembler;
 
-    GetTeacherProfile(TeacherProfileRepository profiles, IdentityManagement identity) {
+    GetTeacherProfile(TeacherProfileRepository profiles, TeacherBranchGuard branchGuard,
+            TeacherProfileAssembler assembler) {
         this.profiles = profiles;
-        this.identity = identity;
+        this.branchGuard = branchGuard;
+        this.assembler = assembler;
     }
 
     @Transactional(readOnly = true)
-    public TeacherProfileResponse execute(UUID profileId) {
+    public TeacherProfileResponse execute(UUID actorAccountId, UUID profileId) {
         var profile = profiles.findById(profileId).orElseThrow(() -> new TeacherProfileNotFoundException(profileId));
-        var account = identity.summariesOf(List.of(profile.getAccountId())).get(profile.getAccountId());
-        return toResponse(profile, account);
-    }
-
-    private static TeacherProfileResponse toResponse(TeacherProfile profile,
-            IdentityManagement.AccountBasicInfo account) {
-        return new TeacherProfileResponse(profile.getId(), profile.getAccountId(),
-                account == null ? null : account.fullName(), account == null ? null : account.email(),
-                profile.getSubjects(), profile.getPhone(), profile.getBio(), profile.isActive());
+        branchGuard.require(actorAccountId, profile, AccessConstants.Actions.READ);
+        return assembler.toResponse(profile);
     }
 }

@@ -7,12 +7,12 @@ public final class PayrollEvents {
     private PayrollEvents() {
     }
 
-    public record ContractCreated(UUID contractId, UUID actorAccountId, UUID actorBranchId) {
-    }
-
-    public record ContractTerminated(UUID contractId, UUID actorAccountId, UUID actorBranchId) {
-    }
-
     public record PayrollRunApproved(UUID payrollRunId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
+    public record PayslipPaid(UUID payslipId, UUID actorAccountId, UUID actorBranchId) {
+    }
+
+    public record PayslipPaymentUndone(UUID payslipId, UUID actorAccountId, UUID actorBranchId) {
     }
 }

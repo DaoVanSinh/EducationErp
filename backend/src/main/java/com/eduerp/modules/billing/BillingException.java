@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 public sealed class BillingException extends AppException
         permits InvoiceNotFoundException, PaymentNotFoundException, EnrollmentNotFoundException,
         EnrollmentNotActiveForBillingException, CourseNotFoundException, CourseTuitionNotConfiguredException,
-        InstallmentLimitExceededException, InvoiceAmountExceedsTuitionException, InvoiceNotPayableException,
+        InvoiceNotPayableException, StudentHasUnpaidInvoicesException, ComboAlreadyInvoicedException,
         InvalidPaymentAmountException, InvalidCallbackSignatureException, UnknownPaymentGatewayException,
         PaymentGatewayUnavailableException, InvoiceHasPendingPaymentException, MinimumComboSizeException,
         StudentMismatchInComboException, EnrollmentAlreadyInComboException,

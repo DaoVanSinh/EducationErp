@@ -31,7 +31,7 @@ export const academicApi = {
   },
 
   /** getBlob đi qua lượt tự refresh khi access token hết hạn và đọc luôn tên file từ
-   * Content-Disposition - cùng đường mà tải file hợp đồng đã dùng. */
+   * Content-Disposition. */
   async downloadGradebook(classId: string): Promise<{ blob: Blob; fileName: string | null }> {
     return apiClient.getBlob(API_ROUTE.academic.classGradebookExport(classId));
   },

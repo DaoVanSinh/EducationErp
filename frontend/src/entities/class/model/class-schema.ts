@@ -74,6 +74,8 @@ export const classSummarySchema = z.object({
   branchName: z.string().nullable(),
   teacherId: z.string().uuid(),
   teacherName: z.string().nullable(),
+  /** Lớp còn mở nhưng giáo viên thuộc chi nhánh khác: dữ liệu cũ, giữ tới khi kết thúc và có cảnh báo. */
+  teacherOutsideBranch: z.boolean(),
   maxSeats: z.number().int(),
   minSeats: z.number().int(),
   /** Số học viên đang học - để biết lớp đã đủ sĩ số tối thiểu để khai giảng chưa. */
@@ -104,6 +106,8 @@ export interface CreateClassPayload {
 /** Trạng thái lớp không sửa ở đây - lớp chuyển trạng thái qua khai giảng/kết thúc/huỷ. */
 export interface UpdateClassPayload {
   readonly teacherId: string;
+  /** Chỉ khi thay giáo viên ở lớp đã khai giảng: buổi trước ngày này vẫn tính giờ cho giáo viên cũ. */
+  readonly teacherEffectiveFrom: string | null;
   readonly maxSeats: number;
   readonly minSeats: number;
   readonly startDate: string;

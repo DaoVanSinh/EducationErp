@@ -1,22 +1,18 @@
-import { MAX_PAYMENT_NOTE_LENGTH, MIN_COMBO_ENROLLMENTS, MIN_GROUP_MEMBERS, PAYMENT_METHOD } from "@/entities/billing";
+import {
+  MAX_EXTENSION_REASON_LENGTH,
+  MAX_PAYMENT_NOTE_LENGTH,
+  MIN_COMBO_ENROLLMENTS,
+  MIN_GROUP_MEMBERS,
+  PAYMENT_METHOD,
+} from "@/entities/billing";
 import { z } from "zod";
 
 export const createInvoiceFormSchema = z.object({
   enrollmentId: z.string().uuid("Chọn ghi danh"),
-  amount: z
-    .string()
-    .min(1, "Nhập số tiền")
-    .transform((value) => Number(value))
-    .refine((value) => Number.isFinite(value) && value > 0, "Số tiền phải lớn hơn 0"),
-  dueDate: z.string().min(1, "Chọn hạn thanh toán"),
 });
 
+/** Thu đủ một lần: số tiền là phần còn lại của hoá đơn, không nhập tay. */
 export const manualPaymentFormSchema = z.object({
-  amount: z
-    .string()
-    .min(1, "Nhập số tiền")
-    .transform((value) => Number(value))
-    .refine((value) => Number.isFinite(value) && value > 0, "Số tiền phải lớn hơn 0"),
   method: z.enum([PAYMENT_METHOD.cash, PAYMENT_METHOD.bankTransfer]),
   note: z
     .string()
@@ -29,7 +25,6 @@ export const createComboFormSchema = z.object({
   enrollmentIds: z
     .array(z.string().uuid())
     .min(MIN_COMBO_ENROLLMENTS, `Chọn ít nhất ${MIN_COMBO_ENROLLMENTS} khoá đang học`),
-  dueDate: z.string().min(1, "Chọn hạn đóng của combo"),
 });
 
 /** Nhóm học chung: chọn một lớp, rồi tick ít nhất 2 học viên đang học lớp đó. */
@@ -40,13 +35,13 @@ export const createGroupRegistrationFormSchema = z.object({
     .min(MIN_GROUP_MEMBERS, `Chọn ít nhất ${MIN_GROUP_MEMBERS} học viên học chung`),
 });
 
-export const comboInvoiceFormSchema = z.object({
-  amount: z
+export const extendInvoiceFormSchema = z.object({
+  dueDate: z.string().min(1, "Chọn hạn mới"),
+  reason: z
     .string()
-    .min(1, "Nhập số tiền")
-    .transform((value) => Number(value))
-    .refine((value) => Number.isFinite(value) && value > 0, "Số tiền phải lớn hơn 0"),
-  dueDate: z.string().min(1, "Chọn hạn thanh toán của đợt này"),
+    .trim()
+    .min(1, "Nhập lý do gia hạn")
+    .max(MAX_EXTENSION_REASON_LENGTH, `Lý do tối đa ${MAX_EXTENSION_REASON_LENGTH} ký tự`),
 });
 
 export const comboDiscountTierFormSchema = z.object({

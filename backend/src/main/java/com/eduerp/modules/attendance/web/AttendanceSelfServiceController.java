@@ -2,7 +2,9 @@ package com.eduerp.modules.attendance.web;
 
 import com.eduerp.modules.access.AccessConstants;
 import com.eduerp.modules.attendance.dto.MyAttendanceClassResponse;
+import com.eduerp.modules.attendance.dto.TaughtClassResponse;
 import com.eduerp.modules.attendance.usecase.GetMyAttendance;
+import com.eduerp.modules.attendance.usecase.GetMyTaughtClasses;
 import com.eduerp.shared.AccountPrincipal;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,9 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 class AttendanceSelfServiceController {
 
     private final GetMyAttendance getMyAttendance;
+    private final GetMyTaughtClasses getMyTaughtClasses;
 
-    AttendanceSelfServiceController(GetMyAttendance getMyAttendance) {
+    AttendanceSelfServiceController(GetMyAttendance getMyAttendance, GetMyTaughtClasses getMyTaughtClasses) {
         this.getMyAttendance = getMyAttendance;
+        this.getMyTaughtClasses = getMyTaughtClasses;
+    }
+
+    /** Lớp giáo viên từng dạy, kể cả đã bàn giao - accountId luôn là chính người gọi. */
+    @GetMapping("/taught-classes")
+    List<TaughtClassResponse> myTaughtClasses(@AuthenticationPrincipal AccountPrincipal principal) {
+        return getMyTaughtClasses.execute(principal.accountId());
     }
 
     @GetMapping("/classes")
